@@ -221,9 +221,6 @@
       gap: 8px;
       align-items: center;
     }
-    .chip.badge-good { background: rgba(52, 211, 153, 0.1); border-color: rgba(52, 211, 153, 0.3); color: var(--good); }
-    .chip.badge-warn { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: var(--warn); }
-    .chip.badge-bad { background: rgba(251, 113, 133, 0.1); border-color: rgba(251, 113, 133, 0.3); color: var(--bad); }
     
     /* Stats */
     .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -312,7 +309,7 @@
     .log::-webkit-scrollbar-track { background: transparent; }
     .log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     .msg { display: flex; margin: 0; }
-    .bubble { max-width: 88%; padding: 11px 13px; border-radius: 14px; border: 1px solid var(--border); white-space: pre-wrap; word-wrap: break-word; }
+    .bubble { max-width: 88%; padding: 11px 13px; border-radius: 14px; border: 1px solid var(--border); white-space: pre-wrap; word-wrap: break-word; line-height: 1.5; }
     .user { justify-content: flex-end; }
     .user .bubble { background: rgba(96, 165, 250, 0.14); border-color: rgba(96, 165, 250, 0.3); }
     .bot .bubble { background: rgba(94, 234, 212, 0.12); border-color: rgba(94, 234, 212, 0.3); }
@@ -556,7 +553,7 @@
     <!-- Assistant -->
     <section class="section" id="ask">
       <h2>💬 AI farm assistant</h2>
-      <p class="desc">Ask about wheat, rice, water, the best crop, risk, or current conditions.</p>
+      <p class="desc">Ask about crops, weather, irrigation, risks, or farming practices.</p>
       <div class="grid2">
         <div class="panel pad">
           <div id="log" class="log"></div>
@@ -959,20 +956,101 @@
       renderAll();
     }
 
+    // ===== IMPROVED AI ADVISOR =====
     function assistantReply(question) {
       const text = question.toLowerCase();
       const best = ranking()[0];
+      const list = ranking();
       const risk = currentRisk();
+      const temp = round(S.wx.temp + S.future.t, 1);
+      const rain = round(S.wx.rain7 * (1 + S.future.r / 100), 0);
+      const hum = clamp(Math.round(S.wx.hum + S.future.h), 0, 100);
 
-      if (text.includes('wheat')) return `🌾 Wheat score: ${cropScore(CROPS[0])}/100. Best in cool, dry rabi season with moderate rainfall.`;
-      if (text.includes('rice')) return `🍚 Rice score: ${cropScore(CROPS[1])}/100. Loves warm, wet, humid kharif conditions.`;
-      if (text.includes('water') || text.includes('irrig')) return `💧 ${best.crop.name} water need: ${best.crop.water}. Current rain: ${round(S.wx.rain7 * (1 + S.future.r / 100), 0)} mm.`;
-      if (text.includes('risk') || text.includes('safe')) return `🛡️ Farm Safety: ${risk}/100. ${risk < 35 ? 'Safe conditions.' : risk < 70 ? 'Caution advised.' : 'High risk, prepare defenses.'}`;
-      if (text.includes('aqi') || text.includes('air')) return `💨 Air quality: ${S.aq.aqi ?? '--'} (${fmtAqi(S.aq.aqi)}). Affects plant photosynthesis and worker safety.`;
-      if (text.includes('location') || text.includes('city')) return `📍 Viewing data for ${S.locationText}. Elevation: ${S.elev ?? '--'} m.`;
-      if (text.includes('best') || text.includes('which') || text.includes('recommend')) return `🏆 Best right now: ${best.crop.emoji} ${best.crop.name} (${best.score}/100). ${best.crop.note}`;
-      if (text.includes('hello') || text.includes('hi')) return `👋 Hello! I can help with crop choice, weather, irrigation, and farm risk for ${S.locationText}. What would you like to know?`;
-      return `🌾 For ${S.locationText}, the strongest crop is ${best.crop.emoji} ${best.crop.name}. Ask about specific crops, water, risk, or climate.`;
+      // Specific crop queries
+      if (text.includes('wheat')) {
+        const score = cropScore(CROPS[0]);
+        return `🌾 Wheat score: ${score}/100. Best in Rabi (Nov-Apr) with cool, dry conditions. Your area is ${score >= 70 ? 'excellent' : score >= 50 ? 'good' : 'challenging'} for wheat. Temperature ${temp}°C is ${temp >= 8 && temp <= 24 ? '✓ ideal' : '⚠️ suboptimal'}.`;
+      }
+      if (text.includes('rice')) {
+        const score = cropScore(CROPS[1]);
+        return `🍚 Rice score: ${score}/100. Thrives in Kharif (Jun-Sep) with warm, wet conditions. Current temp ${temp}°C and humidity ${hum}% are ${temp >= 20 && temp <= 34 && hum >= 55 ? '✓ perfect' : '⚠️ not ideal'} for rice.`;
+      }
+      if (text.includes('corn') || text.includes('maize')) {
+        const score = cropScore(CROPS[2]);
+        return `🌽 Maize score: ${score}/100. Versatile crop for Kharif and Zaid. Your conditions (${temp}°C, ${rain}mm) would give a ${score >= 70 ? '🟢 strong' : score >= 50 ? '🟡 moderate' : '🔴 weak'} yield.`;
+      }
+
+      // Water & Irrigation queries
+      if (text.includes('water') || text.includes('irrigat') || text.includes('rain')) {
+        const waterNeed = best.crop.water;
+        const canRain = rain >= best.crop.rain[0];
+        return `💧 ${best.crop.name} needs ${waterNeed} water. Your 7-day rainfall is ${rain}mm. ${canRain ? '✓ Natural rainfall should suffice.' : `⚠️ You may need additional irrigation (needed: ${best.crop.rain[0]}mm, forecast: ${rain}mm).`}`;
+      }
+
+      // Risk & Safety
+      if (text.includes('risk') || text.includes('safe') || text.includes('danger')) {
+        const riskLevel = risk < 35 ? '✅ Safe' : risk < 70 ? '⚠️ Moderate' : '🚨 High';
+        const factors = [];
+        if (temp >= 38) factors.push('very hot');
+        if (hum < 22 || hum > 93) factors.push('extreme humidity');
+        if ((S.aq.aqi ?? 0) >= 60) factors.push('poor air quality');
+        if (rain < 100) factors.push('low rainfall');
+        const facStr = factors.length ? ' Main factors: ' + factors.join(', ') + '.' : '';
+        return `🛡️ Farm Safety: ${risk}/100 (${riskLevel}).${facStr}`;
+      }
+
+      // Air Quality
+      if (text.includes('aqi') || text.includes('air') || text.includes('quality')) {
+        const aqiVal = S.aq.aqi ?? 'unknown';
+        const aqiStatus = fmtAqi(S.aq.aqi);
+        return `💨 Air Quality Index: ${aqiVal} (${aqiStatus}). ${aqiVal <= 50 ? '✓ Healthy' : aqiVal <= 100 ? '⚠️ Acceptable' : '🔴 Poor'}. This affects crop growth and worker health.`;
+      }
+
+      // Soil queries
+      if (text.includes('soil')) {
+        const soilType = $('soil').value;
+        const goodCrops = CROPS.filter(c => c.soil.includes(soilType)).map(c => c.name).join(', ');
+        return `🌍 Your soil type (${soilType}) is good for: ${goodCrops}. Current best match: ${best.crop.name}.`;
+      }
+
+      // Season queries
+      if (text.includes('season') || text.includes('when')) {
+        const season = $('season').value;
+        const seasonName = { kharif: 'Kharif (Jun-Sep)', rabi: 'Rabi (Nov-Apr)', zaid: 'Zaid (Mar-Jun)' }[season];
+        const goodCrops = CROPS.filter(c => c.seasons.includes(season)).map(c => `${c.emoji} ${c.name}`).join(', ');
+        return `📅 Currently viewing ${seasonName}. Best crops for this season: ${goodCrops}.`;
+      }
+
+      // Location & Climate
+      if (text.includes('location') || text.includes('city') || text.includes('where')) {
+        return `📍 Location: ${S.locationText}. Elevation: ${S.elev ?? '--'}m. Current climate: ${temp}°C, ${hum}% humidity, ${rain}mm rain expected. This profile suits ${best.crop.name} best.`;
+      }
+
+      // Compare crops
+      if (text.includes('compare') || text.includes('difference') || text.includes('versus') || text.includes('vs')) {
+        const top3 = list.slice(0, 3);
+        return `📊 Top 3 crops for ${S.locationText}:\n1. ${top3[0].crop.emoji} ${top3[0].crop.name} (${top3[0].score}/100)\n2. ${top3[1].crop.emoji} ${top3[1].crop.name} (${top3[1].score}/100)\n3. ${top3[2].crop.emoji} ${top3[2].crop.name} (${top3[2].score}/100)`;
+      }
+
+      // Recommendations
+      if (text.includes('best') || text.includes('recommend') || text.includes('should') || text.includes('plant')) {
+        const top5Below50 = list.filter(i => i.score < 50);
+        const avoid = top5Below50.length ? ` Avoid: ${top5Below50.map(i => i.crop.name).join(', ')}.` : '';
+        return `🏆 Best recommendation for ${S.locationText}:\n${best.crop.emoji} ${best.crop.name} (${best.score}/100)\n${best.crop.note}${avoid}`;
+      }
+
+      // Help / General
+      if (text.includes('help') || text.includes('how') || text.includes('what can')) {
+        return `🌾 I can help with:\n✓ Crop recommendations\n✓ Irrigation planning\n✓ Weather analysis\n✓ Soil & season guidance\n✓ Farm risk assessment\nAsk me about any crop, water, air quality, or your farm conditions!`;
+      }
+
+      // Greeting
+      if (text.includes('hello') || text.includes('hi') || text.includes('hey')) {
+        return `👋 Hi! I'm Aarambh's AI advisor. I can help analyze crops for ${S.locationText}, plan irrigation, assess risks, and give farming tips. What would you like to know?`;
+      }
+
+      // Default
+      return `🌾 For ${S.locationText}, I'd recommend ${best.crop.emoji} ${best.crop.name} (${best.score}/100). Ask me about specific crops, water needs, risk, soil type, or farming practices!`;
     }
 
     function copyReport() {
@@ -1067,7 +1145,7 @@
     }
 
     function seedChat() {
-      renderAssistantLog('👋 Hi! I\'m Aarambh\'s AI assistant. Ask about crop suitability, irrigation, weather, air quality, or farm risk for ' + S.locationText + '.', 'bot');
+      renderAssistantLog('👋 Hi! I\'m Aarambh\'s AI advisor. I can help with crop choice, irrigation, weather, soil type, farm risk, and farming practices. Ask me anything about farming in ' + S.locationText + '!', 'bot');
     }
 
     async function init() {
