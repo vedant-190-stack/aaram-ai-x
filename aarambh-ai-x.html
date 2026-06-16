@@ -1,1164 +1,194 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#07111f" />
-  <title>Aarambh AI X — AgriTech Dashboard</title>
-  <meta name="description" content="Aarambh AI X is a premium agriculture dashboard with automatic location, live weather, air quality, crop guidance, and a climate simulator." />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <style>
-    :root {
-      --bg: #07111f;
-      --bg-2: #0d1b2a;
-      --panel: rgba(13, 27, 42, 0.74);
-      --panel-2: rgba(20, 37, 58, 0.78);
-      --text: #eaf2ff;
-      --muted: #9bb0c8;
-      --border: rgba(255, 255, 255, 0.09);
-      --shadow: 0 22px 70px rgba(0, 0, 0, 0.34);
-      --primary: #5eead4;
-      --primary-2: #60a5fa;
-      --good: #34d399;
-      --warn: #f59e0b;
-      --bad: #fb7185;
-      --chip: rgba(255, 255, 255, 0.05);
-      --accent: #ec4899;
-    }
-    [data-theme="light"] {
-      --bg: #edf5ff;
-      --bg-2: #dcecff;
-      --panel: rgba(255, 255, 255, 0.72);
-      --panel-2: rgba(255, 255, 255, 0.88);
-      --text: #102238;
-      --muted: #58708c;
-      --border: rgba(15, 33, 56, 0.09);
-      --shadow: 0 20px 60px rgba(16, 34, 56, 0.12);
-      --chip: rgba(16, 34, 56, 0.04);
-    }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; font-size: 16px; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font: 15px/1.65 Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(94, 234, 212, 0.14), transparent 28%),
-        radial-gradient(circle at top right, rgba(96, 165, 250, 0.14), transparent 24%),
-        linear-gradient(180deg, var(--bg), var(--bg-2));
-    }
-    a { color: inherit; text-decoration: none; }
-    button, input, select { font: inherit; }
-    img { max-width: 100%; display: block; }
-    .wrap { width: min(1180px, calc(100% - 24px)); margin: 0 auto; }
-
-    /* Toast */
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      z-index: 50;
-      padding: 14px 20px;
-      border-radius: 14px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-weight: 700;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.3s ease;
-      pointer-events: none;
-    }
-    .toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
-    .toast.success { color: var(--good); }
-    .toast.error { color: var(--bad); }
-
-    /* Nav */
-    .nav {
-      position: sticky;
-      top: 0;
-      z-index: 40;
-      backdrop-filter: blur(16px);
-      background: color-mix(in srgb, var(--bg) 78%, transparent);
-      border-bottom: 1px solid var(--border);
-    }
-    .nav-inner {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 14px;
-      padding: 14px 0;
-      flex-wrap: wrap;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 900;
-      letter-spacing: -0.03em;
-    }
-    .brand-mark {
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(135deg, var(--primary), var(--primary-2));
-      color: #06111a;
-      box-shadow: var(--shadow);
-      flex: 0 0 auto;
-      font-size: 1.6rem;
-    }
-    .brand small {
-      display: block;
-      color: var(--muted);
-      font-weight: 600;
-      letter-spacing: 0;
-      margin-top: 2px;
-      font-size: 0.8rem;
-    }
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-    .nav-links a,
-    .nav-links button {
-      border: 0;
-      background: transparent;
-      color: var(--text);
-      cursor: pointer;
-      font-weight: 700;
-      opacity: 0.88;
-      padding: 6px 0;
-      transition: opacity 0.2s, color 0.2s;
-    }
-    .nav-links a:hover,
-    .nav-links button:hover { opacity: 1; color: var(--primary); }
-
-    /* Hero */
-    .hero {
-      padding: 34px 0 14px;
-      display: grid;
-      grid-template-columns: 1.2fr 0.95fr;
-      gap: 14px;
-    }
-    .panel {
-      background: linear-gradient(180deg, var(--panel), var(--panel-2));
-      border: 1px solid var(--border);
-      border-radius: 26px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-    .panel.elevated { border: 1px solid rgba(94, 234, 212, 0.2); }
-    .pad { padding: 22px; }
-    h1 {
-      margin: 12px 0 10px;
-      font-size: clamp(2rem, 4vw, 4.2rem);
-      line-height: 1.02;
-      letter-spacing: -0.05em;
-    }
-    h1 .accent { background: linear-gradient(135deg, var(--primary), var(--primary-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    h2 { margin: 0 0 8px; font-size: 1.28rem; letter-spacing: -0.02em; }
-    h3 { margin: 0 0 8px; font-size: 1.02rem; }
-    p { margin: 0; color: var(--muted); }
-    .desc { margin-top: 8px; margin-bottom: 14px; line-height: 1.7; }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(94, 234, 212, 0.22);
-      background: rgba(94, 234, 212, 0.12);
-      color: var(--primary);
-      font-size: 0.86rem;
-      font-weight: 800;
-    }
-    .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
-    .btn {
-      border: 0;
-      border-radius: 14px;
-      padding: 12px 16px;
-      font-weight: 800;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s;
-    }
-    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn.pri {
-      background: linear-gradient(135deg, var(--primary), var(--primary-2));
-      color: #06111a;
-      box-shadow: 0 8px 24px rgba(94, 234, 212, 0.2);
-    }
-    .btn.pri:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(94, 234, 212, 0.3); }
-    .btn.ghost {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .btn.ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
-    .divider { height: 1px; background: var(--border); margin: 14px 0; }
-    .chips, .pills { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip, .pill {
-      padding: 8px 11px;
-      border-radius: 999px;
-      background: var(--chip);
-      border: 1px solid var(--border);
-      font-size: 0.88rem;
-      font-weight: 700;
-      display: inline-flex;
-      gap: 8px;
-      align-items: center;
-    }
-    
-    /* Stats */
-    .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .box, .mini, .card {
-      padding: 14px;
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border);
-      transition: all 0.2s;
-    }
-    .box:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(94, 234, 212, 0.3); }
-    .label { font-size: 0.84rem; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
-    .value { margin-top: 4px; font-size: 1.46rem; font-weight: 900; letter-spacing: -0.03em; }
-    .sub { margin-top: 4px; color: var(--muted); font-size: 0.9rem; }
-    .bar { height: 11px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
-    .bar > span {
-      display: block;
-      height: 100%;
-      width: 0;
-      border-radius: inherit;
-      background: linear-gradient(90deg, var(--good), var(--warn), var(--bad));
-      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    /* Section */
-    .section { padding: 12px 0 22px; }
-    .inputs {
-      display: grid;
-      grid-template-columns: 1.05fr 0.8fr 0.8fr auto;
-      gap: 10px;
-      align-items: end;
-    }
-    .field label {
-      display: block;
-      margin: 0 0 6px;
-      color: var(--muted);
-      font-size: 0.84rem;
-      font-weight: 600;
-    }
-    .field input, .field select {
-      width: 100%;
-      padding: 12px 13px;
-      border-radius: 13px;
-      border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text);
-      outline: none;
-      transition: all 0.2s;
-    }
-    .field input:focus, .field select:focus { 
-      border-color: var(--primary); 
-      background: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 0 0 3px rgba(94, 234, 212, 0.1);
-    }
-    .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-    .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    
-    /* Crop Cards */
-    .crop { position: relative; overflow: hidden; }
-    .crop::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(94, 234, 212, 0.05), transparent); opacity: 0; transition: opacity 0.3s; }
-    .crop:hover { border-color: var(--primary); }
-    .crop:hover::before { opacity: 1; }
-    .crop.top { border: 1px solid rgba(94, 234, 212, 0.4); background: rgba(94, 234, 212, 0.05); }
-    .crop .score { font-weight: 900; font-size: 1.04rem; margin-bottom: 8px; }
-    .crop .meta { margin-top: 10px; color: var(--muted); font-size: 0.9rem; line-height: 1.55; }
-    
-    /* Sliders */
-    .range { padding: 13px; border: 1px solid var(--border); border-radius: 16px; background: rgba(255, 255, 255, 0.04); }
-    .range-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; font-weight: 800; }
-    input[type="range"] { width: 100%; accent-color: var(--primary); cursor: pointer; }
-    
-    /* Chat */
-    .log { 
-      min-height: 220px; 
-      max-height: 320px; 
-      overflow-y: auto; 
-      padding: 12px; 
-      border-radius: 16px; 
-      border: 1px solid var(--border); 
-      background: rgba(255, 255, 255, 0.04);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .log::-webkit-scrollbar { width: 6px; }
-    .log::-webkit-scrollbar-track { background: transparent; }
-    .log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    .msg { display: flex; margin: 0; }
-    .bubble { max-width: 88%; padding: 11px 13px; border-radius: 14px; border: 1px solid var(--border); white-space: pre-wrap; word-wrap: break-word; line-height: 1.5; }
-    .user { justify-content: flex-end; }
-    .user .bubble { background: rgba(96, 165, 250, 0.14); border-color: rgba(96, 165, 250, 0.3); }
-    .bot .bubble { background: rgba(94, 234, 212, 0.12); border-color: rgba(94, 234, 212, 0.3); }
-    .typing { display: flex; gap: 4px; align-items: center; }
-    .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); animation: pulse 1.4s ease-in-out infinite; }
-    .typing span:nth-child(2) { animation-delay: 0.2s; }
-    .typing span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-    
-    /* Chart */
-    canvas { width: 100%; height: 280px; display: block; border-radius: 18px; background: rgba(255, 255, 255, 0.02); }
-    
-    /* Forecast */
-    .forecast { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
-    .day { 
-      padding: 10px; 
-      border-radius: 14px; 
-      border: 1px solid var(--border); 
-      background: rgba(255, 255, 255, 0.04); 
-      text-align: center;
-      transition: all 0.2s;
-    }
-    .day:hover { background: rgba(255, 255, 255, 0.08); border-color: var(--primary); }
-    .day strong { display: block; margin-top: 6px; font-weight: 800; }
-    .day span { display: block; color: var(--muted); font-size: 0.84rem; margin: 2px 0; }
-    
-    /* Status */
-    .status { 
-      padding: 10px 14px; 
-      border-radius: 14px; 
-      border: 1px solid var(--border); 
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--muted);
-      font-weight: 600;
-      transition: all 0.3s;
-    }
-    .status.ok { color: var(--good); border-color: rgba(52, 211, 153, 0.3); background: rgba(52, 211, 153, 0.05); }
-    .status.warn { color: var(--warn); border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); }
-    .status.bad { color: var(--bad); border-color: rgba(251, 113, 133, 0.3); background: rgba(251, 113, 133, 0.05); }
-    
-    /* Footer */
-    .footer { padding: 10px 0 28px; color: var(--muted); font-size: 0.92rem; }
-    
-    /* Map */
-    #map { 
-      height: 380px; 
-      border-radius: 18px; 
-      overflow: hidden; 
-      background: rgba(255, 255, 255, 0.04); 
-      border: 1px solid var(--border); 
-    }
-    .map-fallback { display: grid; place-items: center; min-height: 380px; text-align: center; padding: 24px; color: var(--muted); }
-    
-    /* Responsive */
-    @media (max-width: 980px) {
-      .hero, .grid2, .grid3, .inputs, .forecast { grid-template-columns: 1fr; }
-      .nav-inner { align-items: flex-start; flex-direction: column; }
-      .nav-links { width: 100%; }
-    }
-    @media (max-width: 600px) {
-      .wrap { width: calc(100% - 16px); }
-      h1 { font-size: 2.2rem; }
-      .pad { padding: 16px; }
-      .inputs { grid-template-columns: 1fr; }
-      .forecast { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    }
-  </style>
-</head>
-<body>
-  <header class="nav">
-    <div class="wrap nav-inner">
-      <a class="brand" href="#top">
-        <div class="brand-mark">🌱</div>
-        <div>
-          Aarambh AI X
-          <small>AgriTech dashboard</small>
-        </div>
-      </a>
-
-      <nav class="nav-links">
-        <a href="#weather">Weather</a>
-        <a href="#recommend">Crops</a>
-        <a href="#sim">Simulator</a>
-        <a href="#charts">Chart</a>
-        <a href="#mapSection">Map</a>
-        <a href="#ask">Assistant</a>
-        <button id="themeBtn" title="Toggle theme">🌓</button>
-      </nav>
-    </div>
-  </header>
-
-  <main class="wrap" id="top">
-    <!-- Hero Section -->
-    <section class="hero">
-      <div class="panel pad">
-        <div class="badge">⚡ Automatic location · Live weather · Air quality</div>
-        <h1>Clean agriculture <span class="accent">intelligence</span> in one file.</h1>
-        <p class="desc">
-          Aarambh AI X detects your location, reads live weather and air quality, then suggests crops and risk levels through an elegant dashboard. Built for smart farming.
-        </p>
-        <div class="cta">
-          <a class="btn pri" href="#recommend">🌾 Analyze crops</a>
-          <a class="btn ghost" href="#sim">📊 Open simulator</a>
-          <button class="btn ghost" id="copyReportBtn">📋 Copy report</button>
-        </div>
-        <div class="divider"></div>
-        <div class="chips">
-          <span class="chip">🌡️ Weather</span>
-          <span class="chip">💨 Air quality</span>
-          <span class="chip">🏆 Crop score</span>
-          <span class="chip">📍 Elevation</span>
-          <span class="chip">🌍 Location</span>
-        </div>
-      </div>
-
-      <aside class="panel pad elevated" id="weather">
-        <div class="stats">
-          <div class="box">
-            <div class="label">📍 Location</div>
-            <div class="value" id="loc" style="font-size: 1.1rem;">Detecting…</div>
-            <div class="sub" id="locSub">Waiting for permission</div>
-          </div>
-          <div class="box">
-            <div class="label">🛡️ Farm Safety</div>
-            <div class="value" id="risk">--</div>
-            <div class="sub" id="riskSub">0–100</div>
-          </div>
-          <div class="box">
-            <div class="label">🌡️ Temperature</div>
-            <div class="value" id="temp">--°C</div>
-            <div class="sub" id="tempSub">Current</div>
-          </div>
-          <div class="box">
-            <div class="label">💨 AQI</div>
-            <div class="value" id="aqi">--</div>
-            <div class="sub" id="aqiSub">Air quality</div>
-          </div>
-        </div>
-
-        <div style="height:12px"></div>
-        <div class="box">
-          <div class="label">🏆 Best crop match</div>
-          <div class="value" id="best" style="font-size: 1.2rem;">—</div>
-          <div class="sub" id="bestSub">Location details loading…</div>
-          <div style="height:10px"></div>
-          <div class="bar"><span id="riskBar" style="width:0%"></span></div>
-        </div>
-      </aside>
-    </section>
-
-    <!-- Crop Recommendation -->
-    <section class="section" id="recommend">
-      <h2>🌾 Crop recommendation</h2>
-      <p class="desc">Pick a city if needed, then compare crops against the live climate data.</p>
-      <div class="panel pad">
-        <div class="inputs">
-          <div class="field">
-            <label>City search</label>
-            <input id="city" placeholder="Delhi, Pune, Jaipur, Mumbai…" autocomplete="off" />
-          </div>
-          <div class="field">
-            <label>Season</label>
-            <select id="season">
-              <option value="kharif">Kharif (Jun–Sep)</option>
-              <option value="rabi" selected>Rabi (Nov–Apr)</option>
-              <option value="zaid">Zaid (Mar–Jun)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Soil type</label>
-            <select id="soil">
-              <option value="loam" selected>Loam</option>
-              <option value="sandy">Sandy</option>
-              <option value="clay">Clay</option>
-              <option value="black">Black soil</option>
-            </select>
-          </div>
-          <button class="btn pri" id="analyzeBtn">Analyze</button>
-        </div>
-
-        <div style="height:12px"></div>
-        <div id="status" class="status">Getting location details…</div>
-        <div style="height:12px"></div>
-        <div class="grid3" id="cropGrid"></div>
-        <div class="forecast" id="forecast"></div>
-      </div>
-    </section>
-
-    <!-- Climate Simulator -->
-    <section class="section" id="sim">
-      <h2>📊 Future climate simulator</h2>
-      <p class="desc">Move the sliders to preview how hotter or drier conditions change the recommendation.</p>
-      <div class="grid2">
-        <div class="panel pad">
-          <div class="range">
-            <div class="range-head"><span>🌡️ Temperature change</span><span id="tLab">+0°C</span></div>
-            <input id="t" type="range" min="-5" max="8" value="0" step="0.5">
-          </div>
-          <div style="height:12px"></div>
-          <div class="range">
-            <div class="range-head"><span>🌧️ Rainfall change</span><span id="rLab">0%</span></div>
-            <input id="r" type="range" min="-60" max="60" step="5" value="0">
-          </div>
-          <div style="height:12px"></div>
-          <div class="range">
-            <div class="range-head"><span>💧 Humidity change</span><span id="hLab">0%</span></div>
-            <input id="h" type="range" min="-40" max="40" step="5" value="0">
-          </div>
-        </div>
-        <div class="panel pad">
-          <div class="mini">
-            <h3>Simulated output</h3>
-            <p id="simText">Adjust sliders to preview future farm conditions.</p>
-            <div class="divider"></div>
-            <div class="pills" id="simPills"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Chart -->
-    <section class="section" id="charts">
-      <h2>📈 Crop suitability chart</h2>
-      <p class="desc">Compare all tracked crops at current (or simulated) conditions.</p>
-      <div class="panel pad">
-        <canvas id="chart" width="1000" height="320"></canvas>
-      </div>
-    </section>
-
-    <!-- Map -->
-    <section class="section" id="mapSection">
-      <h2>🗺️ Interactive farm map</h2>
-      <p class="desc">Click on the map to load weather data for any location.</p>
-      <div class="panel pad">
-        <div id="map">
-          <div class="map-fallback" id="mapFallback">Loading map…</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Assistant -->
-    <section class="section" id="ask">
-      <h2>💬 AI farm assistant</h2>
-      <p class="desc">Ask about crops, weather, irrigation, risks, or farming practices.</p>
-      <div class="grid2">
-        <div class="panel pad">
-          <div id="log" class="log"></div>
-          <div style="height:12px"></div>
-          <div class="inputs" style="grid-template-columns:1fr auto; align-items: flex-end;">
-            <div class="field">
-              <label>Your question</label>
-              <input id="q" placeholder="Can I grow wheat here?" autocomplete="off" />
-            </div>
-            <button class="btn pri" id="sendBtn">Send</button>
-          </div>
-        </div>
-        <div class="panel pad">
-          <div class="mini">
-            <h3>📊 Live snapshot</h3>
-            <div style="margin-top: 12px;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); font-size: 0.9rem;">
-                <span>Location:</span>
-                <strong id="iLoc" style="color: var(--text);">—</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); font-size: 0.9rem;">
-                <span>Temperature:</span>
-                <strong id="iTemp" style="color: var(--text);">—</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); font-size: 0.9rem;">
-                <span>Best crop:</span>
-                <strong id="iBest" style="color: var(--text);">—</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; color: var(--muted); font-size: 0.9rem;">
-                <span>Risk:</span>
-                <strong id="iRisk" style="color: var(--text);">—</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <div class="footer">
-      ✨ Upload this file as <strong>index.html</strong> in a GitHub repo and enable GitHub Pages.
-    </div>
-  </main>
-
-  <!-- Toast -->
-  <div class="toast" id="toast"></div>
-
-  <script>
-    'use strict';
-
-    const CROPS = [
-      { name: 'Wheat', emoji: '🌾', seasons: ['rabi'], temp: [8, 24], rain: [300, 900], hum: [35, 65], soil: ['loam', 'clay'], water: 'Moderate', note: 'Best in cool, dry winters with moderate rainfall.' },
-      { name: 'Rice', emoji: '🍚', seasons: ['kharif'], temp: [20, 34], rain: [900, 2000], hum: [55, 95], soil: ['clay', 'black'], water: 'High', note: 'Needs warm, wet conditions and high humidity.' },
-      { name: 'Maize', emoji: '🌽', seasons: ['kharif', 'zaid'], temp: [18, 32], rain: [500, 1200], hum: [40, 75], soil: ['loam', 'black'], water: 'Moderate', note: 'Flexible crop for many regions.' },
-      { name: 'Millet', emoji: '🌿', seasons: ['kharif', 'zaid'], temp: [20, 38], rain: [200, 700], hum: [25, 65], soil: ['sandy', 'loam', 'black'], water: 'Low', note: 'Good for hot, dry, low-rainfall areas.' },
-      { name: 'Pulses', emoji: '🫘', seasons: ['rabi', 'kharif'], temp: [15, 30], rain: [250, 900], hum: [30, 75], soil: ['loam', 'black'], water: 'Low', note: 'Nitrogen-fixing legumes for water-limited farms.' },
-      { name: 'Soybean', emoji: '🌱', seasons: ['kharif'], temp: [20, 30], rain: [600, 1000], hum: [50, 80], soil: ['loam', 'black'], water: 'Moderate', note: 'Rich oilseed crop for black soil regions.' },
-      { name: 'Cotton', emoji: '☁️', seasons: ['kharif'], temp: [22, 38], rain: [500, 1000], hum: [35, 70], soil: ['black', 'clay'], water: 'Moderate', note: 'High-value cash crop for warm, long-season zones.' }
-    ];
-
-    const $ = id => document.getElementById(id);
-    const num = (v, fb = 0) => { const n = Number(v); return Number.isFinite(n) ? n : fb; };
-    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-    const round = (v, d = 0) => { const p = 10 ** d; return Math.round(v * p) / p; };
-    const fmtAqi = v => v == null ? '--' : v < 20 ? 'Good' : v < 40 ? 'Fair' : v < 60 ? 'Moderate' : v < 80 ? 'Poor' : 'Very poor';
-    const wxIcon = c => ({0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'❄️',80:'🌦️',95:'⛈️'}[c] || '🌡️');
-    const wxLabel = c => ({0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Snow',80:'Showers',95:'Thunderstorm'}[c] || 'Weather data');
-
-    const S = {
-      theme: localStorage.getItem('agrix-theme') || 'dark',
-      place: 'Detecting…',
-      locationText: 'Detecting…',
-      lat: null,
-      lon: null,
-      elev: null,
-      wx: { temp: 26, hum: 52, rain7: 42, wind: 9, code: 0, daily: [] },
-      aq: { aqi: null, pm25: null, uv: null },
-      future: { t: 0, r: 0, h: 0 },
-      map: null,
-      marker: null,
-      chartInst: null,
-      aiLoading: false
-    };
-
-    function currentRisk() {
-      const temp = S.wx.temp + S.future.t;
-      const rain = S.wx.rain7 * (1 + S.future.r / 100);
-      const hum = clamp(S.wx.hum + S.future.h, 0, 100);
-      let s = 0;
-      if (temp >= 38) s += 32; else if (temp >= 35) s += 22; else if (temp >= 32) s += 14;
-      if (rain < 100) s += 28; else if (rain < 200) s += 16; else if (rain > 2800) s += 20;
-      if (hum < 22 || hum > 93) s += 15;
-      if ((S.aq.aqi ?? 0) >= 60) s += 10;
-      if (S.wx.wind >= 28) s += 8;
-      return clamp(Math.round(s), 0, 100);
-    }
-
-    function cropScore(crop) {
-      const temp = S.wx.temp + S.future.t;
-      const rain = S.wx.rain7 * (1 + S.future.r / 100);
-      const hum = clamp(S.wx.hum + S.future.h, 0, 100);
-      const season = $('season').value;
-      const soil = $('soil').value;
-      let s = 100;
-      s -= temp < crop.temp[0] ? (crop.temp[0] - temp) * 5 : temp > crop.temp[1] ? (temp - crop.temp[1]) * 5 : 0;
-      s -= rain < crop.rain[0] ? (crop.rain[0] - rain) / 12 : rain > crop.rain[1] ? (rain - crop.rain[1]) / 20 : 0;
-      s -= hum < crop.hum[0] ? (crop.hum[0] - hum) * 1.4 : hum > crop.hum[1] ? (hum - crop.hum[1]) * 1.1 : 0;
-      s -= crop.seasons.includes(season) ? 0 : 20;
-      s -= crop.soil.includes(soil) ? 0 : 14;
-      return clamp(Math.round(s), 0, 100);
-    }
-
-    function ranking() {
-      return CROPS.map(c => ({ crop: c, score: cropScore(c) })).sort((a, b) => b.score - a.score);
-    }
-
-    function applyTheme(t) {
-      S.theme = t === 'light' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', S.theme);
-      localStorage.setItem('agrix-theme', S.theme);
-      $('themeBtn').textContent = S.theme === 'dark' ? '🌓' : '🌙';
-      if (S.chartInst) drawChart();
-    }
-
-    function toast(msg, type = '') {
-      const t = $('toast');
-      t.textContent = msg;
-      t.className = 'toast show' + (type ? ' ' + type : '');
-      clearTimeout(t.toastTimer);
-      t.toastTimer = setTimeout(() => { t.className = 'toast'; }, 3000);
-    }
-
-    function syncSliders() {
-      $('tLab').textContent = `${S.future.t >= 0 ? '+' : ''}${S.future.t}°C`;
-      $('rLab').textContent = `${S.future.r >= 0 ? '+' : ''}${S.future.r}%`;
-      $('hLab').textContent = `${S.future.h >= 0 ? '+' : ''}${S.future.h}%`;
-    }
-
-    function forecastCards() {
-      const box = $('forecast');
-      if (!S.wx.daily.length) { box.innerHTML = ''; return; }
-      box.innerHTML = S.wx.daily.map(day => `
-        <div class="day">
-          <strong>${day.day}</strong>
-          <span>${wxIcon(day.code)}</span>
-          <strong>${day.max}° / ${day.min}°</strong>
-          <span>💧 ${day.rain} mm</span>
-        </div>
-      `).join('');
-    }
-
-    function drawChart() {
-      const canvas = $('chart');
-      if (!canvas || !window.Chart) return;
-      const list = ranking();
-      const isDark = S.theme === 'dark';
-      const labels = list.map(i => i.crop.emoji + ' ' + i.crop.name);
-      const data = list.map(i => i.score);
-      const colors = data.map(v =>
-        v >= 75 ? (isDark ? 'rgba(52, 211, 153, 0.8)' : 'rgba(15, 110, 86, 0.85)') :
-        v >= 50 ? (isDark ? 'rgba(245, 195, 66, 0.75)' : 'rgba(186, 117, 23, 0.85)') :
-                  (isDark ? 'rgba(251, 113, 133, 0.72)' : 'rgba(163, 45, 45, 0.85)')
-      );
-      if (S.chartInst) { S.chartInst.destroy(); }
-      S.chartInst = new Chart(canvas, {
-        type: 'bar',
-        data: { labels, datasets: [{ label: 'Suitability score', data, backgroundColor: colors, borderRadius: 10, borderSkipped: false, borderWidth: 0 }] },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: ctx => `Score: ${ctx.raw}/100` }, backgroundColor: 'rgba(0,0,0,0.8)', padding: 10, titleFont: { size: 14 }, bodyFont: { size: 13 } }
-          },
-          scales: {
-            x: { grid: { display: false }, ticks: { color: isDark ? '#7a9ab8' : '#4a6c90', font: { family: 'Inter', weight: '600', size: 13 } }, border: { display: false } },
-            y: { min: 0, max: 100, grid: { color: isDark ? 'rgba(255,255,255,.06)' : 'rgba(14,40,70,.07)' }, ticks: { color: isDark ? '#7a9ab8' : '#4a6c90', font: { family: 'Inter', size: 12 }, stepSize: 20 }, border: { display: false } }
-          }
-        }
-      });
-    }
-
-    function renderAssistantLog(text, role) {
-      const row = document.createElement('div');
-      row.className = `msg ${role}`;
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble';
-      bubble.textContent = text;
-      row.appendChild(bubble);
-      $('log').appendChild(row);
-      $('log').scrollTop = $('log').scrollHeight;
-    }
-
-    function renderAll() {
-      syncSliders();
-      const risk = currentRisk();
-      const list = ranking();
-      const best = list[0];
-      const temp = round(S.wx.temp + S.future.t, 1);
-      const rain = round(S.wx.rain7 * (1 + S.future.r / 100), 0);
-      const hum = clamp(Math.round(S.wx.hum + S.future.h), 0, 100);
-
-      $('loc').textContent = S.place;
-      $('locSub').textContent = `${wxLabel(S.wx.code)} · Elevation ${S.elev ?? '--'} m`;
-      $('risk').textContent = risk;
-      $('riskSub').textContent = risk < 35 ? '✅ Safe' : risk < 70 ? '⚠️ Caution' : '🚨 Danger';
-      $('temp').textContent = `${temp}°C`;
-      $('tempSub').textContent = `${hum}% humidity`;
-      $('aqi').textContent = S.aq.aqi ?? '--';
-      $('aqiSub').textContent = fmtAqi(S.aq.aqi);
-      $('best').textContent = `${best.crop.emoji} ${best.crop.name}`;
-      $('bestSub').textContent = `${best.score}/100 · ${best.crop.note}`;
-      $('riskBar').style.width = `${risk}%`;
-
-      $('status').className = `status ${risk < 35 ? 'ok' : risk < 70 ? 'warn' : 'bad'}`;
-      $('status').textContent = `📍 ${S.place}: ${best.crop.name} is the best match. Climate risk: ${risk}/100.`;
-
-      $('cropGrid').innerHTML = list.map((item, i) => `
-        <div class="box crop${i === 0 ? ' top' : ''}">
-          <div class="score">${item.crop.emoji} ${item.score}<span style="font-size:0.7rem;color:var(--muted);font-weight:500">/100</span></div>
-          <h3>${item.crop.name}</h3>
-          <p>${item.crop.note}</p>
-          <div class="meta">
-            <strong>Season:</strong> ${item.crop.seasons.join(', ')}<br>
-            <strong>Water:</strong> ${item.crop.water}<br>
-            <strong>Soil:</strong> ${item.crop.soil.join(', ')}
-          </div>
-        </div>
-      `).join('');
-
-      $('simText').textContent = `At ${temp}°C, +${S.future.r}% rain, and +${S.future.h}% humidity, the risk becomes ${risk}/100. Best crop: ${best.crop.name}.`;
-      $('simPills').innerHTML = list.map(item => `<span class="pill">${item.crop.emoji} ${item.crop.name} ${item.score}/100</span>`).join('');
-
-      $('iLoc').textContent = S.locationText;
-      $('iTemp').textContent = `${temp}°C, ${hum}%`;
-      $('iRisk').textContent = `${risk}/100`;
-      $('iBest').textContent = best.crop.name;
-
-      forecastCards();
-      drawChart();
-      refreshMap();
-    }
-
-    function setLoading(on, message) {
-      $('analyzeBtn').disabled = on;
-      $('analyzeBtn').textContent = on ? '⏳ Loading…' : '✓ Analyze';
-      if (message) $('status').textContent = message;
-    }
-
-    async function fetchJSON(url, timeout = 9000) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeout);
-      try {
-        const response = await fetch(url, { signal: controller.signal });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return await response.json();
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-
-    function placeNameFromBigData(data) {
-      if (!data) return 'Current location';
-      const bits = [data.city, data.locality, data.principalSubdivision, data.countryName].filter(Boolean);
-      return bits.join(', ') || 'Current location';
-    }
-
-    async function reverseGeocode(lat, lon) {
-      const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
-      return await fetchJSON(url);
-    }
-
-    async function loadByCoordinates(lat, lon, fallbackName) {
-      try {
-        const [weather, air, elevation] = await Promise.all([
-          fetchJSON(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&forecast_days=7&timezone=auto`),
-          fetchJSON(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=european_aqi,pm2_5,uv_index&timezone=auto`),
-          fetchJSON(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`)
-        ]);
-
-        S.lat = lat;
-        S.lon = lon;
-        S.place = fallbackName || 'Current location';
-        S.locationText = S.place;
-        S.wx.temp = num(weather?.current?.temperature_2m, 26);
-        S.wx.hum = num(weather?.current?.relative_humidity_2m, 52);
-        S.wx.wind = num(weather?.current?.wind_speed_10m, 9);
-        S.wx.code = num(weather?.current?.weather_code, 0);
-        S.wx.rain7 = Array.isArray(weather?.daily?.precipitation_sum) ? weather.daily.precipitation_sum.reduce((sum, v) => sum + num(v, 0), 0) : 42;
-        S.wx.daily = Array.isArray(weather?.daily?.time) ? weather.daily.time.map((time, i) => ({
-          day: new Date(time).toLocaleDateString(undefined, { weekday: 'short' }),
-          max: Math.round(num(weather.daily.temperature_2m_max?.[i], 0)),
-          min: Math.round(num(weather.daily.temperature_2m_min?.[i], 0)),
-          rain: Math.round(num(weather.daily.precipitation_sum?.[i], 0)),
-          code: num(weather.daily.weather_code?.[i], S.wx.code)
-        })) : [];
-        S.aq.aqi = num(air?.current?.european_aqi, null);
-        S.aq.pm25 = num(air?.current?.pm2_5, null);
-        S.aq.uv = num(air?.current?.uv_index, null);
-        S.elev = Array.isArray(elevation?.elevation) ? Math.round(num(elevation.elevation[0], 0)) : null;
-      } catch (e) {
-        console.error('Load error:', e);
-      }
-    }
-
-    async function searchCity(city) {
-      const q = (city || '').trim();
-      if (!q) return null;
-      try {
-        const data = await fetchJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en&format=json`);
-        const place = data?.results?.[0];
-        if (!place) return null;
-        return { lat: place.latitude, lon: place.longitude, name: place.name || q };
-      } catch (e) {
-        return null;
-      }
-    }
-
-    async function loadFallback(query) {
-      const result = await searchCity(query).catch(() => null);
-      if (!result) {
-        S.place = query || 'Delhi';
-        S.locationText = S.place;
-        S.wx = { temp: 26, hum: 52, rain7: 42, wind: 9, code: 0, daily: [] };
-        S.aq = { aqi: null, pm25: null, uv: null };
-        S.elev = null;
-        return;
-      }
-      await loadByCoordinates(result.lat, result.lon, result.name || query);
-      $('city').value = result.name || query;
-    }
-
-    async function loadApproxLocation() {
-      try {
-        const place = await fetchJSON('https://api.bigdatacloud.net/data/reverse-geocode-client?localityLanguage=en').catch(() => null);
-        const name = place ? placeNameFromBigData(place) : null;
-        if (name) $('city').value = name;
-        if (name) await loadFallback(name).catch(() => {});
-        return name;
-      } catch (e) {
-        return null;
-      }
-    }
-
-    async function startLocationFlow() {
-      if (!navigator.geolocation) {
-        const approx = await loadApproxLocation();
-        if (!approx) await loadFallback('Delhi');
-        renderAll();
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(async position => {
-        try {
-          const { latitude: lat, longitude: lon } = position.coords;
-          const place = await reverseGeocode(lat, lon).catch(() => null);
-          const name = place ? placeNameFromBigData(place) : 'Current location';
-          await loadByCoordinates(lat, lon, name);
-          $('city').value = name;
-          renderAll();
-          toast(`📍 Loaded ${name}`, 'success');
-        } catch (error) {
-          const approx = await loadApproxLocation();
-          if (!approx) {
-            await loadFallback('Delhi');
-            toast('📍 Location unavailable, loaded Delhi', 'error');
-          } else {
-            toast(`📍 Loaded ${approx}`, 'success');
-          }
-          renderAll();
-        }
-      }, async () => {
-        const approx = await loadApproxLocation();
-        if (!approx) {
-          await loadFallback('Delhi');
-          toast('📍 Permission denied, loaded Delhi', 'error');
-        } else {
-          toast(`📍 Using ${approx}`, 'success');
-        }
-        renderAll();
-      }, { enableHighAccuracy: false, timeout: 7000, maximumAge: 600000 });
-    }
-
-    async function analyze(query) {
-      const city = (query || '').trim();
-      const target = city || S.locationText || 'Delhi';
-      setLoading(true, `🔍 Searching ${target}...`);
-      try {
-        await loadFallback(target);
-        setLoading(false, `✓ Loaded ${S.locationText}`);
-        toast(`✓ Loaded ${S.locationText}`, 'success');
-      } catch (error) {
-        S.place = target;
-        S.locationText = target;
-        S.wx = { temp: 26, hum: 52, rain7: 42, wind: 9, code: 0, daily: [] };
-        S.aq = { aqi: null, pm25: null, uv: null };
-        S.elev = null;
-        setLoading(false, '⚠️ Offline data');
-        toast('⚠️ Using offline fallback', 'error');
-      }
-      renderAll();
-    }
-
-    // ===== IMPROVED AI ADVISOR =====
-    function assistantReply(question) {
-      const text = question.toLowerCase();
-      const best = ranking()[0];
-      const list = ranking();
-      const risk = currentRisk();
-      const temp = round(S.wx.temp + S.future.t, 1);
-      const rain = round(S.wx.rain7 * (1 + S.future.r / 100), 0);
-      const hum = clamp(Math.round(S.wx.hum + S.future.h), 0, 100);
-
-      // Specific crop queries
-      if (text.includes('wheat')) {
-        const score = cropScore(CROPS[0]);
-        return `🌾 Wheat score: ${score}/100. Best in Rabi (Nov-Apr) with cool, dry conditions. Your area is ${score >= 70 ? 'excellent' : score >= 50 ? 'good' : 'challenging'} for wheat. Temperature ${temp}°C is ${temp >= 8 && temp <= 24 ? '✓ ideal' : '⚠️ suboptimal'}.`;
-      }
-      if (text.includes('rice')) {
-        const score = cropScore(CROPS[1]);
-        return `🍚 Rice score: ${score}/100. Thrives in Kharif (Jun-Sep) with warm, wet conditions. Current temp ${temp}°C and humidity ${hum}% are ${temp >= 20 && temp <= 34 && hum >= 55 ? '✓ perfect' : '⚠️ not ideal'} for rice.`;
-      }
-      if (text.includes('corn') || text.includes('maize')) {
-        const score = cropScore(CROPS[2]);
-        return `🌽 Maize score: ${score}/100. Versatile crop for Kharif and Zaid. Your conditions (${temp}°C, ${rain}mm) would give a ${score >= 70 ? '🟢 strong' : score >= 50 ? '🟡 moderate' : '🔴 weak'} yield.`;
-      }
-
-      // Water & Irrigation queries
-      if (text.includes('water') || text.includes('irrigat') || text.includes('rain')) {
-        const waterNeed = best.crop.water;
-        const canRain = rain >= best.crop.rain[0];
-        return `💧 ${best.crop.name} needs ${waterNeed} water. Your 7-day rainfall is ${rain}mm. ${canRain ? '✓ Natural rainfall should suffice.' : `⚠️ You may need additional irrigation (needed: ${best.crop.rain[0]}mm, forecast: ${rain}mm).`}`;
-      }
-
-      // Risk & Safety
-      if (text.includes('risk') || text.includes('safe') || text.includes('danger')) {
-        const riskLevel = risk < 35 ? '✅ Safe' : risk < 70 ? '⚠️ Moderate' : '🚨 High';
-        const factors = [];
-        if (temp >= 38) factors.push('very hot');
-        if (hum < 22 || hum > 93) factors.push('extreme humidity');
-        if ((S.aq.aqi ?? 0) >= 60) factors.push('poor air quality');
-        if (rain < 100) factors.push('low rainfall');
-        const facStr = factors.length ? ' Main factors: ' + factors.join(', ') + '.' : '';
-        return `🛡️ Farm Safety: ${risk}/100 (${riskLevel}).${facStr}`;
-      }
-
-      // Air Quality
-      if (text.includes('aqi') || text.includes('air') || text.includes('quality')) {
-        const aqiVal = S.aq.aqi ?? 'unknown';
-        const aqiStatus = fmtAqi(S.aq.aqi);
-        return `💨 Air Quality Index: ${aqiVal} (${aqiStatus}). ${aqiVal <= 50 ? '✓ Healthy' : aqiVal <= 100 ? '⚠️ Acceptable' : '🔴 Poor'}. This affects crop growth and worker health.`;
-      }
-
-      // Soil queries
-      if (text.includes('soil')) {
-        const soilType = $('soil').value;
-        const goodCrops = CROPS.filter(c => c.soil.includes(soilType)).map(c => c.name).join(', ');
-        return `🌍 Your soil type (${soilType}) is good for: ${goodCrops}. Current best match: ${best.crop.name}.`;
-      }
-
-      // Season queries
-      if (text.includes('season') || text.includes('when')) {
-        const season = $('season').value;
-        const seasonName = { kharif: 'Kharif (Jun-Sep)', rabi: 'Rabi (Nov-Apr)', zaid: 'Zaid (Mar-Jun)' }[season];
-        const goodCrops = CROPS.filter(c => c.seasons.includes(season)).map(c => `${c.emoji} ${c.name}`).join(', ');
-        return `📅 Currently viewing ${seasonName}. Best crops for this season: ${goodCrops}.`;
-      }
-
-      // Location & Climate
-      if (text.includes('location') || text.includes('city') || text.includes('where')) {
-        return `📍 Location: ${S.locationText}. Elevation: ${S.elev ?? '--'}m. Current climate: ${temp}°C, ${hum}% humidity, ${rain}mm rain expected. This profile suits ${best.crop.name} best.`;
-      }
-
-      // Compare crops
-      if (text.includes('compare') || text.includes('difference') || text.includes('versus') || text.includes('vs')) {
-        const top3 = list.slice(0, 3);
-        return `📊 Top 3 crops for ${S.locationText}:\n1. ${top3[0].crop.emoji} ${top3[0].crop.name} (${top3[0].score}/100)\n2. ${top3[1].crop.emoji} ${top3[1].crop.name} (${top3[1].score}/100)\n3. ${top3[2].crop.emoji} ${top3[2].crop.name} (${top3[2].score}/100)`;
-      }
-
-      // Recommendations
-      if (text.includes('best') || text.includes('recommend') || text.includes('should') || text.includes('plant')) {
-        const top5Below50 = list.filter(i => i.score < 50);
-        const avoid = top5Below50.length ? ` Avoid: ${top5Below50.map(i => i.crop.name).join(', ')}.` : '';
-        return `🏆 Best recommendation for ${S.locationText}:\n${best.crop.emoji} ${best.crop.name} (${best.score}/100)\n${best.crop.note}${avoid}`;
-      }
-
-      // Help / General
-      if (text.includes('help') || text.includes('how') || text.includes('what can')) {
-        return `🌾 I can help with:\n✓ Crop recommendations\n✓ Irrigation planning\n✓ Weather analysis\n✓ Soil & season guidance\n✓ Farm risk assessment\nAsk me about any crop, water, air quality, or your farm conditions!`;
-      }
-
-      // Greeting
-      if (text.includes('hello') || text.includes('hi') || text.includes('hey')) {
-        return `👋 Hi! I'm Aarambh's AI advisor. I can help analyze crops for ${S.locationText}, plan irrigation, assess risks, and give farming tips. What would you like to know?`;
-      }
-
-      // Default
-      return `🌾 For ${S.locationText}, I'd recommend ${best.crop.emoji} ${best.crop.name} (${best.score}/100). Ask me about specific crops, water needs, risk, soil type, or farming practices!`;
-    }
-
-    function copyReport() {
-      const best = ranking()[0];
-      const risk = currentRisk();
-      const temp = round(S.wx.temp + S.future.t, 1);
-      const rain = round(S.wx.rain7 * (1 + S.future.r / 100), 0);
-      const hum = clamp(Math.round(S.wx.hum + S.future.h), 0, 100);
-      const report = [
-        '🌾 Aarambh AI X Report',
-        `📍 Place: ${S.locationText}`,
-        `📈 Elevation: ${S.elev ?? '--'} m`,
-        `🌡️ Temperature: ${temp}°C`,
-        `🌧️ Rainfall: ${rain} mm`,
-        `💧 Humidity: ${hum}%`,
-        `💨 AQI: ${S.aq.aqi ?? '--'} (${fmtAqi(S.aq.aqi)})`,
-        `🛡️ Risk: ${risk}/100`,
-        `🏆 Best crop: ${best.crop.emoji} ${best.crop.name} (${best.score}/100)`
-      ].join('\n');
-      if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(report)
-          .then(() => toast('✓ Report copied!', 'success'))
-          .catch(() => toast('Copy failed', 'error'));
-      } else {
-        toast('Clipboard unavailable', 'error');
-      }
-    }
-
-    function initMap() {
-      if (typeof L === 'undefined') {
-        $('map').innerHTML = '<div class="map-fallback">🗺️ Map library unavailable. Dashboard features still work.</div>';
-        return;
-      }
-      S.map = L.map('map', { zoomControl: true }).setView([20.5937, 78.9629], 5);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(S.map);
-      S.marker = L.marker([20.5937, 78.9629]).addTo(S.map).bindPopup('Aarambh AI X location');
-      S.map.on('click', async e => {
-        setLoading(true, '🔍 Loading data for clicked location...');
-        await loadByCoordinates(e.latlng.lat, e.latlng.lng, `${e.latlng.lat.toFixed(2)}, ${e.latlng.lng.toFixed(2)}`);
-        setLoading(false, `✓ Loaded ${S.locationText}`);
-        renderAll();
-      });
-    }
-
-    function refreshMap() {
-      if (!S.map || !S.marker || !S.lat || !S.lon) return;
-      S.map.setView([S.lat, S.lon], 8);
-      S.marker.setLatLng([S.lat, S.lon]);
-      const best = ranking()[0];
-      S.marker.setPopupContent(`<strong>${S.locationText}</strong><br>Temp: ${round(S.wx.temp + S.future.t, 1)}°C<br>Risk: ${currentRisk()}/100<br>Best: ${best.crop.name}`);
-    }
-
-    function wireEvents() {
-      $('themeBtn').addEventListener('click', () => applyTheme(S.theme === 'dark' ? 'light' : 'dark'));
-      $('copyReportBtn').addEventListener('click', copyReport);
-      $('analyzeBtn').addEventListener('click', () => analyze($('city').value));
-      $('city').addEventListener('keydown', e => { if (e.key === 'Enter') analyze($('city').value); });
-
-      ['t', 'r', 'h'].forEach(id => {
-        $(id).addEventListener('input', () => {
-          S.future = { t: num($('t').value, 0), r: num($('r').value, 0), h: num($('h').value, 0) };
-          renderAll();
-        });
-      });
-      ['season', 'soil'].forEach(id => $(id).addEventListener('change', renderAll));
-
-      $('sendBtn').addEventListener('click', () => {
-        const q = $('q').value.trim();
-        if (!q || S.aiLoading) return;
-        renderAssistantLog(q, 'user');
-        $('q').value = '';
-        S.aiLoading = true;
-        $('sendBtn').disabled = true;
-        const typing = document.createElement('div');
-        typing.className = 'msg bot';
-        typing.innerHTML = '<div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
-        $('log').appendChild(typing);
-        $('log').scrollTop = $('log').scrollHeight;
-        setTimeout(() => {
-          typing.remove();
-          renderAssistantLog(assistantReply(q), 'bot');
-          S.aiLoading = false;
-          $('sendBtn').disabled = false;
-        }, 300);
-      });
-      $('q').addEventListener('keydown', e => { if (e.key === 'Enter') $('sendBtn').click(); });
-
-      window.addEventListener('resize', () => {
-        if (S.chartInst) drawChart();
-        if (S.map) S.map.invalidateSize();
-      });
-    }
-
-    function seedChat() {
-      renderAssistantLog('👋 Hi! I\'m Aarambh\'s AI advisor. I can help with crop choice, irrigation, weather, soil type, farm risk, and farming practices. Ask me anything about farming in ' + S.locationText + '!', 'bot');
-    }
-
-    async function init() {
-      applyTheme(S.theme);
-      wireEvents();
-      initMap();
-      seedChat();
-      $('status').textContent = '🔍 Getting your location…';
-      await startLocationFlow();
-      renderAll();
-    }
-
-    init();
-  </script>
-</body>
-</html>
+async function askAI(question){
+
+if(S.aiLoading) return;
+
+S.aiLoading=true;
+$("sendBtn").disabled=true;
+
+const typing=appendTyping();
+
+await new Promise(r=>setTimeout(r,700));
+
+typing.remove();
+
+const q=question.toLowerCase();
+
+const risk=currentRisk();
+const crops=ranking();
+const best=crops[0];
+
+const temp=round(S.wx.temp+S.future.t,1);
+const rain=round(S.wx.rain7*(1+S.future.r/100),0);
+const hum=clamp(Math.round(S.wx.hum+S.future.h),0,100);
+const wind=S.wx.wind;
+const aqi=S.aq.aqi??0;
+const place=S.place;
+
+let msg="";
+
+if(q.includes("hello")||q.includes("hi")||q.includes("hey")){
+
+const greet=[
+`👋 Hello! I analyzed the latest farm conditions around ${place}. Current risk is ${risk}/100 and ${best.crop.name} is the best performing crop today.`,
+
+`🌱 Welcome back! Live weather and environmental data have been processed successfully. Ask me anything about crops, irrigation or weather.`,
+
+`🚜 Aarambh AI X is ready. I can help with crop planning, rainfall analysis, irrigation scheduling and climate risks.`,
+
+`🌾 Hi! I've already checked temperature, humidity, rainfall and crop suitability for your location.`
+];
+
+msg=greet[Math.floor(Math.random()*greet.length)];
+
+}
+
+else if(q.includes("best crop")){
+
+msg=`🏆 Based on current conditions in ${place}, ${best.crop.name} is the best crop with a suitability score of ${best.score}/100.
+
+Temperature ${temp}°C, humidity ${hum}% and rainfall ${rain} mm make it the strongest recommendation today.
+
+${best.crop.note}`;
+
+}
+
+else if(q.includes("risk")){
+
+msg=`🛡️ Current farm risk is ${risk}/100.
+
+${risk<30?
+"Conditions are favorable for cultivation with low climate stress.":
+risk<60?
+"Moderate climate stress exists. Monitor irrigation and rainfall carefully.":
+"High climate stress detected. Consider drought-resistant crops and water conservation."}`;
+
+}
+
+else if(q.includes("irrigation")||q.includes("water")){
+
+if(rain<20){
+
+msg="💧 Rainfall is expected to remain low. Drip irrigation or sprinkler irrigation during early morning is recommended.";
+
+}
+
+else if(rain<60){
+
+msg="💧 Moderate rainfall detected. Supplemental irrigation may be required depending on soil moisture.";
+
+}
+
+else{
+
+msg="💧 Natural rainfall appears sufficient. Avoid over-irrigation to prevent root diseases.";
+
+}
+
+}
+
+else if(q.includes("aqi")||q.includes("air")){
+
+msg=`💨 Current AQI is ${aqi}.
+
+${aqi<50?
+"Air quality is excellent and should not affect crop growth.":
+aqi<100?
+"Moderate pollution may slightly reduce photosynthesis in sensitive crops.":
+"Poor air quality can stress crops and reduce productivity over time."}`;
+
+}
+
+else if(q.includes("soil")){
+
+msg=`🌱 Estimated soil conditions for ${$("soil").value} soil:
+
+Surface moisture appears ${
+rain>50?"good":
+rain>20?"moderate":"low"
+}.
+
+Mulching and organic compost can improve water retention and soil health.`;
+
+}
+
+else if(q.includes("fertilizer")){
+
+msg=`🧪 Fertilizer recommendation for ${best.crop.name}:
+
+Use balanced NPK fertilizer together with organic compost.
+
+Apply nitrogen during vegetative growth and potassium before flowering for better yield.`;
+
+}
+
+else if(q.includes("disease")){
+
+if(hum>80&&temp>24){
+
+msg="🦠 Warm temperatures with high humidity increase fungal disease risk. Monitor leaves regularly and avoid overhead irrigation.";
+
+}
+
+else{
+
+msg="🦠 Current disease risk appears low under existing environmental conditions.";
+
+}
+
+}
+
+else if(q.includes("rain")){
+
+msg=`🌧 Total expected rainfall this week is approximately ${rain} mm.
+
+${rain<20?
+"Dry conditions expected. Irrigation planning is important.":
+rain<60?
+"Moderate rainfall expected over the coming days.":
+"Rainfall outlook is favorable for most seasonal crops."}`;
+
+}
+
+else if(q.includes("temperature")){
+
+msg=`🌡 Current temperature is ${temp}°C.
+
+${temp<15?
+"Cool weather favors wheat and peas.":
+temp<28?
+"Temperature is suitable for many crops.":
+"High temperature may increase water demand and heat stress."}`;
+
+}
+
+else if(q.includes("wind")){
+
+msg=`💨 Wind speed is ${wind} km/h.
+
+${wind<15?
+"Wind conditions are stable for farming operations.":
+"Strong winds may increase evaporation and crop stress."}`;
+
+}
+
+else{
+
+msg=`🌾 Based on today's environmental conditions around ${place},
+
+• Best crop: ${best.crop.name}
+• Crop score: ${best.score}/100
+• Farm risk: ${risk}/100
+• Temperature: ${temp}°C
+• Humidity: ${hum}%
+• Rainfall: ${rain} mm
+
+Feel free to ask about irrigation, soil, fertilizer, rainfall, disease risk, AQI or crop recommendations.`;
+
+}
+
+appendMsg(msg.replace(/\n/g,"<br>"),"bot");
+
+S.aiLoading=false;
+$("sendBtn").disabled=false;
+
+}
