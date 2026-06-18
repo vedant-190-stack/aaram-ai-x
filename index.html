@@ -4,36 +4,45 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aarambh AI X</title>
-  <meta http-equiv="refresh" content="9;url=aarambh-ai-x.html" />
-
+  <meta name="description" content="A polished farm-themed loading page for Aarambh AI X." />
+  <meta http-equiv="refresh" content="12;url=aarambh-ai-x.html" />
   <style>
     :root{
-      --bg1:#07111f;
-      --bg2:#0f1f33;
-      --bg3:#17324f;
-      --text:#eaf2ff;
-      --muted:#9fb3cb;
+      --bg0:#04101a;
+      --bg1:#081729;
+      --bg2:#0d2238;
+      --panel:rgba(10,20,36,.74);
+      --panel-2:rgba(12,24,41,.52);
       --line:rgba(255,255,255,.09);
-      --green:#4ade80;
-      --green2:#22c55e;
-      --soil:#5b3a24;
-      --soil2:#3f2718;
-      --sun:#ffd166;
+      --text:#ecf4ff;
+      --muted:#9fb3c9;
+      --muted-2:#c7d4e4;
+      --soil:#5c3921;
+      --soil-2:#3c2516;
+      --leaf:#4ade80;
+      --leaf-dark:#16a34a;
       --water:#60a5fa;
-      --shadow:0 24px 70px rgba(0,0,0,.35);
+      --sun:#ffd35e;
+      --accent:#5eead4;
+      --accent-2:#38bdf8;
+      --shadow:0 28px 80px rgba(0,0,0,.38);
+      --ease:cubic-bezier(.2,.8,.2,1);
+      --radius:30px;
+      --max:1180px;
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
-      overflow:hidden;
       color:var(--text);
       font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
       background:
-        radial-gradient(circle at 20% 20%, rgba(255,209,102,.18), transparent 18%),
-        radial-gradient(circle at 80% 15%, rgba(96,165,250,.16), transparent 20%),
-        linear-gradient(180deg,var(--bg1),var(--bg2) 52%, var(--bg3));
+        radial-gradient(circle at 12% 12%, rgba(255,211,94,.16), transparent 18%),
+        radial-gradient(circle at 82% 14%, rgba(96,165,250,.18), transparent 20%),
+        radial-gradient(circle at 50% 100%, rgba(74,222,128,.11), transparent 24%),
+        linear-gradient(180deg,var(--bg0),var(--bg1) 46%, var(--bg2));
+      overflow-x:hidden;
     }
 
     .sky{
@@ -41,329 +50,614 @@
       inset:0;
       pointer-events:none;
       overflow:hidden;
-    }
-
-    .cloud{
-      position:absolute;
-      top:10%;
-      width:120px;
-      height:38px;
-      border-radius:999px;
-      background:rgba(255,255,255,.14);
-      filter:blur(.2px);
-      animation: drift linear infinite;
-    }
-    .cloud::before,.cloud::after{
-      content:"";
-      position:absolute;
-      background:rgba(255,255,255,.14);
-      border-radius:999px;
-    }
-    .cloud::before{width:52px;height:52px;left:16px;top:-20px}
-    .cloud::after{width:44px;height:44px;right:18px;top:-14px}
-    .c1{left:-140px;top:12%;animation-duration:34s;transform:scale(1.1)}
-    .c2{left:-220px;top:20%;animation-duration:42s;transform:scale(.8);opacity:.65}
-    .c3{left:-180px;top:7%;animation-duration:50s;transform:scale(.65);opacity:.5}
-
-    @keyframes drift{
-      from{transform:translateX(-10vw)}
-      to{transform:translateX(120vw)}
-    }
-
-    .wrap{
-      height:100%;
-      display:grid;
-      place-items:center;
-      padding:22px;
-      position:relative;
-      z-index:2;
-    }
-
-    .card{
-      width:min(720px,100%);
-      padding:28px 24px 24px;
-      border:1px solid var(--line);
-      border-radius:28px;
-      background:linear-gradient(180deg, rgba(8,18,32,.72), rgba(10,20,34,.58));
-      box-shadow:var(--shadow);
-      backdrop-filter:blur(18px);
-      text-align:center;
-    }
-
-    .brand{
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      gap:10px;
-      margin-bottom:18px;
-      font-weight:800;
-      letter-spacing:-.03em;
-      font-size:1.15rem;
-    }
-    .brand-mark{
-      width:42px;height:42px;border-radius:14px;
-      display:grid;place-items:center;
-      background:linear-gradient(135deg,#5eead4,#60a5fa);
-      color:#07111f;
-      box-shadow:0 10px 30px rgba(96,165,250,.25);
-    }
-
-    h1{
-      margin:8px 0 8px;
-      font-size:clamp(2rem,4vw,3.4rem);
-      line-height:1.02;
-      letter-spacing:-.05em;
-    }
-
-    .sub{
-      margin:0 auto 22px;
-      max-width:52ch;
-      color:var(--muted);
-      line-height:1.7;
-      font-size:1rem;
-    }
-
-    .scene{
-      position:relative;
-      height:360px;
-      margin:10px auto 8px;
-      display:grid;
-      place-items:end center;
+      z-index:0;
     }
 
     .sun{
       position:absolute;
-      top:0;
-      right:18%;
-      font-size:2.1rem;
-      animation: float 3s ease-in-out infinite;
-      filter:drop-shadow(0 10px 30px rgba(255,209,102,.18));
+      top:4%;
+      right:15%;
+      width:96px;
+      height:96px;
+      border-radius:50%;
+      background:radial-gradient(circle at 35% 35%, #fff8d6, var(--sun) 56%, rgba(255,211,94,.08) 74%);
+      box-shadow:0 0 40px rgba(255,211,94,.24), 0 0 90px rgba(255,211,94,.1);
+      animation:sunFloat 7s var(--ease) infinite;
+    }
+
+    .sun::before,
+    .sun::after{
+      content:"";
+      position:absolute;
+      inset:-22px;
+      border-radius:50%;
+      border:1px solid rgba(255,211,94,.13);
+    }
+    .sun::after{inset:-38px;opacity:.5}
+
+    .cloud{
+      position:absolute;
+      width:140px;
+      height:44px;
+      border-radius:999px;
+      background:rgba(255,255,255,.13);
+      animation:drift linear infinite;
+      filter:blur(.1px);
+    }
+    .cloud::before,
+    .cloud::after{
+      content:"";
+      position:absolute;
+      background:rgba(255,255,255,.13);
+      border-radius:999px;
+    }
+    .cloud::before{width:58px;height:58px;left:18px;top:-22px}
+    .cloud::after{width:48px;height:48px;right:18px;top:-16px}
+
+    .c1{left:-170px;top:13%;animation-duration:34s}
+    .c2{left:-240px;top:22%;animation-duration:44s;transform:scale(.82);opacity:.58}
+    .c3{left:-280px;top:8%;animation-duration:54s;transform:scale(.6);opacity:.42}
+
+    .birds{
+      position:absolute;
+      top:11%;
+      left:16%;
+      width:240px;
+      height:64px;
+      opacity:.6;
+      animation:birdsDrift 20s linear infinite;
+    }
+    .bird{
+      position:absolute;
+      width:22px;height:12px;
+      border-top:2px solid rgba(236,244,255,.86);
+      border-radius:50% 50% 0 0;
+    }
+    .bird::before,
+    .bird::after{
+      content:"";
+      position:absolute;
+      top:-2px;
+      width:18px;height:10px;
+      border-top:2px solid rgba(236,244,255,.86);
+      border-radius:50% 50% 0 0;
+    }
+    .bird::before{left:-10px;transform:rotate(-12deg)}
+    .bird::after{right:-10px;transform:rotate(12deg)}
+    .b1{left:8px;top:12px;transform:scale(.8)}
+    .b2{left:54px;top:22px;transform:scale(.6)}
+    .b3{left:96px;top:2px;transform:scale(.72)}
+    .b4{left:150px;top:18px;transform:scale(.54)}
+
+    .page{
+      position:relative;
+      z-index:2;
+      min-height:100%;
+      display:grid;
+      place-items:center;
+      padding:24px;
+    }
+
+    .card{
+      width:min(var(--max), 100%);
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(8,18,32,.76), rgba(10,20,34,.58));
+      backdrop-filter:blur(18px);
+      box-shadow:var(--shadow);
+      border-radius:34px;
+      overflow:hidden;
+      position:relative;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(94,234,212,.08), transparent 28%),
+        radial-gradient(circle at 80% 0%, rgba(96,165,250,.08), transparent 32%);
+      pointer-events:none;
+    }
+
+    .inner{
+      position:relative;
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:0;
+      min-height:min(760px, calc(100vh - 48px));
+    }
+
+    .hero{
+      padding:30px 28px 28px;
+      border-right:1px solid rgba(255,255,255,.06);
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      min-width:0;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:800;
+      letter-spacing:-.03em;
+      font-size:clamp(1.15rem, 2vw, 1.65rem);
+    }
+
+    .brand-mark{
+      width:48px;
+      height:48px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      color:#07111f;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      box-shadow:0 12px 24px rgba(96,165,250,.18);
+      flex:0 0 auto;
+    }
+
+    h1{
+      margin:4px 0 0;
+      font-size:clamp(2rem, 4.8vw, 3.9rem);
+      line-height:1.02;
+      letter-spacing:-.06em;
+      max-width:11ch;
+    }
+
+    .lead{
+      margin:0;
+      max-width:58ch;
+      color:var(--muted);
+      line-height:1.75;
+      font-size:clamp(.96rem, 1.55vw, 1.02rem);
+    }
+
+    .scene{
+      position:relative;
+      margin-top:auto;
+      display:grid;
+      place-items:center;
+      min-height:430px;
+      border-radius:28px;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(255,211,94,.07), transparent 20%),
+        radial-gradient(circle at 40% 70%, rgba(74,222,128,.07), transparent 26%),
+        linear-gradient(180deg, rgba(255,255,255,.015), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .scene::after{
+      content:"";
+      position:absolute;
+      inset:auto 8% 16px 8%;
+      height:22px;
+      border-radius:50%;
+      background:rgba(0,0,0,.24);
+      filter:blur(16px);
+      opacity:.7;
+    }
+
+    .glow{
+      position:absolute;
+      left:50%;
+      bottom:150px;
+      width:420px;
+      height:120px;
+      transform:translateX(-50%);
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(94,234,212,.18), transparent 68%);
+      filter:blur(14px);
+      animation:ring 9s ease-in-out infinite;
     }
 
     .hill{
       position:absolute;
-      bottom:20px;
       left:50%;
+      bottom:120px;
       transform:translateX(-50%);
-      width:min(520px,92%);
-      height:150px;
+      width:min(640px, 92%);
+      height:170px;
+      border-radius:190px 190px 26px 26px;
       background:
-        radial-gradient(circle at 50% 0%, rgba(34,197,94,.26), transparent 45%),
-        linear-gradient(180deg,#174429,#0f331d);
-      border-radius:180px 180px 26px 26px;
-      box-shadow:inset 0 16px 22px rgba(255,255,255,.04);
+        radial-gradient(circle at 50% 0%, rgba(34,197,94,.22), transparent 42%),
+        linear-gradient(180deg,#19472b,#0f331d);
+      box-shadow:inset 0 16px 24px rgba(255,255,255,.04);
     }
+
+    .rows{
+      position:absolute;
+      left:50%;
+      bottom:136px;
+      transform:translateX(-50%);
+      width:min(640px, 92%);
+      height:108px;
+      opacity:.44;
+    }
+    .rows span{
+      position:absolute;
+      left:0;
+      right:0;
+      height:2px;
+      border-radius:999px;
+      background:rgba(255,255,255,.08);
+    }
+    .rows span:nth-child(1){top:10px}
+    .rows span:nth-child(2){top:28px}
+    .rows span:nth-child(3){top:46px}
+    .rows span:nth-child(4){top:64px}
+    .rows span:nth-child(5){top:82px}
+    .rows span:nth-child(6){top:100px}
 
     .soil{
       position:absolute;
-      bottom:0;
       left:50%;
+      bottom:0;
       transform:translateX(-50%);
-      width:min(560px,96%);
-      height:94px;
-      border-radius:26px 26px 20px 20px;
-      background:linear-gradient(180deg,var(--soil),var(--soil2));
-      box-shadow:inset 0 14px 24px rgba(0,0,0,.25);
+      width:min(700px, 96%);
+      height:128px;
+      border-radius:28px 28px 20px 20px;
+      background:linear-gradient(180deg, var(--soil), var(--soil-2));
+      box-shadow:inset 0 14px 26px rgba(0,0,0,.26);
       overflow:hidden;
     }
 
     .soil::before{
       content:"";
       position:absolute;
-      inset:12px 18px auto 18px;
+      inset:14px 18px auto 18px;
       height:14px;
       border-radius:999px;
       background:rgba(255,255,255,.06);
-      opacity:.45;
+      opacity:.36;
     }
 
-    .farmer{
+    .farm{
       position:absolute;
-      left:20%;
-      bottom:78px;
-      width:110px;
-      height:160px;
-      transform-origin:bottom center;
-      animation: walk-in 2.6s ease-in-out forwards;
-    }
-
-    .head{
-      position:absolute;
-      top:0; left:38px;
-      width:34px;height:34px;border-radius:50%;
-      background:#f2c7a5;
-      box-shadow:inset 0 -2px 0 rgba(0,0,0,.06);
-    }
-
-    .hat{
-      position:absolute;
-      top:-7px; left:28px;
-      width:52px;height:18px;
-      border-radius:999px;
-      background:#9a6b2f;
-      transform:rotate(-3deg);
-    }
-    .hat::after{
-      content:"";
-      position:absolute;
-      left:7px; top:10px;
-      width:38px;height:6px;border-radius:999px;
-      background:#7c5327;
-    }
-
-    .body{
-      position:absolute;
-      top:34px; left:31px;
-      width:48px;height:52px;
-      border-radius:14px;
-      background:linear-gradient(180deg,#5eead4,#38bdf8);
-      box-shadow:inset 0 -4px 0 rgba(0,0,0,.08);
-    }
-
-    .leg{
-      position:absolute;
-      top:82px;
-      width:12px;height:48px;border-radius:999px;
-      background:#f2c7a5;
-      transform-origin:top center;
-    }
-    .leg.left{left:38px; animation: step-left 2.6s ease-in-out forwards}
-    .leg.right{left:60px; animation: step-right 2.6s ease-in-out forwards}
-
-    .arm{
-      position:absolute;
-      top:40px;
-      width:12px;height:48px;border-radius:999px;
-      background:#f2c7a5;
-      transform-origin:top center;
-    }
-    .arm.left{left:18px; transform:rotate(28deg); animation: arm-wave 1.8s ease-in-out infinite}
-    .arm.right{left:78px; transform:rotate(-38deg);}
-
-    .can{
-      position:absolute;
-      left:78px;
-      top:22px;
-      font-size:1.7rem;
-      transform-origin:center;
-      animation: pour 2.6s ease-in-out forwards;
-      filter:drop-shadow(0 12px 24px rgba(96,165,250,.12));
-    }
-
-    .water-stream{
-      position:absolute;
-      left:112px;
-      top:42px;
-      width:90px;
-      height:120px;
-      opacity:0;
-      background:
-        radial-gradient(circle at 20% 0%, rgba(96,165,250,.95) 0 2px, transparent 3px) 0 0 / 16px 18px,
-        linear-gradient(180deg, rgba(96,165,250,.55), rgba(96,165,250,.02));
-      clip-path:polygon(20% 0, 80% 0, 58% 100%, 40% 100%);
-      filter:blur(.4px);
-      animation: water 2.6s ease-in-out forwards;
+      left:50%;
+      bottom:110px;
+      width:min(700px, 96%);
+      height:250px;
+      transform:translateX(-50%);
     }
 
     .bed{
       position:absolute;
-      bottom:26px;
       left:50%;
+      bottom:30px;
       transform:translateX(-50%);
-      width:220px;
-      height:88px;
+      width:240px;
+      height:96px;
     }
 
     .seed{
       position:absolute;
       left:50%;
-      bottom:26px;
-      width:14px;height:14px;border-radius:50%;
-      background:linear-gradient(180deg,#d7a76b,#a86c31);
-      transform:translateX(-50%) scale(.9);
-      animation: seed-drop 2.6s ease-in-out forwards;
+      bottom:28px;
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      background:linear-gradient(180deg,#d9a96f,#a86a2d);
+      transform:translateX(-50%) scale(.92);
       box-shadow:0 4px 10px rgba(0,0,0,.22);
+      animation:seedDrop 2.8s var(--ease) forwards;
     }
 
     .sprout{
       position:absolute;
       left:50%;
       bottom:36px;
-      width:18px;height:22px;
+      width:18px;
+      height:24px;
+      opacity:0;
       transform:translateX(-50%) scaleY(0);
       transform-origin:bottom center;
-      opacity:0;
-      animation: sprout 2.6s 2.3s ease-out forwards;
+      animation:sprout 2.8s 2.3s var(--ease) forwards;
     }
 
-    .stem{
+    .sprout .stem{
       position:absolute;
       left:8px;
       bottom:0;
       width:2px;
       height:20px;
-      background:var(--green);
       border-radius:999px;
+      background:var(--leaf);
       box-shadow:0 0 14px rgba(74,222,128,.25);
     }
-    .leaf{
+    .sprout .leaf{
       position:absolute;
-      width:16px;height:10px;
-      background:var(--green);
+      width:16px;
+      height:10px;
+      top:4px;
+      background:var(--leaf);
       border-radius:999px 999px 999px 0;
-      top:3px;
     }
-    .leaf.l{left:-7px; transform:rotate(-35deg)}
-    .leaf.r{left:8px; transform:scaleX(-1) rotate(-35deg)}
+    .sprout .leaf.l{left:-7px;transform:rotate(-36deg)}
+    .sprout .leaf.r{left:8px;transform:scaleX(-1) rotate(-36deg)}
 
     .plant{
       position:absolute;
       left:50%;
-      bottom:28px;
-      width:62px;height:120px;
-      transform:translateX(-50%) scale(.2);
+      bottom:32px;
+      width:80px;
+      height:150px;
+      transform:translateX(-50%) scale(.16);
       transform-origin:bottom center;
       opacity:0;
-      animation: plant-grow 2.8s 4.4s ease-out forwards;
+      animation:plantGrow 3.2s 4.5s var(--ease) forwards;
     }
 
     .plant .stem{
-      left:30px;
-      height:70px;
-      width:3px;
+      position:absolute;
+      left:38px;
+      bottom:0;
+      width:4px;
+      height:82px;
+      border-radius:999px;
       background:linear-gradient(180deg,#4ade80,#16a34a);
     }
     .plant .leaf{
-      width:28px;height:16px;
-      top:14px;
+      position:absolute;
+      width:28px;
+      height:16px;
+      border-radius:999px 999px 999px 0;
       background:linear-gradient(180deg,#4ade80,#22c55e);
     }
-    .plant .leaf.l{left:3px}
-    .plant .leaf.r{left:29px}
-    .plant .leaf.l2{top:36px; left:0; transform:rotate(-28deg)}
-    .plant .leaf.r2{top:36px; left:32px; transform:scaleX(-1) rotate(-28deg)}
+    .plant .leaf.l{left:8px;top:20px;transform:rotate(-30deg)}
+    .plant .leaf.r{left:40px;top:20px;transform:scaleX(-1) rotate(-30deg)}
+    .plant .leaf.l2{left:4px;top:46px;transform:rotate(-24deg)}
+    .plant .leaf.r2{left:44px;top:46px;transform:scaleX(-1) rotate(-24deg)}
     .plant .flower{
       position:absolute;
-      top:-16px;
-      left:18px;
-      font-size:1.4rem;
-      animation: bloom 2s 5.2s ease-out forwards;
+      left:28px;
+      top:-20px;
+      font-size:1.5rem;
       opacity:0;
+      animation:bloom 2s 5.4s var(--ease) forwards;
     }
 
-    .progress-wrap{
-      width:min(520px,100%);
-      margin:8px auto 0;
+    .farmer{
+      position:absolute;
+      left:20px;
+      bottom:58px;
+      width:136px;
+      height:200px;
+      transform-origin:bottom left;
+      animation:walk 2.8s var(--ease) forwards;
     }
 
-    .status{
+    .hat{
+      position:absolute;
+      top:-6px;
+      left:30px;
+      width:56px;
+      height:18px;
+      border-radius:999px;
+      background:#9a6b2f;
+      transform:rotate(-2deg);
+    }
+    .hat::after{
+      content:"";
+      position:absolute;
+      left:7px;
+      top:10px;
+      width:40px;
+      height:6px;
+      border-radius:999px;
+      background:#7b4f23;
+    }
+
+    .head{
+      position:absolute;
+      top:2px;
+      left:41px;
+      width:38px;
+      height:38px;
+      border-radius:50%;
+      background:#f2c7a5;
+      box-shadow:inset 0 -2px 0 rgba(0,0,0,.05);
+    }
+
+    .body{
+      position:absolute;
+      top:40px;
+      left:33px;
+      width:54px;
+      height:60px;
+      border-radius:16px;
+      background:linear-gradient(180deg,#5eead4,#38bdf8);
+      box-shadow:inset 0 -4px 0 rgba(0,0,0,.08);
+    }
+
+    .arm,.leg{
+      position:absolute;
+      border-radius:999px;
+      transform-origin:top center;
+      background:#f2c7a5;
+    }
+
+    .arm{
+      top:44px;
+      width:12px;
+      height:54px;
+    }
+    .arm.left{
+      left:18px;
+      transform:rotate(28deg);
+      animation:armWave 1.9s ease-in-out infinite;
+    }
+    .arm.right{
+      left:82px;
+      transform:rotate(-36deg);
+    }
+
+    .leg{
+      top:92px;
+      width:13px;
+      height:58px;
+    }
+    .leg.left{left:41px;animation:stepLeft 2.8s var(--ease) forwards}
+    .leg.right{left:64px;animation:stepRight 2.8s var(--ease) forwards}
+
+    .can{
+      position:absolute;
+      left:86px;
+      top:26px;
+      font-size:1.85rem;
+      transform-origin:center;
+      animation:pour 2.8s var(--ease) forwards;
+    }
+
+    .water{
+      position:absolute;
+      left:122px;
+      top:50px;
+      width:100px;
+      height:130px;
+      opacity:0;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(96,165,250,.96) 0 2px, transparent 3px) 0 0 / 16px 18px,
+        linear-gradient(180deg, rgba(96,165,250,.55), rgba(96,165,250,.02));
+      clip-path:polygon(20% 0, 80% 0, 58% 100%, 40% 100%);
+      filter:blur(.35px);
+      animation:water 2.8s var(--ease) forwards;
+    }
+
+    .seed-particles{
+      position:absolute;
+      inset:0;
+      overflow:hidden;
+      pointer-events:none;
+      opacity:.65;
+    }
+    .particle{
+      position:absolute;
+      width:5px;
+      height:5px;
+      border-radius:50%;
+      background:rgba(255,211,94,.9);
+      box-shadow:0 0 10px rgba(255,211,94,.15);
+      animation:particleFloat 8s linear infinite;
+    }
+    .particle:nth-child(1){left:14%; top:76%; animation-duration:11s}
+    .particle:nth-child(2){left:24%; top:79%; animation-duration:14s; opacity:.6}
+    .particle:nth-child(3){left:33%; top:83%; animation-duration:10s; opacity:.5}
+    .particle:nth-child(4){left:42%; top:75%; animation-duration:13s; opacity:.7}
+    .particle:nth-child(5){left:57%; top:79%; animation-duration:12s; opacity:.5}
+    .particle:nth-child(6){left:67%; top:76%; animation-duration:15s; opacity:.6}
+    .particle:nth-child(7){left:74%; top:81%; animation-duration:9s; opacity:.55}
+    .particle:nth-child(8){left:82%; top:77%; animation-duration:16s; opacity:.45}
+    .particle:nth-child(9){left:46%; top:69%; animation-duration:18s; opacity:.35}
+    .particle:nth-child(10){left:64%; top:70%; animation-duration:20s; opacity:.35}
+
+    .right{
+      padding:30px 28px 28px;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      min-width:0;
+    }
+
+    .panel{
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:24px;
+      background:rgba(255,255,255,.03);
+      padding:18px;
+    }
+
+    .panel h2{
+      margin:0 0 10px;
+      font-size:1.02rem;
+      letter-spacing:-.02em;
+    }
+
+    .panel p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.65;
+      font-size:.93rem;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:10px;
+    }
+
+    .stat{
+      padding:14px;
+      border-radius:18px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.07);
+    }
+    .stat .k{
+      display:block;
+      font-size:.74rem;
+      text-transform:uppercase;
+      letter-spacing:.07em;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    .stat .v{
+      display:block;
+      font-size:1.15rem;
+      font-weight:800;
+      letter-spacing:-.03em;
+      color:var(--text);
+    }
+    .stat .s{
+      display:block;
+      margin-top:4px;
+      font-size:.76rem;
+      color:var(--muted);
+    }
+
+    .timelineBox{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .stepItem{
+      padding:12px 14px;
+      border-radius:16px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.07);
+      color:var(--muted);
+      opacity:.45;
+      transition:opacity .4s var(--ease), transform .4s var(--ease), border-color .4s var(--ease), background .4s var(--ease), color .4s var(--ease);
+      transform:translateX(8px);
+    }
+    .stepItem.active{
+      opacity:1;
+      transform:translateX(0);
+      color:var(--text);
+      background:rgba(94,234,212,.08);
+      border-color:rgba(94,234,212,.28);
+    }
+
+    .progress{
+      padding:18px;
+      border-radius:24px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.07);
+    }
+
+    .progressTop{
       display:flex;
       justify-content:space-between;
       align-items:center;
-      gap:14px;
-      margin:8px 0 10px;
+      gap:12px;
+      margin-bottom:10px;
       color:var(--muted);
-      font-size:.95rem;
+      font-size:.92rem;
+    }
+
+    .stage{
+      color:var(--text);
+      font-weight:800;
+      letter-spacing:-.02em;
     }
 
     .dots{
@@ -372,133 +666,122 @@
       gap:6px;
     }
     .dots span{
-      width:8px;height:8px;border-radius:50%;
-      background:rgba(234,242,255,.8);
-      animation: pulse 1.2s infinite ease-in-out;
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:rgba(236,244,255,.82);
+      animation:dotPulse 1.3s infinite var(--ease);
     }
-    .dots span:nth-child(2){animation-delay:.2s}
-    .dots span:nth-child(3){animation-delay:.4s}
+    .dots span:nth-child(2){animation-delay:.18s}
+    .dots span:nth-child(3){animation-delay:.36s}
 
     .bar{
-      height:14px;
+      width:100%;
+      height:16px;
       border-radius:999px;
       background:rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.08);
       overflow:hidden;
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
     }
-    .fill{
+
+    .bar > span{
+      display:block;
+      width:0;
       height:100%;
-      width:0%;
       border-radius:inherit;
-      background:linear-gradient(90deg,#22c55e,#5eead4,#60a5fa);
+      background:linear-gradient(90deg, #22c55e, #5eead4 55%, #60a5fa);
       box-shadow:0 0 18px rgba(96,165,250,.24);
-      animation: load 8.8s linear forwards;
+      animation:progress 10.8s linear forwards;
     }
 
     .tiny{
       margin-top:12px;
-      color:#d7e3f0;
-      opacity:.88;
-      font-size:.92rem;
-      min-height:22px;
+      min-height:24px;
+      color:var(--muted-2);
+      font-size:.95rem;
+      line-height:1.55;
+    }
+
+    .redirect{
+      margin-top:8px;
+      font-size:.84rem;
+      color:var(--muted);
     }
 
     .hint{
       margin-top:6px;
-      color:var(--muted);
       font-size:.82rem;
-      letter-spacing:.02em;
+      color:var(--muted-2);
+      opacity:.8;
     }
 
-    .redirect{
-      margin-top:16px;
-      font-size:.9rem;
-      color:#cde6d5;
-      opacity:.88;
+    .glow{
+      position:absolute;
+      left:50%;
+      bottom:166px;
+      width:440px;
+      height:120px;
+      transform:translateX(-50%);
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(94,234,212,.17), transparent 68%);
+      filter:blur(14px);
+      animation:ring 9s ease-in-out infinite;
     }
 
-    @keyframes walk-in{
-      0%{transform:translateX(-130px)}
-      55%{transform:translateX(12px)}
-      80%{transform:translateX(0)}
-      100%{transform:translateX(0)}
+    @keyframes sunFloat{
+      0%,100%{transform:translateY(0) scale(1)}
+      50%{transform:translateY(-8px) scale(1.03)}
     }
 
-    @keyframes step-left{
-      0%,100%{transform:rotate(8deg)}
-      50%{transform:rotate(-16deg)}
+    @keyframes drift{from{transform:translateX(-10vw)}to{transform:translateX(120vw)}}
+    @keyframes birdsDrift{from{transform:translateX(-12vw)}to{transform:translateX(118vw)}}
+    @keyframes walk{0%{transform:translateX(-130px)}55%{transform:translateX(12px)}80%{transform:translateX(0)}100%{transform:translateX(0)}}
+    @keyframes stepLeft{0%,100%{transform:rotate(7deg)}50%{transform:rotate(-16deg)}}
+    @keyframes stepRight{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(14deg)}}
+    @keyframes armWave{0%,100%{transform:rotate(26deg)}50%{transform:rotate(40deg)}}
+    @keyframes pour{0%,28%{transform:rotate(0deg) translateY(0)}35%{transform:rotate(-14deg) translateY(0)}58%{transform:rotate(-18deg) translateY(6px)}100%{transform:rotate(0deg) translateY(0)}}
+    @keyframes water{0%,30%{opacity:0; transform:translateY(-8px) scaleY(.6)}38%{opacity:1}60%{opacity:1; transform:translateY(10px) scaleY(1)}100%{opacity:0; transform:translateY(22px) scaleY(1.1)}}
+    @keyframes seedDrop{0%,22%{opacity:0; transform:translateX(-50%) translateY(-30px) scale(.6)}35%{opacity:1}56%{transform:translateX(-50%) translateY(0) scale(1)}100%{transform:translateX(-50%) translateY(0) scale(1)}}
+    @keyframes sprout{0%{opacity:0; transform:translateX(-50%) scaleY(0)}35%{opacity:1; transform:translateX(-50%) scaleY(.2)}70%{opacity:1; transform:translateX(-50%) scaleY(1)}100%{opacity:0; transform:translateX(-50%) scaleY(1)}}
+    @keyframes plantGrow{0%{opacity:0; transform:translateX(-50%) scale(.15)}18%{opacity:0}35%{opacity:1; transform:translateX(-50%) scale(.35)}65%{opacity:1; transform:translateX(-50%) scale(.8)}100%{opacity:1; transform:translateX(-50%) scale(1)}}
+    @keyframes bloom{0%,70%{opacity:0; transform:translateY(10px) scale(.7)}100%{opacity:1; transform:translateY(0) scale(1)}}
+    @keyframes progress{0%{width:0%}14%{width:10%}28%{width:22%}42%{width:37%}56%{width:52%}70%{width:68%}84%{width:85%}100%{width:100%}}
+    @keyframes dotPulse{0%,100%{transform:scale(.85); opacity:.45}50%{transform:scale(1.12); opacity:1}}
+    @keyframes particleFloat{0%{transform:translateY(0) translateX(0) scale(1); opacity:0}10%{opacity:.9}50%{transform:translateY(-32px) translateX(8px) scale(1.08); opacity:.55}100%{transform:translateY(-68px) translateX(14px) scale(1); opacity:0}}
+    @keyframes ring{0%,100%{transform:translateX(-50%) scale(1); opacity:.8}50%{transform:translateX(-50%) scale(1.05); opacity:1}}
+
+    @media (max-width: 1040px){
+      .inner{grid-template-columns:1fr}
+      .hero{border-right:none;border-bottom:1px solid rgba(255,255,255,.06)}
+      .scene{min-height:400px}
+      .timelineBox{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr))}
+      .right{padding-top:18px}
     }
 
-    @keyframes step-right{
-      0%,100%{transform:rotate(-6deg)}
-      50%{transform:rotate(14deg)}
+    @media (max-width: 760px){
+      .page{padding:14px}
+      .card{border-radius:24px}
+      .hero,.right{padding:18px}
+      h1{max-width:none}
+      .stats{grid-template-columns:1fr}
+      .timelineBox{grid-template-columns:1fr}
+      .scene{min-height:330px}
+      .farmer{left:50%;transform:translateX(-50%) scale(.9);transform-origin:center bottom;bottom:54px}
+      .hill{width:96%;height:150px}
+      .soil{width:100%;height:112px}
+      .rows{width:96%}
+      .glow{width:320px;height:100px;bottom:150px}
+      .sun{right:10%;width:80px;height:80px}
+      .birds{left:8%;transform:scale(.88)}
     }
 
-    @keyframes arm-wave{
-      0%,100%{transform:rotate(26deg)}
-      50%{transform:rotate(40deg)}
-    }
-
-    @keyframes pour{
-      0%,28%{transform:rotate(0deg) translateY(0)}
-      35%{transform:rotate(-14deg) translateY(0)}
-      58%{transform:rotate(-18deg) translateY(6px)}
-      100%{transform:rotate(0deg) translateY(0)}
-    }
-
-    @keyframes water{
-      0%,30%{opacity:0; transform:translateY(-8px) scaleY(.6)}
-      38%{opacity:1}
-      60%{opacity:1; transform:translateY(10px) scaleY(1)}
-      100%{opacity:0; transform:translateY(22px) scaleY(1.1)}
-    }
-
-    @keyframes seed-drop{
-      0%,22%{opacity:0; transform:translateX(-50%) translateY(-30px) scale(.6)}
-      35%{opacity:1}
-      56%{transform:translateX(-50%) translateY(0) scale(1)}
-      100%{transform:translateX(-50%) translateY(0) scale(1)}
-    }
-
-    @keyframes sprout{
-      0%{opacity:0; transform:translateX(-50%) scaleY(0)}
-      35%{opacity:1; transform:translateX(-50%) scaleY(.2)}
-      70%{opacity:1; transform:translateX(-50%) scaleY(1)}
-      100%{opacity:0; transform:translateX(-50%) scaleY(1)}
-    }
-
-    @keyframes plant-grow{
-      0%{opacity:0; transform:translateX(-50%) scale(.15)}
-      18%{opacity:0}
-      35%{opacity:1; transform:translateX(-50%) scale(.35)}
-      65%{opacity:1; transform:translateX(-50%) scale(.8)}
-      100%{opacity:1; transform:translateX(-50%) scale(1)}
-    }
-
-    @keyframes bloom{
-      0%,70%{opacity:0; transform:translateY(10px) scale(.7)}
-      100%{opacity:1; transform:translateY(0) scale(1)}
-    }
-
-    @keyframes load{
-      0%{width:0%}
-      18%{width:12%}
-      36%{width:28%}
-      52%{width:48%}
-      66%{width:66%}
-      80%{width:84%}
-      100%{width:100%}
-    }
-
-    @keyframes pulse{
-      0%,100%{transform:scale(.85);opacity:.45}
-      50%{transform:scale(1.15);opacity:1}
-    }
-
-    @keyframes float{
-      0%,100%{transform:translateY(0)}
-      50%{transform:translateY(-6px)}
+    @media (max-width: 520px){
+      .title{font-size:1rem}
+      .brand-mark{width:42px;height:42px;border-radius:14px}
+      .subtitle{font-size:.92rem;top:72px}
+      .scene{min-height:300px}
+      .farmer{transform:translateX(-50%) scale(.78);bottom:46px}
+      .progressTop{flex-direction:column;align-items:flex-start}
     }
 
     @media (prefers-reduced-motion: reduce){
@@ -507,118 +790,196 @@
       *::after{
         animation:none !important;
         transition:none !important;
-        scroll-behavior:auto !important;
       }
     }
   </style>
 </head>
 <body>
   <div class="sky" aria-hidden="true">
+    <div class="sun"></div>
     <div class="cloud c1"></div>
     <div class="cloud c2"></div>
     <div class="cloud c3"></div>
+    <div class="birds">
+      <div class="bird b1"></div>
+      <div class="bird b2"></div>
+      <div class="bird b3"></div>
+      <div class="bird b4"></div>
+    </div>
   </div>
 
-  <main class="wrap">
-    <section class="card" aria-label="Loading screen">
-      <div class="brand">
-        <div class="brand-mark">🌱</div>
-        <div>Aarambh AI X</div>
-      </div>
-
-      <h1>Planting intelligence, growing results.</h1>
-      <p class="sub">
-        A tiny farm scene is preparing your dashboard. Seed planted, water flowing, plant growing, and then the app opens.
-      </p>
-
-      <div class="scene">
-        <div class="sun">☀️</div>
-
-        <div class="farmer">
-          <div class="hat"></div>
-          <div class="head"></div>
-          <div class="body"></div>
-          <div class="arm left"></div>
-          <div class="arm right"></div>
-          <div class="leg left"></div>
-          <div class="leg right"></div>
-          <div class="can">🚿</div>
-          <div class="water-stream"></div>
-        </div>
-
-        <div class="hill"></div>
-        <div class="soil"></div>
-        <div class="bed">
-          <div class="seed"></div>
-
-          <div class="sprout">
-            <div class="stem"></div>
-            <div class="leaf l"></div>
-            <div class="leaf r"></div>
+  <main class="page">
+    <section class="card" aria-label="Aarambh AI X loading screen">
+      <div class="inner">
+        <div class="hero">
+          <div class="brand">
+            <div class="brand-mark">🌱</div>
+            <div>Aarambh AI X</div>
           </div>
 
-          <div class="plant">
-            <div class="stem"></div>
-            <div class="leaf l"></div>
-            <div class="leaf r"></div>
-            <div class="leaf l2"></div>
-            <div class="leaf r2"></div>
-            <div class="flower">🌿</div>
+          <h1>Planting intelligence, growing results.</h1>
+          <p class="lead">
+            A seed is being planted, watered, and grown into a dashboard. The scene stays neat on every screen size, and the app opens automatically when the growth is complete.
+          </p>
+
+          <div class="scene">
+            <div class="glow"></div>
+
+            <div class="farm" aria-hidden="true">
+              <div class="hill"></div>
+              <div class="rows">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+              <div class="soil"></div>
+
+              <div class="bed">
+                <div class="seed"></div>
+                <div class="sprout">
+                  <div class="stem"></div>
+                  <div class="leaf l"></div>
+                  <div class="leaf r"></div>
+                </div>
+                <div class="plant">
+                  <div class="stem"></div>
+                  <div class="leaf l"></div>
+                  <div class="leaf r"></div>
+                  <div class="leaf l2"></div>
+                  <div class="leaf r2"></div>
+                  <div class="flower">🌿</div>
+                </div>
+              </div>
+
+              <div class="farmer">
+                <div class="hat"></div>
+                <div class="head"></div>
+                <div class="body"></div>
+                <div class="arm left"></div>
+                <div class="arm right"></div>
+                <div class="leg left"></div>
+                <div class="leg right"></div>
+                <div class="can">🚿</div>
+                <div class="water"></div>
+              </div>
+
+              <div class="seed-particles">
+                <span class="particle"></span><span class="particle"></span><span class="particle"></span><span class="particle"></span><span class="particle"></span>
+                <span class="particle"></span><span class="particle"></span><span class="particle"></span><span class="particle"></span><span class="particle"></span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="progress-wrap">
-        <div class="status">
-          <span id="stageText">Preparing the soil...</span>
-          <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
-        </div>
+        <aside class="right">
+          <div class="panel">
+            <h2>What is happening</h2>
+            <p>The loader runs through a clear sequence: soil, seed, water, sprout, growth, and then the dashboard opens. Each step is timed to feel deliberate and clean.</p>
+          </div>
 
-        <div class="bar" aria-label="Loading progress">
-          <div class="fill"></div>
-        </div>
+          <div class="panel">
+            <h2>Live progress</h2>
+            <div class="stats">
+              <div class="stat">
+                <span class="k">Stage</span>
+                <span class="v" id="stageText">Preparing the soil...</span>
+                <span class="s">Growing the farm scene</span>
+              </div>
+              <div class="stat">
+                <span class="k">Status</span>
+                <span class="v">Loading</span>
+                <span class="s">Auto redirect on</span>
+              </div>
+            </div>
+          </div>
 
-        <div class="tiny" id="tinyText">Loading your farm intelligence dashboard.</div>
-        <div class="hint">Redirecting to Aarambh AI X automatically.</div>
-        <div class="redirect">If nothing happens, open <strong>aarambh-ai-x.html</strong>.</div>
+          <div class="panel">
+            <h2>Growth timeline</h2>
+            <div class="timelineBox" aria-hidden="true">
+              <div class="stepItem" id="step1">1. Preparing the soil</div>
+              <div class="stepItem" id="step2">2. Planting the seed</div>
+              <div class="stepItem" id="step3">3. Watering the crop</div>
+              <div class="stepItem" id="step4">4. Sprout appears</div>
+              <div class="stepItem" id="step5">5. Plant grows</div>
+              <div class="stepItem" id="step6">6. Dashboard opens</div>
+            </div>
+          </div>
+
+          <div class="progress">
+            <div class="progressTop">
+              <div class="stage" id="stageText2">Preparing the soil...</div>
+              <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            </div>
+            <div class="bar" aria-label="Loading progress"><span></span></div>
+            <div class="tiny" id="tinyText">Loading your farm intelligence dashboard.</div>
+            <div class="redirect">Redirecting to <strong>aarambh-ai-x.html</strong> automatically.</div>
+            <div class="hint">If nothing happens, open aarambh-ai-x.html manually.</div>
+          </div>
+        </aside>
       </div>
     </section>
   </main>
 
   <script>
+    const stageText = document.getElementById("stageText");
+    const stageText2 = document.getElementById("stageText2");
+    const tinyText = document.getElementById("tinyText");
+
+    const stepEls = [
+      document.getElementById("step1"),
+      document.getElementById("step2"),
+      document.getElementById("step3"),
+      document.getElementById("step4"),
+      document.getElementById("step5"),
+      document.getElementById("step6"),
+    ];
+
     const stages = [
       "Preparing the soil...",
       "Planting the seed...",
       "Watering the crop...",
-      "Watching it sprout...",
-      "Growing stronger...",
-      "Almost ready..."
+      "Sprout detected...",
+      "Plant growing stronger...",
+      "Final checks...",
+      "Opening dashboard..."
     ];
 
-    const tinyLines = [
+    const tiny = [
       "Soil checked. Seed planted.",
       "Water flowing. Growth begins.",
       "Sprout detected. Progress steady.",
       "Leaves opening. Dashboard is almost ready.",
-      "Farm intelligence is fully loaded."
+      "Farm intelligence is fully loaded.",
+      "Redirecting now..."
     ];
 
-    const stageText = document.getElementById("stageText");
-    const tinyText = document.getElementById("tinyText");
+    let tick = 0;
 
-    let i = 0;
-    const timer = setInterval(() => {
-      stageText.textContent = stages[i % stages.length];
-      tinyText.textContent = tinyLines[i % tinyLines.length];
-      i++;
-    }, 1300);
+    function setActiveStep(index){
+      stepEls.forEach((el, i) => {
+        if(!el) return;
+        el.classList.toggle("active", i === index);
+      });
+    }
+
+    function advance(){
+      const idx = tick % stages.length;
+      stageText.textContent = stages[idx];
+      stageText2.textContent = stages[idx];
+      tinyText.textContent = tiny[idx % tiny.length];
+      setActiveStep(Math.min(idx, stepEls.length - 1));
+      tick += 1;
+    }
+
+    advance();
+    const interval = setInterval(advance, 1400);
 
     setTimeout(() => {
-      clearInterval(timer);
+      clearInterval(interval);
       stageText.textContent = "Growth complete.";
+      stageText2.textContent = "Growth complete.";
       tinyText.textContent = "Opening Aarambh AI X...";
+      setActiveStep(stepEls.length - 1);
       window.location.href = "aarambh-ai-x.html";
-    }, 8800);
+    }, 10800);
   </script>
 </body>
 </html>
