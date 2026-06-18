@@ -1,11 +1,624 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0;url=aarambh-ai-x.html">
-    <title>Redirecting to Aarambh AI X...</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aarambh AI X</title>
+  <meta http-equiv="refresh" content="9;url=aarambh-ai-x.html" />
+
+  <style>
+    :root{
+      --bg1:#07111f;
+      --bg2:#0f1f33;
+      --bg3:#17324f;
+      --text:#eaf2ff;
+      --muted:#9fb3cb;
+      --line:rgba(255,255,255,.09);
+      --green:#4ade80;
+      --green2:#22c55e;
+      --soil:#5b3a24;
+      --soil2:#3f2718;
+      --sun:#ffd166;
+      --water:#60a5fa;
+      --shadow:0 24px 70px rgba(0,0,0,.35);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      overflow:hidden;
+      color:var(--text);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,209,102,.18), transparent 18%),
+        radial-gradient(circle at 80% 15%, rgba(96,165,250,.16), transparent 20%),
+        linear-gradient(180deg,var(--bg1),var(--bg2) 52%, var(--bg3));
+    }
+
+    .sky{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+    }
+
+    .cloud{
+      position:absolute;
+      top:10%;
+      width:120px;
+      height:38px;
+      border-radius:999px;
+      background:rgba(255,255,255,.14);
+      filter:blur(.2px);
+      animation: drift linear infinite;
+    }
+    .cloud::before,.cloud::after{
+      content:"";
+      position:absolute;
+      background:rgba(255,255,255,.14);
+      border-radius:999px;
+    }
+    .cloud::before{width:52px;height:52px;left:16px;top:-20px}
+    .cloud::after{width:44px;height:44px;right:18px;top:-14px}
+    .c1{left:-140px;top:12%;animation-duration:34s;transform:scale(1.1)}
+    .c2{left:-220px;top:20%;animation-duration:42s;transform:scale(.8);opacity:.65}
+    .c3{left:-180px;top:7%;animation-duration:50s;transform:scale(.65);opacity:.5}
+
+    @keyframes drift{
+      from{transform:translateX(-10vw)}
+      to{transform:translateX(120vw)}
+    }
+
+    .wrap{
+      height:100%;
+      display:grid;
+      place-items:center;
+      padding:22px;
+      position:relative;
+      z-index:2;
+    }
+
+    .card{
+      width:min(720px,100%);
+      padding:28px 24px 24px;
+      border:1px solid var(--line);
+      border-radius:28px;
+      background:linear-gradient(180deg, rgba(8,18,32,.72), rgba(10,20,34,.58));
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(18px);
+      text-align:center;
+    }
+
+    .brand{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:10px;
+      margin-bottom:18px;
+      font-weight:800;
+      letter-spacing:-.03em;
+      font-size:1.15rem;
+    }
+    .brand-mark{
+      width:42px;height:42px;border-radius:14px;
+      display:grid;place-items:center;
+      background:linear-gradient(135deg,#5eead4,#60a5fa);
+      color:#07111f;
+      box-shadow:0 10px 30px rgba(96,165,250,.25);
+    }
+
+    h1{
+      margin:8px 0 8px;
+      font-size:clamp(2rem,4vw,3.4rem);
+      line-height:1.02;
+      letter-spacing:-.05em;
+    }
+
+    .sub{
+      margin:0 auto 22px;
+      max-width:52ch;
+      color:var(--muted);
+      line-height:1.7;
+      font-size:1rem;
+    }
+
+    .scene{
+      position:relative;
+      height:360px;
+      margin:10px auto 8px;
+      display:grid;
+      place-items:end center;
+    }
+
+    .sun{
+      position:absolute;
+      top:0;
+      right:18%;
+      font-size:2.1rem;
+      animation: float 3s ease-in-out infinite;
+      filter:drop-shadow(0 10px 30px rgba(255,209,102,.18));
+    }
+
+    .hill{
+      position:absolute;
+      bottom:20px;
+      left:50%;
+      transform:translateX(-50%);
+      width:min(520px,92%);
+      height:150px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(34,197,94,.26), transparent 45%),
+        linear-gradient(180deg,#174429,#0f331d);
+      border-radius:180px 180px 26px 26px;
+      box-shadow:inset 0 16px 22px rgba(255,255,255,.04);
+    }
+
+    .soil{
+      position:absolute;
+      bottom:0;
+      left:50%;
+      transform:translateX(-50%);
+      width:min(560px,96%);
+      height:94px;
+      border-radius:26px 26px 20px 20px;
+      background:linear-gradient(180deg,var(--soil),var(--soil2));
+      box-shadow:inset 0 14px 24px rgba(0,0,0,.25);
+      overflow:hidden;
+    }
+
+    .soil::before{
+      content:"";
+      position:absolute;
+      inset:12px 18px auto 18px;
+      height:14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+      opacity:.45;
+    }
+
+    .farmer{
+      position:absolute;
+      left:20%;
+      bottom:78px;
+      width:110px;
+      height:160px;
+      transform-origin:bottom center;
+      animation: walk-in 2.6s ease-in-out forwards;
+    }
+
+    .head{
+      position:absolute;
+      top:0; left:38px;
+      width:34px;height:34px;border-radius:50%;
+      background:#f2c7a5;
+      box-shadow:inset 0 -2px 0 rgba(0,0,0,.06);
+    }
+
+    .hat{
+      position:absolute;
+      top:-7px; left:28px;
+      width:52px;height:18px;
+      border-radius:999px;
+      background:#9a6b2f;
+      transform:rotate(-3deg);
+    }
+    .hat::after{
+      content:"";
+      position:absolute;
+      left:7px; top:10px;
+      width:38px;height:6px;border-radius:999px;
+      background:#7c5327;
+    }
+
+    .body{
+      position:absolute;
+      top:34px; left:31px;
+      width:48px;height:52px;
+      border-radius:14px;
+      background:linear-gradient(180deg,#5eead4,#38bdf8);
+      box-shadow:inset 0 -4px 0 rgba(0,0,0,.08);
+    }
+
+    .leg{
+      position:absolute;
+      top:82px;
+      width:12px;height:48px;border-radius:999px;
+      background:#f2c7a5;
+      transform-origin:top center;
+    }
+    .leg.left{left:38px; animation: step-left 2.6s ease-in-out forwards}
+    .leg.right{left:60px; animation: step-right 2.6s ease-in-out forwards}
+
+    .arm{
+      position:absolute;
+      top:40px;
+      width:12px;height:48px;border-radius:999px;
+      background:#f2c7a5;
+      transform-origin:top center;
+    }
+    .arm.left{left:18px; transform:rotate(28deg); animation: arm-wave 1.8s ease-in-out infinite}
+    .arm.right{left:78px; transform:rotate(-38deg);}
+
+    .can{
+      position:absolute;
+      left:78px;
+      top:22px;
+      font-size:1.7rem;
+      transform-origin:center;
+      animation: pour 2.6s ease-in-out forwards;
+      filter:drop-shadow(0 12px 24px rgba(96,165,250,.12));
+    }
+
+    .water-stream{
+      position:absolute;
+      left:112px;
+      top:42px;
+      width:90px;
+      height:120px;
+      opacity:0;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(96,165,250,.95) 0 2px, transparent 3px) 0 0 / 16px 18px,
+        linear-gradient(180deg, rgba(96,165,250,.55), rgba(96,165,250,.02));
+      clip-path:polygon(20% 0, 80% 0, 58% 100%, 40% 100%);
+      filter:blur(.4px);
+      animation: water 2.6s ease-in-out forwards;
+    }
+
+    .bed{
+      position:absolute;
+      bottom:26px;
+      left:50%;
+      transform:translateX(-50%);
+      width:220px;
+      height:88px;
+    }
+
+    .seed{
+      position:absolute;
+      left:50%;
+      bottom:26px;
+      width:14px;height:14px;border-radius:50%;
+      background:linear-gradient(180deg,#d7a76b,#a86c31);
+      transform:translateX(-50%) scale(.9);
+      animation: seed-drop 2.6s ease-in-out forwards;
+      box-shadow:0 4px 10px rgba(0,0,0,.22);
+    }
+
+    .sprout{
+      position:absolute;
+      left:50%;
+      bottom:36px;
+      width:18px;height:22px;
+      transform:translateX(-50%) scaleY(0);
+      transform-origin:bottom center;
+      opacity:0;
+      animation: sprout 2.6s 2.3s ease-out forwards;
+    }
+
+    .stem{
+      position:absolute;
+      left:8px;
+      bottom:0;
+      width:2px;
+      height:20px;
+      background:var(--green);
+      border-radius:999px;
+      box-shadow:0 0 14px rgba(74,222,128,.25);
+    }
+    .leaf{
+      position:absolute;
+      width:16px;height:10px;
+      background:var(--green);
+      border-radius:999px 999px 999px 0;
+      top:3px;
+    }
+    .leaf.l{left:-7px; transform:rotate(-35deg)}
+    .leaf.r{left:8px; transform:scaleX(-1) rotate(-35deg)}
+
+    .plant{
+      position:absolute;
+      left:50%;
+      bottom:28px;
+      width:62px;height:120px;
+      transform:translateX(-50%) scale(.2);
+      transform-origin:bottom center;
+      opacity:0;
+      animation: plant-grow 2.8s 4.4s ease-out forwards;
+    }
+
+    .plant .stem{
+      left:30px;
+      height:70px;
+      width:3px;
+      background:linear-gradient(180deg,#4ade80,#16a34a);
+    }
+    .plant .leaf{
+      width:28px;height:16px;
+      top:14px;
+      background:linear-gradient(180deg,#4ade80,#22c55e);
+    }
+    .plant .leaf.l{left:3px}
+    .plant .leaf.r{left:29px}
+    .plant .leaf.l2{top:36px; left:0; transform:rotate(-28deg)}
+    .plant .leaf.r2{top:36px; left:32px; transform:scaleX(-1) rotate(-28deg)}
+    .plant .flower{
+      position:absolute;
+      top:-16px;
+      left:18px;
+      font-size:1.4rem;
+      animation: bloom 2s 5.2s ease-out forwards;
+      opacity:0;
+    }
+
+    .progress-wrap{
+      width:min(520px,100%);
+      margin:8px auto 0;
+    }
+
+    .status{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:14px;
+      margin:8px 0 10px;
+      color:var(--muted);
+      font-size:.95rem;
+    }
+
+    .dots{
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .dots span{
+      width:8px;height:8px;border-radius:50%;
+      background:rgba(234,242,255,.8);
+      animation: pulse 1.2s infinite ease-in-out;
+    }
+    .dots span:nth-child(2){animation-delay:.2s}
+    .dots span:nth-child(3){animation-delay:.4s}
+
+    .bar{
+      height:14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.08);
+      overflow:hidden;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .fill{
+      height:100%;
+      width:0%;
+      border-radius:inherit;
+      background:linear-gradient(90deg,#22c55e,#5eead4,#60a5fa);
+      box-shadow:0 0 18px rgba(96,165,250,.24);
+      animation: load 8.8s linear forwards;
+    }
+
+    .tiny{
+      margin-top:12px;
+      color:#d7e3f0;
+      opacity:.88;
+      font-size:.92rem;
+      min-height:22px;
+    }
+
+    .hint{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:.82rem;
+      letter-spacing:.02em;
+    }
+
+    .redirect{
+      margin-top:16px;
+      font-size:.9rem;
+      color:#cde6d5;
+      opacity:.88;
+    }
+
+    @keyframes walk-in{
+      0%{transform:translateX(-130px)}
+      55%{transform:translateX(12px)}
+      80%{transform:translateX(0)}
+      100%{transform:translateX(0)}
+    }
+
+    @keyframes step-left{
+      0%,100%{transform:rotate(8deg)}
+      50%{transform:rotate(-16deg)}
+    }
+
+    @keyframes step-right{
+      0%,100%{transform:rotate(-6deg)}
+      50%{transform:rotate(14deg)}
+    }
+
+    @keyframes arm-wave{
+      0%,100%{transform:rotate(26deg)}
+      50%{transform:rotate(40deg)}
+    }
+
+    @keyframes pour{
+      0%,28%{transform:rotate(0deg) translateY(0)}
+      35%{transform:rotate(-14deg) translateY(0)}
+      58%{transform:rotate(-18deg) translateY(6px)}
+      100%{transform:rotate(0deg) translateY(0)}
+    }
+
+    @keyframes water{
+      0%,30%{opacity:0; transform:translateY(-8px) scaleY(.6)}
+      38%{opacity:1}
+      60%{opacity:1; transform:translateY(10px) scaleY(1)}
+      100%{opacity:0; transform:translateY(22px) scaleY(1.1)}
+    }
+
+    @keyframes seed-drop{
+      0%,22%{opacity:0; transform:translateX(-50%) translateY(-30px) scale(.6)}
+      35%{opacity:1}
+      56%{transform:translateX(-50%) translateY(0) scale(1)}
+      100%{transform:translateX(-50%) translateY(0) scale(1)}
+    }
+
+    @keyframes sprout{
+      0%{opacity:0; transform:translateX(-50%) scaleY(0)}
+      35%{opacity:1; transform:translateX(-50%) scaleY(.2)}
+      70%{opacity:1; transform:translateX(-50%) scaleY(1)}
+      100%{opacity:0; transform:translateX(-50%) scaleY(1)}
+    }
+
+    @keyframes plant-grow{
+      0%{opacity:0; transform:translateX(-50%) scale(.15)}
+      18%{opacity:0}
+      35%{opacity:1; transform:translateX(-50%) scale(.35)}
+      65%{opacity:1; transform:translateX(-50%) scale(.8)}
+      100%{opacity:1; transform:translateX(-50%) scale(1)}
+    }
+
+    @keyframes bloom{
+      0%,70%{opacity:0; transform:translateY(10px) scale(.7)}
+      100%{opacity:1; transform:translateY(0) scale(1)}
+    }
+
+    @keyframes load{
+      0%{width:0%}
+      18%{width:12%}
+      36%{width:28%}
+      52%{width:48%}
+      66%{width:66%}
+      80%{width:84%}
+      100%{width:100%}
+    }
+
+    @keyframes pulse{
+      0%,100%{transform:scale(.85);opacity:.45}
+      50%{transform:scale(1.15);opacity:1}
+    }
+
+    @keyframes float{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-6px)}
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      *,
+      *::before,
+      *::after{
+        animation:none !important;
+        transition:none !important;
+        scroll-behavior:auto !important;
+      }
+    }
+  </style>
 </head>
 <body>
-    <p>Redirecting to <a href="aarambh-ai-x.html">Aarambh AI X</a>...</p>
+  <div class="sky" aria-hidden="true">
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="cloud c3"></div>
+  </div>
+
+  <main class="wrap">
+    <section class="card" aria-label="Loading screen">
+      <div class="brand">
+        <div class="brand-mark">🌱</div>
+        <div>Aarambh AI X</div>
+      </div>
+
+      <h1>Planting intelligence, growing results.</h1>
+      <p class="sub">
+        A tiny farm scene is preparing your dashboard. Seed planted, water flowing, plant growing, and then the app opens.
+      </p>
+
+      <div class="scene">
+        <div class="sun">☀️</div>
+
+        <div class="farmer">
+          <div class="hat"></div>
+          <div class="head"></div>
+          <div class="body"></div>
+          <div class="arm left"></div>
+          <div class="arm right"></div>
+          <div class="leg left"></div>
+          <div class="leg right"></div>
+          <div class="can">🚿</div>
+          <div class="water-stream"></div>
+        </div>
+
+        <div class="hill"></div>
+        <div class="soil"></div>
+        <div class="bed">
+          <div class="seed"></div>
+
+          <div class="sprout">
+            <div class="stem"></div>
+            <div class="leaf l"></div>
+            <div class="leaf r"></div>
+          </div>
+
+          <div class="plant">
+            <div class="stem"></div>
+            <div class="leaf l"></div>
+            <div class="leaf r"></div>
+            <div class="leaf l2"></div>
+            <div class="leaf r2"></div>
+            <div class="flower">🌿</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="status">
+          <span id="stageText">Preparing the soil...</span>
+          <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
+        </div>
+
+        <div class="bar" aria-label="Loading progress">
+          <div class="fill"></div>
+        </div>
+
+        <div class="tiny" id="tinyText">Loading your farm intelligence dashboard.</div>
+        <div class="hint">Redirecting to Aarambh AI X automatically.</div>
+        <div class="redirect">If nothing happens, open <strong>aarambh-ai-x.html</strong>.</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const stages = [
+      "Preparing the soil...",
+      "Planting the seed...",
+      "Watering the crop...",
+      "Watching it sprout...",
+      "Growing stronger...",
+      "Almost ready..."
+    ];
+
+    const tinyLines = [
+      "Soil checked. Seed planted.",
+      "Water flowing. Growth begins.",
+      "Sprout detected. Progress steady.",
+      "Leaves opening. Dashboard is almost ready.",
+      "Farm intelligence is fully loaded."
+    ];
+
+    const stageText = document.getElementById("stageText");
+    const tinyText = document.getElementById("tinyText");
+
+    let i = 0;
+    const timer = setInterval(() => {
+      stageText.textContent = stages[i % stages.length];
+      tinyText.textContent = tinyLines[i % tinyLines.length];
+      i++;
+    }, 1300);
+
+    setTimeout(() => {
+      clearInterval(timer);
+      stageText.textContent = "Growth complete.";
+      tinyText.textContent = "Opening Aarambh AI X...";
+      window.location.href = "aarambh-ai-x.html";
+    }, 8800);
+  </script>
 </body>
 </html>
