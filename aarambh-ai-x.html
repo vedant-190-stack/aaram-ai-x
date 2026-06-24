@@ -123,7 +123,7 @@
       padding:10px 18px;border-radius:12px;
       font-size:0.85rem;color:var(--warn);
       margin-bottom:16px;display:none;
-      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      align-items:center;justify-content:space-between;gap:12px;
       flex-wrap:wrap;
     }
     #guestBanner a{color:var(--primary);text-decoration:underline;cursor:pointer;font-weight:600}
@@ -455,7 +455,6 @@
 </head>
 <body>
 
-  <!-- ── Firebase Auth Screen ── -->
   <div id="authScreen">
     <div class="auth-card">
       <div class="auth-logo">🌱</div>
@@ -475,7 +474,6 @@
     </div>
   </div>
 
-  <!-- Loading screen -->
   <div class="loader" id="loader" style="display:none">
     <div class="loader-inner">
       <div class="loader-icon">🌱</div>
@@ -485,13 +483,10 @@
     </div>
   </div>
 
-  <!-- Toast -->
   <div class="toast" id="toast"></div>
 
-  <!-- Main app (hidden until auth) -->
   <div id="appShell" style="display:none">
 
-    <!-- Navbar -->
     <header class="nav">
       <div class="wrap nav-inner">
         <a class="brand" href="#top">
@@ -518,12 +513,10 @@
 
     <main class="wrap" id="top">
 
-      <!-- Guest Banner -->
       <div id="guestBanner" style="display:none;margin-top:16px">
         👋 You are in guest mode — <a id="signUpLink">Sign up free</a> to save your farm history and preferences.
       </div>
 
-      <!-- Hero -->
       <section class="hero" id="weather">
         <div class="panel pad">
           <div class="badge"><span class="dot"></span>Live data · Location aware</div>
@@ -595,7 +588,6 @@
         </aside>
       </section>
 
-      <!-- Crop recommendation -->
       <section class="section" id="recommend">
         <div class="section-head">
           <h2>Crop recommendation</h2>
@@ -633,7 +625,6 @@
         </div>
       </section>
 
-      <!-- Climate simulator -->
       <section class="section" id="sim">
         <div class="section-head">
           <h2>Future climate simulator</h2>
@@ -676,7 +667,6 @@
         </div>
       </section>
 
-      <!-- Charts -->
       <section class="section" id="charts">
         <div class="section-head">
           <h2>Crop suitability chart</h2>
@@ -689,7 +679,6 @@
         </div>
       </section>
 
-      <!-- Map -->
       <section class="section" id="mapSection">
         <div class="section-head">
           <h2>Farm map</h2>
@@ -700,7 +689,6 @@
         </div>
       </section>
 
-      <!-- AI Chat -->
       <section class="section" id="ask">
         <div class="section-head">
           <h2>AI farm advisor</h2>
@@ -737,7 +725,7 @@
             </div>
             <div style="height:12px"></div>
             <div style="font-size:0.8rem;color:var(--muted);line-height:1.7;padding:0 4px">
-              Data sources: Open-Meteo (weather, forecast, air quality, elevation), BigDataCloud (reverse geocoding), OpenStreetMap (map tiles). AI advisor uses live dashboard data powered by Groq.
+              Data sources: Open-Meteo (weather, forecast, air quality, elevation), BigDataCloud (reverse geocoding), OpenStreetMap (map tiles). AI advisor uses live dashboard data with a built-in farm intelligence engine.
             </div>
           </div>
         </div>
@@ -751,58 +739,81 @@
           <a href="https://groq.com" target="_blank" rel="noopener">AI Engine — Groq</a>
         </span>
       </footer>
+
     </main>
-  </div><!-- end appShell -->
+  </div>
 
-  <!-- Firebase SDK v10 -->
-  <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged }
-    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-  import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp }
-    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
+  <script>
   'use strict';
 
-  // ── Firebase config ──────────────────────────────────────────────────────
-  const firebaseConfig = {
-    apiKey: "AIzaSyDaIhf9Z4umVHxNH1Byjowpg_Bb9AxCCpc",
-    authDomain: "aarambh-ai-x.firebaseapp.com",
-    projectId: "aarambh-ai-x",
-    storageBucket: "aarambh-ai-x.firebasestorage.app",
-    messagingSenderId: "896342721418",
-    appId: "1:896342721418:web:78b6b440a9cb1d41283e73",
-    measurementId: "G-W3JS1EHZN7"
-  };
-
-  const fbApp  = initializeApp(firebaseConfig);
-  const auth   = getAuth(fbApp);
-  const db     = getFirestore(fbApp);
-  const gProvider = new GoogleAuthProvider();
-
-  // Current session ID for Firestore grouping
-  const SESSION_ID = `session_${Date.now()}`;
-
-  // ── Crop data ────────────────────────────────────────────────────────────
+  // ───────────────────────────────── DATA ─────────────────────────────────
   const CROPS = [
-    { name:'Wheat',   emoji:'🌾', seasons:['rabi'],           temp:[8,24],  rain:[300,900],  hum:[35,65], soil:['loam','clay'],         water:'Moderate', note:'Thrives in cool, dry winters with moderate rainfall.' },
-    { name:'Rice',    emoji:'🍚', seasons:['kharif'],          temp:[20,34], rain:[900,2000], hum:[55,95], soil:['clay','black'],        water:'High',     note:'Needs warm, wet conditions and standing water.' },
-    { name:'Maize',   emoji:'🌽', seasons:['kharif','zaid'],   temp:[18,32], rain:[500,1200], hum:[40,75], soil:['loam','black'],        water:'Moderate', note:'A flexible staple suited to many Indian climates.' },
-    { name:'Millet',  emoji:'🌿', seasons:['kharif','zaid'],   temp:[20,38], rain:[200,700],  hum:[25,65], soil:['sandy','loam','black'],water:'Low',      note:'Drought-resilient, ideal for arid and semi-arid zones.' },
-    { name:'Pulses',  emoji:'🫘', seasons:['rabi','kharif'],   temp:[15,30], rain:[250,900],  hum:[30,75], soil:['loam','black'],        water:'Low',      note:'Nitrogen-fixing legumes for water-limited farms.' },
-    { name:'Soybean', emoji:'🌱', seasons:['kharif'],          temp:[20,30], rain:[600,1000], hum:[50,80], soil:['loam','black'],        water:'Moderate', note:'Rich oilseed crop for black soil regions.' },
-    { name:'Cotton',  emoji:'☁️', seasons:['kharif'],          temp:[22,38], rain:[500,1000], hum:[35,70], soil:['black','clay'],        water:'Moderate', note:'High-value cash crop for warm, long-season zones.' }
+    {
+      name:'Wheat', emoji:'🌾',
+      seasons:['rabi'],
+      temp:[8,24],rain:[300,900],hum:[35,65],
+      soil:['loam','clay'],
+      water:'Moderate',
+      note:'Thrives in cool, dry winters with moderate rainfall.'
+    },
+    {
+      name:'Rice', emoji:'🍚',
+      seasons:['kharif'],
+      temp:[20,34],rain:[900,2000],hum:[55,95],
+      soil:['clay','black'],
+      water:'High',
+      note:'Needs warm, wet conditions and standing water.'
+    },
+    {
+      name:'Maize', emoji:'🌽',
+      seasons:['kharif','zaid'],
+      temp:[18,32],rain:[500,1200],hum:[40,75],
+      soil:['loam','black'],
+      water:'Moderate',
+      note:'A flexible staple suited to many Indian climates.'
+    },
+    {
+      name:'Millet', emoji:'🌿',
+      seasons:['kharif','zaid'],
+      temp:[20,38],rain:[200,700],hum:[25,65],
+      soil:['sandy','loam','black'],
+      water:'Low',
+      note:'Drought-resilient, ideal for arid and semi-arid zones.'
+    },
+    {
+      name:'Pulses', emoji:'🫘',
+      seasons:['rabi','kharif'],
+      temp:[15,30],rain:[250,900],hum:[30,75],
+      soil:['loam','black'],
+      water:'Low',
+      note:'Nitrogen-fixing legumes for water-limited farms.'
+    },
+    {
+      name:'Soybean', emoji:'🌱',
+      seasons:['kharif'],
+      temp:[20,30],rain:[600,1000],hum:[50,80],
+      soil:['loam','black'],
+      water:'Moderate',
+      note:'Rich oilseed crop for black soil regions.'
+    },
+    {
+      name:'Cotton', emoji:'☁️',
+      seasons:['kharif'],
+      temp:[22,38],rain:[500,1000],hum:[35,70],
+      soil:['black','clay'],
+      water:'Moderate',
+      note:'High-value cash crop for warm, long-season zones.'
+    }
   ];
 
-  // ── State ────────────────────────────────────────────────────────────────
+  // ───────────────────────────────── STATE ────────────────────────────────
   const $ = id => document.getElementById(id);
   const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
   const round = (v,d=0) => { const p=10**d; return Math.round(v*p)/p; };
   const safe  = (v,fb=0) => { const n=Number(v); return isFinite(n)?n:fb; };
-  const fmtAqi   = v => v==null?'--':v<20?'Good':v<40?'Fair':v<60?'Moderate':v<80?'Poor':'Very poor';
-  const wxIcon   = c => ({0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'❄️',80:'🌦️',95:'⛈️'}[c]||'🌡️');
-  const wxLabel  = c => ({0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Snow',80:'Showers',95:'Thunderstorm'}[c]||'Weather data');
-  const ndviLabel= v => v==null?'Unknown':v<0?'Water/bare':v<0.2?'Sparse/stressed':v<0.4?'Moderate':v<0.6?'Good':'Very healthy';
+  const fmtAqi = v => v==null?'--':v<20?'Good':v<40?'Fair':v<60?'Moderate':v<80?'Poor':'Very poor';
+  const wxIcon = c => ({0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'❄️',80:'🌦️',95:'⛈️'}[c]||'🌡️');
+  const wxLabel= c => ({0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Snow',80:'Showers',95:'Thunderstorm'}[c]||'Weather data');
 
   const S = {
     theme: localStorage.getItem('agrix-theme')||'dark',
@@ -810,52 +821,42 @@
     wx:{temp:26,hum:52,rain7:42,wind:9,code:0,daily:[]},
     aq:{aqi:null,pm25:null,uv:null},
     future:{t:0,r:0,h:0},
-    map:null,marker:null,chartInst:null,aiLoading:false,
-    agro:{ndvi:null,moisture0:null,soilTemp0:null},
-    user: null,  // Firebase user object
-    isGuest: false
+    map:null,marker:null,
+    chartInst:null,
+    aiLoading:false,
+    agro:{ ndvi:null, moisture0:null, soilTemp0:null, polygonId:null, updatedAt:null },
+    agroKey: localStorage.getItem('agro_key') || ''
   };
 
-  // ── Firestore helpers ────────────────────────────────────────────────────
-  async function savePreferences(){
-    if(!S.user || S.isGuest) return;
-    try{
-      await setDoc(doc(db,'users',S.user.uid,'preferences','main'),{
-        defaultSeason: $('season').value,
-        defaultSoil:   $('soil').value,
-        lastLocation:  S.place,
-        updatedAt:     serverTimestamp()
-      },{merge:true});
-    }catch(e){ console.warn('Prefs save failed',e); }
+  // ───────────────────────────────── AUTH UI LOGIC ────────────────────────
+  function setupAuthUI() {
+    $('guestBtn').addEventListener('click', () => {
+      $('authScreen').style.display = 'none';
+      $('appShell').style.display = 'block';
+      $('guestBanner').style.display = 'flex';
+      $('navUser').style.display = 'none';
+      $('signOutBtn').style.display = 'block';
+      initApp();
+    });
+
+    // Stub for Google Sign In
+    $('googleSignInBtn').addEventListener('click', () => {
+      $('authScreen').style.display = 'none';
+      $('appShell').style.display = 'block';
+      $('guestBanner').style.display = 'none';
+      $('navUser').style.display = 'inline-block';
+      $('navUser').textContent = 'Signed in as User';
+      $('signOutBtn').style.display = 'inline-block';
+      initApp();
+    });
+
+    $('signOutBtn').addEventListener('click', () => {
+      $('authScreen').style.display = 'grid';
+      $('appShell').style.display = 'none';
+    });
   }
 
-  async function loadPreferences(){
-    if(!S.user || S.isGuest) return;
-    try{
-      const snap = await getDoc(doc(db,'users',S.user.uid,'preferences','main'));
-      if(snap.exists()){
-        const d = snap.data();
-        if(d.defaultSeason) $('season').value = d.defaultSeason;
-        if(d.defaultSoil)   $('soil').value   = d.defaultSoil;
-        if(d.lastLocation){
-          $('city').value = d.lastLocation;
-          // Don't auto-load — let geo detection run first
-        }
-      }
-    }catch(e){ console.warn('Prefs load failed',e); }
-  }
-
-  async function saveChatMessage(role, text){
-    if(!S.user || S.isGuest) return;
-    try{
-      await addDoc(
-        collection(db,'users',S.user.uid,'sessions',SESSION_ID,'messages'),
-        { role, text, timestamp: serverTimestamp(), location: S.place }
-      );
-    }catch(e){ console.warn('Chat save failed',e); }
-  }
-
-  // ── Scoring ──────────────────────────────────────────────────────────────
+  // ───────────────────────────────── SCORING ──────────────────────────────
   function currentRisk(){
     const temp = S.wx.temp + S.future.t;
     const rain = S.wx.rain7 * (1 + S.future.r/100);
@@ -876,11 +877,11 @@
     const season = $('season').value;
     const soil   = $('soil').value;
     let s = 100;
-    s -= temp<crop.temp[0]?(crop.temp[0]-temp)*5:temp>crop.temp[1]?(temp-crop.temp[1])*5:0;
-    s -= rain<crop.rain[0]?(crop.rain[0]-rain)/12:rain>crop.rain[1]?(rain-crop.rain[1])/20:0;
-    s -= hum<crop.hum[0]?(crop.hum[0]-hum)*1.4:hum>crop.hum[1]?(hum-crop.hum[1])*1.1:0;
-    s -= crop.seasons.includes(season)?0:20;
-    s -= crop.soil.includes(soil)?0:14;
+    s -= temp<crop.temp[0] ? (crop.temp[0]-temp)*5 : temp>crop.temp[1] ? (temp-crop.temp[1])*5 : 0;
+    s -= rain<crop.rain[0] ? (crop.rain[0]-rain)/12 : rain>crop.rain[1] ? (rain-crop.rain[1])/20 : 0;
+    s -= hum<crop.hum[0] ? (crop.hum[0]-hum)*1.4 : hum>crop.hum[1] ? (hum-crop.hum[1])*1.1 : 0;
+    s -= crop.seasons.includes(season) ? 0 : 20;
+    s -= crop.soil.includes(soil) ? 0 : 14;
     return clamp(Math.round(s),0,100);
   }
 
@@ -888,7 +889,7 @@
     return CROPS.map(c=>({crop:c,score:cropScore(c)})).sort((a,b)=>b.score-a.score);
   }
 
-  // ── Theme ────────────────────────────────────────────────────────────────
+  // ───────────────────────────────── THEME ────────────────────────────────
   function applyTheme(t){
     S.theme = t==='light'?'light':'dark';
     document.documentElement.setAttribute('data-theme',S.theme);
@@ -897,7 +898,7 @@
     if(S.chartInst) drawChart();
   }
 
-  // ── Toast ────────────────────────────────────────────────────────────────
+  // ───────────────────────────────── TOAST ────────────────────────────────
   let toastTimer=null;
   function toast(msg,type=''){
     const t=$('toast');
@@ -907,7 +908,7 @@
     toastTimer=setTimeout(()=>t.className='toast',3000);
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────
+  // ───────────────────────────────── RENDER ───────────────────────────────
   function renderAll(){
     syncSliders();
     const risk = currentRisk();
@@ -917,6 +918,7 @@
     const rain  = round(S.wx.rain7*(1+S.future.r/100),0);
     const hum   = clamp(Math.round(S.wx.hum+S.future.h),0,100);
 
+    // Hero stats
     $('loc').textContent = S.place;
     $('locSub').textContent = `${wxLabel(S.wx.code)} · Elev. ${S.elev!=null?S.elev:'--'} m`;
     $('risk').textContent = risk;
@@ -933,10 +935,12 @@
     $('bestSub').textContent = `${best.score}/100 · ${best.crop.note}`;
     $('riskBar').style.width = `${risk}%`;
 
+    // Status bar
     const el=$('status');
     el.className = 'status-bar '+(risk<35?'ok':risk<70?'warn':'bad');
     el.textContent = `${S.place}: ${best.crop.emoji} ${best.crop.name} is the best match — climate risk is ${risk}/100.`;
 
+    // Crop grid
     $('cropGrid').innerHTML = list.map((item,i)=>`
       <div class="crop-card${i===0?' top':''}">
         <div class="crop-score">${item.crop.emoji} ${item.score}<span style="font-size:0.7rem;color:var(--muted);font-weight:500">/100</span></div>
@@ -950,15 +954,20 @@
       </div>
     `).join('');
 
+    // Forecast
     renderForecast();
 
+    // Simulator output
     $('simTemp').textContent = `${temp}°C`;
     $('simRisk').textContent = `${risk}/100`;
     $('simRain').textContent = `${rain} mm`;
     $('simBest').textContent = best.crop.name;
     $('simText').textContent = `At ${temp}°C, rainfall ${S.future.r>=0?'+':''}${S.future.r}%, humidity ${S.future.h>=0?'+':''}${S.future.h}%, the farm risk is ${risk}/100 and the top crop is ${best.crop.name}.`;
-    $('simPills').innerHTML = list.map(item=>`<span class="sim-pill">${item.crop.emoji} ${item.crop.name} ${item.score}/100</span>`).join('');
+    $('simPills').innerHTML = list.map(item=>`
+      <span class="sim-pill">${item.crop.emoji} ${item.crop.name} ${item.score}/100</span>
+    `).join('');
 
+    // Info panel (chat sidebar)
     $('iLoc').textContent  = S.place;
     $('iElev').textContent = S.elev!=null?`${S.elev} m`:'--';
     $('iTemp').textContent = `${temp}°C`;
@@ -968,7 +977,10 @@
     $('iRisk').textContent = `${risk}/100`;
     $('iBest').textContent = best.crop.name;
 
+    // Chart
     drawChart();
+
+    // Map
     refreshMap();
   }
 
@@ -991,47 +1003,101 @@
     `).join('');
   }
 
-  // ── Chart ────────────────────────────────────────────────────────────────
+  // ───────────────────────────────── CHART ────────────────────────────────
   function drawChart(){
-    const canvas=$('cropChart');
+    const canvas = $('cropChart');
     if(!canvas) return;
     if(!window.Chart){setTimeout(drawChart,400);return;}
-    const list=ranking(), isDark=S.theme==='dark';
-    const labels=list.map(i=>i.crop.name), data=list.map(i=>i.score);
-    const colors=data.map(v=>v>=75?(isDark?'rgba(61,227,162,.80)':'rgba(15,110,86,.85)'):v>=50?(isDark?'rgba(245,195,66,.75)':'rgba(186,117,23,.85)'):(isDark?'rgba(240,112,112,.72)':'rgba(163,45,45,.85)'));
-    if(S.chartInst){S.chartInst.destroy();S.chartInst=null;}
-    S.chartInst=new Chart(canvas,{
+
+    const list  = ranking();
+    const isDark = S.theme==='dark';
+    const labels = list.map(i=>i.crop.name);
+    const data   = list.map(i=>i.score);
+    const colors = data.map(v =>
+      v>=75 ? (isDark?'rgba(61,227,162,.80)':'rgba(15,110,86,.85)') :
+      v>=50 ? (isDark?'rgba(245,195,66,.75)':'rgba(186,117,23,.85)') :
+              (isDark?'rgba(240,112,112,.72)':'rgba(163,45,45,.85)')
+    );
+
+    if(S.chartInst){ S.chartInst.destroy(); S.chartInst=null; }
+    S.chartInst = new Chart(canvas,{
       type:'bar',
-      data:{labels,datasets:[{label:'Suitability score',data,backgroundColor:colors,borderRadius:10,borderSkipped:false,borderWidth:0}]},
+      data:{
+        labels,
+        datasets:[{
+          label:'Suitability score',
+          data,
+          backgroundColor:colors,
+          borderRadius:10,
+          borderSkipped:false,
+          borderWidth:0
+        }]
+      },
       options:{
-        responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Score: ${ctx.raw}/100`}}},
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            callbacks:{
+              label:ctx=>`Score: ${ctx.raw}/100`
+            }
+          }
+        },
         scales:{
-          x:{grid:{display:false},ticks:{color:isDark?'#7a9ab8':'#4a6c90',font:{family:'DM Sans',weight:'600',size:13}},border:{display:false}},
-          y:{min:0,max:100,grid:{color:isDark?'rgba(255,255,255,.06)':'rgba(14,40,70,.07)'},ticks:{color:isDark?'#7a9ab8':'#4a6c90',font:{family:'DM Sans',size:12},stepSize:20},border:{display:false}}
+          x:{
+            grid:{display:false},
+            ticks:{
+              color:isDark?'#7a9ab8':'#4a6c90',
+              font:{family:'DM Sans',weight:'600',size:13}
+            },
+            border:{display:false}
+          },
+          y:{
+            min:0,max:100,
+            grid:{color:isDark?'rgba(255,255,255,.06)':'rgba(14,40,70,.07)'},
+            ticks:{
+              color:isDark?'#7a9ab8':'#4a6c90',
+              font:{family:'DM Sans',size:12},
+              stepSize:20
+            },
+            border:{display:false}
+          }
         }
       }
     });
   }
 
-  // ── Map ──────────────────────────────────────────────────────────────────
+  // ───────────────────────────────── MAP ──────────────────────────────────
   function initMap(){
-    if(typeof L==='undefined'){setTimeout(initMap,500);return;}
-    S.map=L.map('map',{zoomControl:true,scrollWheelZoom:false}).setView([20.5937,78.9629],5);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:18}).addTo(S.map);
-    const icon=L.divIcon({html:`<div style="width:30px;height:30px;background:linear-gradient(135deg,#4ee8c4,#5cb8f5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 0 14px rgba(78,232,196,.5);border:2px solid rgba(255,255,255,.25)">🌱</div>`,className:'',iconSize:[30,30],iconAnchor:[15,15]});
-    S.marker=L.marker([20.5937,78.9629],{icon}).addTo(S.map);
+    if(typeof L==='undefined'){
+      setTimeout(initMap,500);
+      return;
+    }
+    S.map = L.map('map',{zoomControl:true,scrollWheelZoom:false}).setView([20.5937,78.9629],5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© OpenStreetMap contributors',
+      maxZoom:18
+    }).addTo(S.map);
+
+    const markerHtml = `<div style="width:30px;height:30px;background:linear-gradient(135deg,#4ee8c4,#5cb8f5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 0 14px rgba(78,232,196,.5);border:2px solid rgba(255,255,255,.25)">🌱</div>`;
+    const icon = L.divIcon({html:markerHtml,className:'',iconSize:[30,30],iconAnchor:[15,15]});
+    S.marker = L.marker([20.5937,78.9629],{icon}).addTo(S.map);
     S.marker.bindPopup('Aarambh AI X — selected location');
+
+    // Click to teleport
     S.map.on('click',async e=>{
-      const {lat,lng}=e.latlng;
+      const {lat,lng} = e.latlng;
       try{
-        const place=await fetchJSON(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`).catch(()=>null);
-        const name=place?bigDataName(place):`${round(lat,3)}, ${round(lng,3)}`;
+        const place = await fetchJSON(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`).catch(()=>null);
+        const name = place ? bigDataName(place) : `${round(lat,3)}, ${round(lng,3)}`;
         await loadCoords(lat,lng,name);
-        $('city').value=name;
+        $('city').value = name;
         renderAll();
         toast(`📍 Switched to ${name}`,'success');
-      }catch(err){toast('Could not load data for that location.','error');}
+      }catch(err){
+        toast('Could not load data for that location.','error');
+      }
     });
   }
 
@@ -1039,10 +1105,16 @@
     if(!S.map||!S.marker||!S.lat||!S.lon) return;
     S.map.setView([S.lat,S.lon],9,{animate:true,duration:.8});
     S.marker.setLatLng([S.lat,S.lon]);
-    S.marker.setPopupContent(`<strong>${S.place}</strong><br>🌡️ Temp: ${round(S.wx.temp+S.future.t,1)}°C<br>💧 Rain (7d): ${round(S.wx.rain7*(1+S.future.r/100),0)} mm<br>🛡️ Risk: ${currentRisk()}/100<br>🏆 Best crop: ${ranking()[0].crop.name}`);
+    S.marker.setPopupContent(`
+      <strong>${S.place}</strong><br>
+      🌡️ Temp: ${round(S.wx.temp+S.future.t,1)}°C<br>
+      💧 Rain (7d): ${round(S.wx.rain7*(1+S.future.r/100),0)} mm<br>
+      🛡️ Risk: ${currentRisk()}/100<br>
+      🏆 Best crop: ${ranking()[0].crop.name}
+    `);
   }
 
-  // ── API ──────────────────────────────────────────────────────────────────
+  // ───────────────────────────────── API FETCH ────────────────────────────
   async function fetchJSON(url,timeout=10000){
     const ctrl=new AbortController();
     const timer=setTimeout(()=>ctrl.abort(),timeout);
@@ -1050,7 +1122,9 @@
       const r=await fetch(url,{signal:ctrl.signal});
       if(!r.ok) throw new Error(`HTTP ${r.status}`);
       return await r.json();
-    }finally{clearTimeout(timer);}
+    }finally{
+      clearTimeout(timer);
+    }
   }
 
   function bigDataName(d){
@@ -1058,61 +1132,81 @@
   }
 
   async function loadCoords(lat,lon,name){
-    const [wx,aq,elev]=await Promise.all([
+    const [wx,aq,elev] = await Promise.all([
       fetchJSON(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&forecast_days=7&timezone=auto`),
       fetchJSON(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=european_aqi,pm2_5,uv_index&timezone=auto`),
       fetchJSON(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`)
     ]);
-    S.lat=lat;S.lon=lon;S.place=name||'Location';
-    S.wx.temp  = safe(wx?.current?.temperature_2m,26);
-    S.wx.hum   = safe(wx?.current?.relative_humidity_2m,52);
-    S.wx.wind  = safe(wx?.current?.wind_speed_10m,9);
-    S.wx.code  = safe(wx?.current?.weather_code,0);
-    S.wx.rain7 = Array.isArray(wx?.daily?.precipitation_sum)?wx.daily.precipitation_sum.reduce((sum,v)=>sum+safe(v,0),0):42;
-    S.wx.daily = Array.isArray(wx?.daily?.time)?wx.daily.time.map((t,i)=>({
-      day:new Date(t).toLocaleDateString(undefined,{weekday:'short'}),
-      max:Math.round(safe(wx.daily.temperature_2m_max?.[i],0)),
-      min:Math.round(safe(wx.daily.temperature_2m_min?.[i],0)),
-      rain:Math.round(safe(wx.daily.precipitation_sum?.[i],0)),
-      code:safe(wx.daily.weather_code?.[i],S.wx.code)
-    })):[];
-    S.aq.aqi  = safe(aq?.current?.european_aqi,null)===-9999?null:safe(aq?.current?.european_aqi,null);
-    S.aq.pm25 = safe(aq?.current?.pm2_5,null);
-    S.aq.uv   = safe(aq?.current?.uv_index,null);
-    S.elev    = Array.isArray(elev?.elevation)?Math.round(safe(elev.elevation[0],0)):null;
+
+    S.lat=lat; S.lon=lon;
+    S.place=name||'Location';
+    S.wx.temp  = safe(wx?.current?.temperature_2m, 26);
+    S.wx.hum   = safe(wx?.current?.relative_humidity_2m, 52);
+    S.wx.wind  = safe(wx?.current?.wind_speed_10m, 9);
+    S.wx.code  = safe(wx?.current?.weather_code, 0);
+    S.wx.rain7 = Array.isArray(wx?.daily?.precipitation_sum)
+      ? wx.daily.precipitation_sum.reduce((sum,v)=>sum+safe(v,0),0) : 42;
+    S.wx.daily = Array.isArray(wx?.daily?.time)
+      ? wx.daily.time.map((t,i)=>({
+          day: new Date(t).toLocaleDateString(undefined,{weekday:'short'}),
+          max: Math.round(safe(wx.daily.temperature_2m_max?.[i],0)),
+          min: Math.round(safe(wx.daily.temperature_2m_min?.[i],0)),
+          rain: Math.round(safe(wx.daily.precipitation_sum?.[i],0)),
+          code: safe(wx.daily.weather_code?.[i], S.wx.code)
+        })) : [];
+    S.aq.aqi   = safe(aq?.current?.european_aqi, null)===-9999?null:safe(aq?.current?.european_aqi,null);
+    S.aq.pm25  = safe(aq?.current?.pm2_5, null);
+    S.aq.uv    = safe(aq?.current?.uv_index, null);
+    S.elev     = Array.isArray(elev?.elevation) ? Math.round(safe(elev.elevation[0],0)) : null;
+
+    // Load satellite / soil intelligence if an Agromonitoring key is available.
+    await loadAgroData().catch(()=>{});
   }
 
   async function searchCity(q){
     if(!q.trim()) return null;
-    const d=await fetchJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q.trim())}&count=1&language=en&format=json`);
-    const p=d?.results?.[0];
+    const d = await fetchJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q.trim())}&count=1&language=en&format=json`);
+    const p = d?.results?.[0];
     if(!p) return null;
     return {lat:p.latitude,lon:p.longitude,name:p.name||q};
   }
 
   async function loadCity(q){
-    const res=await searchCity(q).catch(()=>null);
-    if(!res){S.place=q||'India';S.wx={temp:26,hum:52,rain7:42,wind:9,code:0,daily:[]};S.aq={aqi:null,pm25:null,uv:null};S.elev=null;return;}
+    const res = await searchCity(q).catch(()=>null);
+    if(!res){
+      // fallback defaults
+      S.place=q||'India'; S.wx={temp:26,hum:52,rain7:42,wind:9,code:0,daily:[]}; S.aq={aqi:null,pm25:null,uv:null}; S.elev=null;
+      return;
+    }
     await loadCoords(res.lat,res.lon,res.name||q);
     $('city').value=res.name||q;
   }
 
-  // ── Location flow ────────────────────────────────────────────────────────
-  function loaderMsg(msg){const el=$('loaderMsg');if(el)el.textContent=msg;}
-  function hideLoader(){const l=$('loader');if(!l)return;l.style.opacity='0';setTimeout(()=>l.style.display='none',600);}
+  // ───────────────────────────────── LOCATION FLOW ────────────────────────
+  function loaderMsg(msg){
+    const el=$('loaderMsg');
+    if(el) el.textContent=msg;
+  }
+
+  function hideLoader(){
+    const l=$('loader');
+    if(!l) return;
+    l.style.opacity='0';
+    setTimeout(()=>l.remove(),600);
+  }
 
   async function startGeo(){
     $('loader').style.display='grid';
     if(!navigator.geolocation){
       loaderMsg('Geolocation not supported — loading Delhi…');
       await loadCity('Delhi').catch(()=>{});
-      hideLoader();renderAll();return;
+      hideLoader(); renderAll(); return;
     }
     navigator.geolocation.getCurrentPosition(
       async pos=>{
         try{
           loaderMsg('Fetching weather data…');
-          const lat=pos.coords.latitude,lon=pos.coords.longitude;
+          const lat=pos.coords.latitude, lon=pos.coords.longitude;
           const place=await fetchJSON(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`).catch(()=>null);
           const name=place?bigDataName(place):'Current location';
           await loadCoords(lat,lon,name);
@@ -1131,30 +1225,35 @@
         loaderMsg('Permission denied — loading Delhi…');
         await loadCity('Delhi').catch(()=>{});
         renderAll();
-        setStatus(false,'Location access denied — showing data for New Delhi.');
+        setStatus(false,'Location permission denied. Loaded Delhi.');
         hideLoader();
       },
       {enableHighAccuracy:false,timeout:8000,maximumAge:600000}
     );
   }
 
-  // ── Analyze ──────────────────────────────────────────────────────────────
+  // ───────────────────────────────── ANALYZE ──────────────────────────────
   function setStatus(loading,msg){
     const btn=$('analyzeBtn');
-    btn.disabled=loading;btn.textContent=loading?'Loading…':'Analyze';
-    if(msg)$('status').textContent=msg;
+    btn.disabled=loading;
+    btn.textContent=loading?'Loading…':'Analyze';
+    if(msg) $('status').textContent=msg;
   }
 
   async function analyze(query){
     const city=(query||'').trim()||S.place||'Delhi';
     setStatus(true,`Searching ${city}…`);
-    try{await loadCity(city);setStatus(false,`Loaded ${S.place}.`);}
-    catch(e){S.place=city;setStatus(false,'Using offline fallback data.');}
+    try{
+      await loadCity(city);
+      setStatus(false,`Loaded ${S.place}.`);
+    }catch(e){
+      S.place=city;
+      setStatus(false,'Using offline fallback data.');
+    }
     renderAll();
-    savePreferences();
   }
 
-  // ── AI Chat ──────────────────────────────────────────────────────────────
+  // ───────────────────────────────── AI CHAT ──────────────────────────────
   function appendMsg(text,role){
     const log=$('log');
     const row=document.createElement('div');
@@ -1175,182 +1274,778 @@
     return row;
   }
 
+
+  // ───────────────────────────────── LOCAL FARMGPT ────────────────────────
+  const FARM_GUIDES = [
+    { title:'Tomato', keywords:['tomato','tamatar','tomatoes'], crop:'Tomato', idealTemp:[18,30], rain:[450,900], hum:[50,75], soil:['loam','sandy loam'], season:['rabi','zaid'], water:'Moderate', scoreBoost:1.1, note:'Tomato prefers warm days, cool nights, moderate water, and well-drained loam. Very sensitive to excess heat and very poor air quality.' },
+    { title:'Mango', keywords:['mango','aam','am'], crop:'Mango', idealTemp:[24,38], rain:[700,2200], hum:[50,85], soil:['loam','sandy loam'], season:['kharif','zaid'], water:'Moderate', scoreBoost:0.98, note:'Mango is a tropical fruit crop that prefers warm weather, moderate humidity, deep well-drained soil, and careful irrigation during flowering and fruit setting.' },
+    { title:'Wheat', keywords:['wheat','gehun'], crop:'Wheat', idealTemp:[8,24], rain:[250,900], hum:[35,65], soil:['loam','clay'], season:['rabi'], water:'Moderate', scoreBoost:1.0, note:'Wheat performs best in cool, dry winter conditions with good soil moisture at sowing.' },
+    { title:'Rice', keywords:['rice','paddy','chawal'], crop:'Rice', idealTemp:[20,34], rain:[900,2200], hum:[55,95], soil:['clay','black'], season:['kharif'], water:'High', scoreBoost:1.0, note:'Rice needs high water, warm weather, and heavy soil that can hold moisture.' },
+    { title:'Millet', keywords:['millet','bajra','jowar','sorghum'], crop:'Millet', idealTemp:[20,38], rain:[180,700], hum:[20,65], soil:['sandy','loam','black'], season:['kharif','zaid'], water:'Low', scoreBoost:1.05, note:'Millet is a strong choice for hot, dry, low-rainfall farms.' },
+    { title:'Maize', keywords:['maize','corn','makka'], crop:'Maize', idealTemp:[18,32], rain:[450,1200], hum:[40,80], soil:['loam','black'], season:['kharif','zaid'], water:'Moderate', scoreBoost:1.0, note:'Maize is flexible and works well when rainfall is moderate and soil is fertile.' },
+    { title:'Pulses', keywords:['pulses','lentil','gram','chana','dal'], crop:'Pulses', idealTemp:[15,30], rain:[220,900], hum:[30,75], soil:['loam','black'], season:['rabi','kharif'], water:'Low', scoreBoost:1.08, note:'Pulses are resilient, improve soil nitrogen, and are excellent for water-limited conditions.' },
+    { title:'Soybean', keywords:['soybean','soya'], crop:'Soybean', idealTemp:[20,30], rain:[500,1100], hum:[45,80], soil:['black','loam'], season:['kharif'], water:'Moderate', scoreBoost:1.02, note:'Soybean likes warm weather, balanced rainfall, and black soil.' },
+    { title:'Cotton', keywords:['cotton'], crop:'Cotton', idealTemp:[22,38], rain:[450,1000], hum:[35,75], soil:['black','clay'], season:['kharif'], water:'Moderate', scoreBoost:0.95, note:'Cotton needs a long warm season, but too much humidity can increase pest and disease pressure.' },
+    { title:'Potato', keywords:['potato','aloo'], crop:'Potato', idealTemp:[12,24], rain:[250,700], hum:[55,85], soil:['loam','sandy loam'], season:['rabi'], water:'Moderate', scoreBoost:1.0, note:'Potato prefers cool weather and loose soil for tuber growth.' },
+    { title:'Onion', keywords:['onion','pyaz'], crop:'Onion', idealTemp:[13,28], rain:[250,650], hum:[45,75], soil:['loam','sandy loam'], season:['rabi','zaid'], water:'Low', scoreBoost:1.0, note:'Onion prefers dry air around harvest time and well-drained soil.' },
+    { title:'Chilli', keywords:['chilli','chili','mirchi'], crop:'Chilli', idealTemp:[18,32], rain:[400,900], hum:[45,80], soil:['loam','black'], season:['kharif'], water:'Moderate', scoreBoost:1.0, note:'Chilli likes warmth and good drainage, but very high heat can reduce fruit set.' },
+    { title:'Sugarcane', keywords:['sugarcane','ganna'], crop:'Sugarcane', idealTemp:[20,35], rain:[1200,2500], hum:[55,90], soil:['loam','clay','black'], season:['kharif'], water:'High', scoreBoost:0.95, note:'Sugarcane needs plenty of water and a long growing season.' },
+    { title:'Mustard', keywords:['mustard','sarson'], crop:'Mustard', idealTemp:[10,25], rain:[200,600], hum:[30,70], soil:['loam','clay'], season:['rabi'], water:'Low', scoreBoost:1.0, note:'Mustard prefers cool weather and moderate water.' },
+    { title:'Groundnut', keywords:['groundnut','peanut','mungfali'], crop:'Groundnut', idealTemp:[20,35], rain:[500,1100], hum:[40,80], soil:['sandy','loam'], season:['kharif'], water:'Moderate', scoreBoost:1.0, note:'Groundnut is best in light soil with warm weather and moderate rain.' },
+    { title:'Chickpea', keywords:['chickpea', 'gram', 'चना', 'chana'], crop:'Chickpea', idealTemp:[15, 28], rain:[250, 700], hum:[30, 70], soil:["loam", "black"], season:["rabi"], water:'Low', scoreBoost:1.05, note:'Chickpea is a cool-season pulse that improves soil nitrogen and works well after the monsoon.' },
+    { title:'Lentil', keywords:['lentil', 'masoor'], crop:'Lentil', idealTemp:[12, 26], rain:[200, 600], hum:[30, 70], soil:["loam", "clay"], season:["rabi"], water:'Low', scoreBoost:1.03, note:'Lentil prefers cool weather, light watering, and well-drained soil.' },
+    { title:'Pea', keywords:['pea', 'peas', 'matar'], crop:'Pea', idealTemp:[10, 24], rain:[250, 700], hum:[40, 75], soil:["loam", "sandy loam"], season:["rabi"], water:'Low', scoreBoost:1.02, note:'Pea does best in cool weather and fertile, well-drained soil.' },
+    { title:'Cabbage', keywords:['cabbage', 'patta gobhi'], crop:'Cabbage', idealTemp:[12, 25], rain:[300, 800], hum:[50, 80], soil:["loam", "clay"], season:["rabi"], water:'Moderate', scoreBoost:1.0, note:'Cabbage likes cool weather, regular watering, and fertile soil.' },
+    { title:'Cauliflower', keywords:['cauliflower', 'gobhi'], crop:'Cauliflower', idealTemp:[12, 24], rain:[300, 800], hum:[50, 80], soil:["loam", "clay"], season:["rabi"], water:'Moderate', scoreBoost:1.0, note:'Cauliflower prefers cool temperatures and careful nutrient management.' },
+    { title:'Cucumber', keywords:['cucumber', 'kheera'], crop:'Cucumber', idealTemp:[18, 32], rain:[400, 1000], hum:[45, 80], soil:["loam", "sandy loam"], season:["zaid", "kharif"], water:'Moderate', scoreBoost:1.0, note:'Cucumber needs warmth, moisture, and good drainage.' },
+    { title:'Okra', keywords:['okra', 'bhindi'], crop:'Okra', idealTemp:[20, 35], rain:[400, 1000], hum:[40, 75], soil:["loam", "sandy loam"], season:["kharif", "zaid"], water:'Moderate', scoreBoost:1.0, note:'Okra likes warm weather and well-drained soil.' },
+    { title:'Brinjal', keywords:['brinjal', 'eggplant', 'baingan'], crop:'Brinjal', idealTemp:[20, 35], rain:[500, 1000], hum:[45, 80], soil:["loam", "sandy loam"], season:["kharif", "zaid"], water:'Moderate', scoreBoost:1.0, note:'Brinjal grows well in warm weather with steady moisture.' },
+    { title:'Garlic', keywords:['garlic', 'lahsun'], crop:'Garlic', idealTemp:[12, 28], rain:[250, 700], hum:[35, 70], soil:["loam", "sandy loam"], season:["rabi"], water:'Low', scoreBoost:1.0, note:'Garlic prefers cool weather, careful watering, and loose soil.' },
+    { title:'Ginger', keywords:['ginger', 'adrak'], crop:'Ginger', idealTemp:[20, 30], rain:[1200, 2500], hum:[60, 90], soil:["loam", "sandy loam"], season:["kharif"], water:'High', scoreBoost:0.98, note:'Ginger needs warm, humid weather, shade-friendly management, and rich soil.' },
+    { title:'Turmeric', keywords:['turmeric', 'haldi'], crop:'Turmeric', idealTemp:[20, 30], rain:[1200, 2500], hum:[60, 90], soil:["loam", "clay loam"], season:["kharif"], water:'High', scoreBoost:0.98, note:'Turmeric likes warm humid weather and soil that holds moisture but drains well.' },
+    { title:'Groundnut', keywords:['groundnut', 'peanut', 'mungfali'], crop:'Groundnut', idealTemp:[20, 35], rain:[500, 1000], hum:[35, 70], soil:["sandy", "loam"], season:["kharif"], water:'Moderate', scoreBoost:1.0, note:'Groundnut prefers light soil and warm weather with moderate rainfall.' },
+    { title:'Sesame', keywords:['sesame', 'til'], crop:'Sesame', idealTemp:[24, 38], rain:[300, 800], hum:[30, 70], soil:["sandy", "loam", "black"], season:["kharif", "zaid"], water:'Low', scoreBoost:1.0, note:'Sesame is drought-tolerant and fits warm, semi-dry climates.' },
+    { title:'Sunflower', keywords:['sunflower'], crop:'Sunflower', idealTemp:[18, 30], rain:[400, 900], hum:[35, 75], soil:["loam", "black"], season:["rabi", "kharif"], water:'Moderate', scoreBoost:1.0, note:'Sunflower is flexible and does well in moderate climate conditions.' },
+    { title:'Watermelon', keywords:['watermelon', 'tarbooz'], crop:'Watermelon', idealTemp:[22, 35], rain:[300, 700], hum:[35, 70], soil:["sandy", "loam"], season:["zaid", "kharif"], water:'Moderate', scoreBoost:1.0, note:'Watermelon likes warm weather, sandy soil, and careful water control.' },
+    { title:'Grapes', keywords:['grapes', 'angoor'], crop:'Grapes', idealTemp:[15, 32], rain:[300, 900], hum:[35, 70], soil:["loam", "sandy loam"], season:["rabi", "zaid"], water:'Moderate', scoreBoost:0.98, note:'Grapes need pruning, good drainage, and careful disease control.' },
+    { title:'Apple', keywords:['apple'], crop:'Apple', idealTemp:[10, 24], rain:[500, 1200], hum:[40, 75], soil:["loam"], season:["rabi"], water:'Moderate', scoreBoost:0.96, note:'Apple is a cool-climate orchard crop that needs chilling and careful management.' },
+    { title:'Papaya', keywords:['papaya'], crop:'Papaya', idealTemp:[20, 35], rain:[800, 2000], hum:[50, 85], soil:["loam", "sandy loam"], season:["kharif", "zaid"], water:'Moderate', scoreBoost:1.0, note:'Papaya likes warm tropical conditions and good drainage.' },
+    { title:'Guava', keywords:['guava'], crop:'Guava', idealTemp:[20, 34], rain:[600, 1800], hum:[45, 85], soil:["loam", "sandy loam"], season:["kharif", "zaid"], water:'Moderate', scoreBoost:1.0, note:'Guava is hardy and can tolerate a range of tropical conditions.' },
+    { title:'Spinach', keywords:['spinach', 'palak'], crop:'Spinach', idealTemp:[10, 24], rain:[250, 700], hum:[40, 75], soil:["loam", "sandy loam"], season:["rabi"], water:'Moderate', scoreBoost:1.0, note:'Spinach grows best in cool weather with regular watering and fertile soil.' }
+  ];
+
+  const AGRO_TOPICS = [
+    { key:'irrigation', keywords:['irrigation','water','watering','drip','sprinkler'], title:'Irrigation', hint:'Use rainfall, humidity, wind, and soil type to decide water need.' },
+    { key:'disease', keywords:['disease','fungal','fungus','pest','blight','infection'], title:'Disease risk', hint:'Warm + humid weather increases fungal disease risk.' },
+    { key:'fertilizer', keywords:['fertilizer','fertiliser','npk','manure','compost'], title:'Fertilizer', hint:'Choose fertilizer based on crop stage and soil conditions.' },
+    { key:'soil', keywords:['soil','loam','clay','sandy','black','ph'], title:'Soil', hint:'Soil type affects drainage, moisture retention, and root health.' },
+    { key:'ndvi', keywords:['ndvi','satellite','vegetation','crop health','greenery'], title:'NDVI', hint:'Higher NDVI usually means healthier vegetation cover.' },
+    { key:'aqi', keywords:['aqi','air','pollution','smog'], title:'Air quality', hint:'Very poor AQI can increase stress for workers and delicate crops.' },
+    { key:'weather', keywords:['weather','temperature','rain','forecast','wind','humidity','heat'], title:'Weather', hint:'Weather is the first filter for crop suitability.' },
+    { key:'scheme', keywords:['scheme','subsidy','government','policy','msp'], title:'Government scheme', hint:'Use official agriculture portals for scheme details and eligibility.' },
+
+    { key:'rotation', keywords:['rotation','crop rotation'], title:'Crop rotation', hint:'Rotating crops helps soil and pest control.' },
+    { key:'organic', keywords:['organic','compost','vermicompost'], title:'Organic farming', hint:'Organic methods rely more on biological and compost-based inputs.' },
+    { key:'hydroponics', keywords:['hydroponics'], title:'Hydroponics', hint:'Hydroponics grows plants without soil using nutrient solution.' },
+    { key:'greenhouse', keywords:['greenhouse','polyhouse','shade net'], title:'Protected cultivation', hint:'Protected cultivation helps control temperature, humidity, and pests.' },
+    { key:'climate', keywords:['climate change','climate','sustainability','sustainable'], title:'Climate change', hint:'Changing climate can shift sowing windows and pest pressure.' },
+    { key:'market', keywords:['market','price','msp','profit'], title:'Market and MSP', hint:'Market price depends on demand, supply, quality, and transport.' },
+    { key:'postharvest', keywords:['post harvest','post-harvest','storage','graden'], title:'Post-harvest', hint:'Good handling after harvest reduces losses and improves quality.' },
+    { key:'glossary', keywords:['what is','define','meaning'], title:'Glossary', hint:'Definitions help explain agricultural terms clearly.' }
+
+  ];
+
+  const FARM_FACTS = [
+    { title:'Drip irrigation', keywords:['drip irrigation', 'drip', 'micro irrigation'], note:'Drip irrigation delivers water near the root zone and reduces evaporation losses.' },
+    { title:'Sprinkler irrigation', keywords:['sprinkler irrigation', 'sprinkler'], note:'Sprinklers are useful for many crops but can increase leaf wetness.' },
+    { title:'Mulching', keywords:['mulch', 'mulching'], note:'Mulching reduces evaporation, moderates soil temperature, and improves water retention.' },
+    { title:'Rainfed farming', keywords:['rainfed', 'rain fed'], note:'Rainfed farming depends mostly on rainfall, so crop choice and sowing timing matter a lot.' },
+    { title:'Water stress', keywords:['water stress', 'drought stress'], note:'Water stress reduces growth, leaf area, and yield if it lasts too long.' },
+    { title:'Waterlogging', keywords:['waterlogging', 'water logging'], note:'Waterlogging can damage roots and increase disease risk.' },
+    { title:'Irrigation scheduling', keywords:['irrigation schedule', 'watering schedule'], note:'Irrigation scheduling should consider soil type, crop stage, temperature, rainfall, and wind.' },
+    { title:'Loam soil', keywords:['loam'], note:'Loam is usually the most versatile farm soil because it balances drainage and moisture retention.' },
+    { title:'Clay soil', keywords:['clay'], note:'Clay soil holds water well but may compact and drain slowly.' },
+    { title:'Sandy soil', keywords:['sandy'], note:'Sandy soil drains quickly and often needs more frequent watering and organic matter.' },
+    { title:'Black soil', keywords:['black soil', 'regur'], note:'Black soil holds moisture well and is famous for cotton and soybean.' },
+    { title:'Soil pH', keywords:['soil ph', 'ph'], note:'Most crops do best in slightly acidic to neutral soil, though exceptions exist.' },
+    { title:'Organic matter', keywords:['organic matter'], note:'Organic matter improves soil structure, moisture holding, and microbial activity.' },
+    { title:'Compost', keywords:['compost'], note:'Compost adds organic nutrients and helps soil retain water.' },
+    { title:'Vermicompost', keywords:['vermicompost'], note:'Vermicompost is a nutrient-rich organic amendment made by earthworms.' },
+    { title:'NPK', keywords:['npk'], note:'NPK means nitrogen, phosphorus, and potassium — the main fertilizer nutrients.' },
+    { title:'Nitrogen', keywords:['nitrogen'], note:'Nitrogen supports leafy growth and strong vegetative development.' },
+    { title:'Phosphorus', keywords:['phosphorus'], note:'Phosphorus supports root growth, flowering, and early crop establishment.' },
+    { title:'Potassium', keywords:['potassium'], note:'Potassium supports flowering, fruiting, water balance, and stress tolerance.' },
+    { title:'Micronutrients', keywords:['micronutrient', 'micronutrients'], note:'Micronutrients like zinc, iron, and boron are needed in small amounts but are very important.' },
+    { title:'Balanced fertilizer', keywords:['balanced fertilizer', 'balanced npk'], note:'Balanced fertilizer is a safer choice when a soil test is not available.' },
+    { title:'Fungal disease', keywords:['fungal disease', 'fungal', 'fungus'], note:'Warm and humid conditions often increase fungal disease risk.' },
+    { title:'Early blight', keywords:['early blight', 'blight'], note:'Early blight often affects tomato and potato and can spread with wet leaves.' },
+    { title:'Powdery mildew', keywords:['powdery mildew'], note:'Powdery mildew is common in dry to moderate humidity with poor airflow.' },
+    { title:'Aphids', keywords:['aphid', 'aphids'], note:'Aphids suck sap and can weaken new growth.' },
+    { title:'Whitefly', keywords:['whitefly', 'whiteflies'], note:'Whiteflies can spread plant viruses and increase stress on crops.' },
+    { title:'Thrips', keywords:['thrips'], note:'Thrips can damage flowers and young leaves, especially in warm weather.' },
+    { title:'Integrated pest management', keywords:['ipm', 'integrated pest management'], note:'IPM combines scouting, biological control, resistant varieties, and careful spraying.' },
+    { title:'Field sanitation', keywords:['sanitation', 'field hygiene'], note:'Removing infected plant residue helps reduce disease carryover.' },
+    { title:'Crop rotation', keywords:['crop rotation', 'rotation'], note:'Crop rotation reduces pest build-up and helps balance nutrients in the soil.' },
+    { title:'Intercropping', keywords:['intercropping'], note:'Intercropping grows two crops together to improve land use and reduce risk.' },
+    { title:'Precision farming', keywords:['precision farming', 'precision agriculture'], note:'Precision farming uses data and sensors to apply water and inputs more efficiently.' },
+    { title:'Organic farming', keywords:['organic farming', 'organic'], note:'Organic farming relies more on compost, manure, and biological methods than synthetic chemicals.' },
+    { title:'Hydroponics', keywords:['hydroponics'], note:'Hydroponics grows plants without soil using nutrient solution.' },
+    { title:'Greenhouse', keywords:['greenhouse'], note:'Greenhouses protect crops from harsh weather and allow better climate control.' },
+    { title:'Shade net', keywords:['shade net', 'shadenet'], note:'Shade nets reduce heat stress and protect sensitive crops from extreme sunlight.' },
+    { title:'Seed treatment', keywords:['seed treatment'], note:'Seed treatment can reduce early disease risk and improve germination.' },
+    { title:'Heatwave', keywords:['heatwave', 'heat wave'], note:'Heatwaves raise water demand and can reduce fruit set and pollen viability.' },
+    { title:'Frost', keywords:['frost'], note:'Frost can damage tender leaves and young seedlings.' },
+    { title:'Drought', keywords:['drought'], note:'Drought stress is a major reason for crop failure in rain-limited regions.' },
+    { title:'Solar radiation', keywords:['solar radiation'], note:'Solar radiation drives photosynthesis, but extreme heat with strong sun can also stress crops.' },
+    { title:'Evapotranspiration', keywords:['evapotranspiration', 'et0'], note:'Evapotranspiration is the combined water loss from soil and plants.' },
+    { title:'Humidity', keywords:['humidity'], note:'High humidity can increase disease pressure, while very low humidity can increase water loss.' },
+    { title:'NDVI', keywords:['ndvi'], note:'NDVI near 1 usually means healthy vegetation, while values near 0 mean sparse cover or bare soil.' },
+    { title:'Vegetation stress', keywords:['vegetation stress', 'crop stress'], note:'Lower NDVI or sudden NDVI drops can indicate crop stress, poor stand, or damage.' },
+    { title:'Satellite monitoring', keywords:['satellite', 'remote sensing'], note:'Satellite data helps track vegetation health across larger areas.' },
+    { title:'Crop insurance', keywords:['crop insurance'], note:'Crop insurance reduces financial risk when weather damages the field.' },
+    { title:'MSP', keywords:['msp', 'minimum support price'], note:'MSP is the minimum support price announced by the government for some crops.' },
+    { title:'Government scheme', keywords:['scheme', 'subsidy', 'government'], note:'Government schemes can support irrigation, seeds, machinery, and insurance.' },
+    { title:'Market price', keywords:['market price', 'price'], note:'Market price changes with supply, demand, quality, and transport costs.' },
+    { title:'Sustainable farming', keywords:['sustainable', 'sustainability'], note:'Sustainable farming tries to protect soil, water, biodiversity, and income together.' },
+    { title:'Climate change', keywords:['climate change'], note:'Climate change can shift sowing windows, raise heat stress, and change pest pressure.' },
+    { title:'Soil testing', keywords:['soil testing', 'soil test'], note:'Soil testing is the best way to decide fertilizer and liming needs.' },
+    { title:'Post-harvest', keywords:['post harvest', 'post-harvest'], note:'Good post-harvest handling reduces losses and improves market quality.' },
+    { title:'Storage', keywords:['storage'], note:'Dry, clean, pest-free storage protects grains and produce after harvest.' },
+    { title:'Sowing', keywords:['sowing'], note:'Sowing means placing seed in the field at the right depth and time.' },
+    { title:'Transplanting', keywords:['transplanting'], note:'Transplanting means moving seedlings from nursery to the main field.' },
+    { title:'Chilling requirement', keywords:['chilling'], note:'Some fruit crops need cool temperatures for flowering and fruit development.' },
+    { title:'Chilling hours', keywords:['chilling hours'], note:'Chilling hours are hours spent under cool temperatures needed by some temperate fruit crops.' },
+    { title:'Mulch', keywords:['mulch'], note:'Mulch is a cover placed on the soil to reduce evaporation and weeds.' },
+    { title:'Beneficial insects', keywords:['beneficial insects'], note:'Helpful insects can reduce pest pressure naturally.' },
+    { title:'Weed control', keywords:['weed control'], note:'Weed control reduces competition for water, nutrients, and light.' },
+    { title:'Nursery', keywords:['nursery'], note:'A nursery is a protected place where seedlings are raised before transplanting.' },
+    { title:'Germination', keywords:['germination'], note:'Germination is the stage when a seed starts to sprout.' },
+    { title:'Yield', keywords:['yield'], note:'Yield means the amount of crop harvested per area.' },
+    { title:'Profitability', keywords:['profit', 'profitability'], note:'Profitability depends on yield, price, input cost, and crop risk.' },
+    { title:'Organic compost', keywords:['organic compost'], note:'Organic compost improves soil structure and biological activity.' },
+    { title:'Plant nutrition', keywords:['plant nutrition'], note:'Plant nutrition depends on the right balance of macro and micro nutrients.' },
+    { title:'Root zone', keywords:['root zone'], note:'The root zone is the soil layer where roots absorb water and nutrients.' },
+    { title:'Canopy', keywords:['canopy'], note:'Canopy cover affects shading, evaporation, and crop microclimate.' },
+    { title:'Flowering', keywords:['flowering'], note:'Flowering is a sensitive stage where heat, water stress, and pests can reduce yield.' },
+    { title:'Fruit set', keywords:['fruit set'], note:'Fruit set can fail if temperatures are extreme or the plant is stressed.' },
+    { title:'Pollination', keywords:['pollination'], note:'Pollination is needed for many fruit and seed crops to set good yield.' },
+    { title:'Soil moisture', keywords:['soil moisture'], note:'Soil moisture is one of the best indicators of irrigation need.' },
+    { title:'Field scouting', keywords:['scouting'], note:'Regular scouting catches disease and pest problems early.' },
+    { title:'Banana disease management', keywords:['banana disease'], note:'Banana benefits from good drainage, sanitation, and disease monitoring.' },
+    { title:'Mango flowering', keywords:['mango flowering'], note:'Mango flowering is sensitive to temperature, humidity, and irrigation timing.' },
+    { title:'Tomato pruning', keywords:['tomato pruning'], note:'Tomato plants may benefit from training, support, and removing diseased leaves.' },
+    { title:'Potato tubers', keywords:['potato tuber'], note:'Potato tuber formation is better in cool weather and loose soil.' },
+    { title:'Onion bulb formation', keywords:['onion bulb'], note:'Onion bulb development needs stable moisture and good drainage.' },
+    { title:'Cotton pests', keywords:['cotton pest'], note:'Cotton is often affected by bollworms, aphids, and whiteflies.' },
+    { title:'Sugarcane water need', keywords:['sugarcane water'], note:'Sugarcane uses a lot of water and nutrient management matters.' },
+    { title:'Groundnut pegging', keywords:['groundnut'], note:'Groundnut needs loose soil so pegs can enter and form pods.' },
+    { title:'Hydroponic nutrients', keywords:['hydroponic nutrients'], note:'Hydroponic systems need balanced dissolved nutrients and pH control.' },
+    { title:'Greenhouse ventilation', keywords:['greenhouse ventilation'], note:'Ventilation in a greenhouse controls heat and humidity.' },
+    { title:'Drip fertigation', keywords:['fertigation'], note:'Fertigation combines fertilizer with irrigation for efficient delivery.' }
+  ];
+
+  const FARM_KB = [...FARM_GUIDES, ...FARM_FACTS];
+
+  function cleanText(s){
+    return String(s || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\u0900-\u097f]+/g,' ')
+      .trim();
+  }
+
+  function words(s){
+    const stop = new Set(['the','a','an','and','or','to','of','for','in','on','at','is','are','was','were','be','been','can','could','should','would','i','you','me','my','your','it','this','that','with','from','as','by','about','what','which','how','why','when','where','who','whats','what\'s','here','there','please','bro','hey','hi','hello']);
+    return cleanText(s).split(/\s+/).filter(w => w && !stop.has(w));
+  }
+
+  function detectTopic(q){
+    const t = cleanText(q);
+    for(const topic of AGRO_TOPICS){
+      if(topic.key && t.includes(topic.key)) return topic.key;
+      if(topic.keywords.some(k => t.includes(k))) return topic.key;
+    }
+    return 'general';
+  }
+
+  function levenshtein(a,b){
+    a = cleanText(a);
+    b = cleanText(b);
+    if(!a || !b) return Math.max(a.length, b.length);
+    const dp = Array.from({length:a.length+1}, (_, i) => [i]);
+    for(let j=0;j<=b.length;j++) dp[0][j] = j;
+    for(let i=1;i<=a.length;i++){
+      for(let j=1;j<=b.length;j++){
+        const cost = a[i-1] === b[j-1] ? 0 : 1;
+        dp[i][j] = Math.min(
+          dp[i-1][j] + 1,
+          dp[i][j-1] + 1,
+          dp[i-1][j-1] + cost
+        );
+      }
+    }
+    return dp[a.length][b.length];
+  }
+
+  function fuzzyCropMatch(q){
+    const t = cleanText(q);
+    let best = null;
+    for(const g of FARM_GUIDES){
+      const keys = [g.title, g.crop, ...(g.keywords || [])].map(cleanText);
+      let score = 0;
+      for(const k of keys){
+        if(!k) continue;
+        if(t.includes(k)) score += 6;
+        else {
+          const token = words(t).find(w => levenshtein(w, k) <= 2 || w.startsWith(k.slice(0,4)));
+          if(token) score += 3;
+        }
+      }
+      if(score > 0 && (!best || score > best.score)) best = { item: g, score };
+    }
+    return best?.item || null;
+  }
+
+  function detectCrop(q){
+    const t = cleanText(q);
+    const exact = FARM_GUIDES.find(g => g.keywords.some(k => t.includes(k)) || t.includes(cleanText(g.title)) || t.includes(cleanText(g.crop)));
+    return exact || fuzzyCropMatch(q);
+  }
+
+  function kbSearch(q, limit=4){
+    const qWords = words(q);
+    const scored = FARM_KB.map(item => {
+      const hay = cleanText([item.title, item.crop || '', item.note, ...(item.keywords||[])].join(' '));
+      const score = qWords.reduce((acc,w) => acc + (hay.includes(w) ? 2 : 0), 0)
+        + (item.keywords || []).reduce((acc,k) => acc + (cleanText(q).includes(k) ? 5 : 0), 0)
+        + (item.title && cleanText(q).includes(cleanText(item.title)) ? 8 : 0);
+      return { item, score };
+    }).filter(x => x.score > 0).sort((a,b) => b.score - a.score).slice(0, limit);
+    return scored.map(x => x.item);
+  }
+
+  function explainRiskDrivers(){
+    const temp = round((S.wx?.temp ?? 25) + (S.future?.t ?? 0), 1);
+    const rain = round((S.wx?.rain7 ?? 0) * (1 + ((S.future?.r ?? 0) / 100)), 0);
+    const hum = clamp(Math.round((S.wx?.hum ?? 50) + (S.future?.h ?? 0)), 0, 100);
+    const wind = round(S.wx?.wind ?? 0, 0);
+    const aqi = S.aq?.aqi;
+
+    const notes = [];
+    if(temp >= 34) notes.push('high temperature');
+    else if(temp <= 12) notes.push('cool stress');
+    if(rain < 15) notes.push('very low rainfall');
+    else if(rain > 300) notes.push('excess moisture');
+    if(hum < 30) notes.push('dry air');
+    else if(hum > 80) notes.push('humidity-driven disease risk');
+    if(wind > 20) notes.push('strong wind and evaporation');
+    if((aqi ?? 0) >= 100) notes.push('very poor air quality');
+    return notes.length ? notes.join(', ') : 'balanced weather and moisture';
+  }
+
+  function cropSuitability(profile){
+    const temp = round((S.wx?.temp ?? 25) + (S.future?.t ?? 0), 1);
+    const rain = round((S.wx?.rain7 ?? 0) * (1 + ((S.future?.r ?? 0) / 100)), 0);
+    const hum = clamp(Math.round((S.wx?.hum ?? 50) + (S.future?.h ?? 0)), 0, 100);
+    const soil = ($('soil')?.value || 'loam').toLowerCase();
+    const season = ($('season')?.value || 'rabi').toLowerCase();
+
+    let score = 100;
+    const tempMid = (profile.idealTemp[0] + profile.idealTemp[1]) / 2;
+    const tempSpan = (profile.idealTemp[1] - profile.idealTemp[0]) / 2 || 1;
+    const rainMid = (profile.rain[0] + profile.rain[1]) / 2;
+    const rainSpan = (profile.rain[1] - profile.rain[0]) / 2 || 1;
+    const humMid = (profile.hum[0] + profile.hum[1]) / 2;
+    const humSpan = (profile.hum[1] - profile.hum[0]) / 2 || 1;
+
+    score -= Math.min(45, Math.abs(temp - tempMid) * (18 / tempSpan));
+    score -= Math.min(35, Math.abs(rain - rainMid) / rainSpan * 18);
+    score -= Math.min(20, Math.abs(hum - humMid) / humSpan * 10);
+    if(!profile.soil.includes(soil)) score -= 14;
+    if(!profile.season.includes(season)) score -= 16;
+    if((S.aq?.aqi ?? 0) >= 100 && (profile.crop === 'Tomato' || profile.crop === 'Chilli')) score -= 8;
+    if((S.wx?.wind ?? 0) > 25 && (profile.crop === 'Potato' || profile.crop === 'Onion')) score -= 6;
+
+    score = clamp(Math.round(score * (profile.scoreBoost || 1)), 0, 100);
+    return { score, temp, rain, hum, soil, season };
+  }
+
+  function formatCropSentence(profile, s){
+    const temp = round((S.wx?.temp ?? 25) + (S.future?.t ?? 0), 1);
+    const rain = round((S.wx?.rain7 ?? 0) * (1 + ((S.future?.r ?? 0) / 100)), 0);
+    const hum = clamp(Math.round((S.wx?.hum ?? 50) + (S.future?.h ?? 0)), 0, 100);
+    const soil = ($('soil')?.value || 'loam').toLowerCase();
+    const season = ($('season')?.value || 'rabi').toLowerCase();
+    const reasons = [];
+    if(temp < profile.idealTemp[0]) reasons.push(`it is a bit cool for ${profile.crop.toLowerCase()}`);
+    else if(temp > profile.idealTemp[1]) reasons.push(`it is hotter than ideal for ${profile.crop.toLowerCase()}`);
+    if(rain < profile.rain[0]) reasons.push('rainfall is below its comfort range');
+    else if(rain > profile.rain[1]) reasons.push('rainfall is on the higher side');
+    if(hum < profile.hum[0]) reasons.push('humidity is lower than ideal');
+    else if(hum > profile.hum[1]) reasons.push('humidity is higher than ideal');
+    if(!profile.soil.includes(soil)) reasons.push(`your selected ${soil} soil is not its best match`);
+    if(!profile.season.includes(season)) reasons.push(`this is usually better in ${profile.season.join(' or ')} season`);
+    if(!reasons.length) reasons.push('the live weather and soil match its preferred range well');
+    return reasons.join(', ');
+  }
+
+  function followUpHint(topic, best){
+    if(topic === 'irrigation') return `If you want, I can turn this into a water schedule for ${best.crop}.`;
+    if(topic === 'disease') return `If you want, I can also explain preventive spray timing and field hygiene.`;
+    if(topic === 'fertilizer') return `If you want, I can tailor the fertilizer advice to tomato, wheat, rice, or pulses.`;
+    if(topic === 'soil') return `If you want, I can compare your soil with the best crop choices right now.`;
+    return `If you want, I can narrow this down crop by crop.`;
+  }
+
+  function rememberTurn(q, a, topic, crop){
+    if(!S.chat) S.chat = { lastTopic:'', lastCrop:'', turns:[] };
+    S.chat.lastTopic = topic || S.chat.lastTopic || 'general';
+    if(crop) S.chat.lastCrop = crop;
+    S.chat.turns.unshift({
+      q: q,
+      a: a,
+      topic: topic || 'general',
+      crop: crop || S.chat.lastCrop || '',
+      at: Date.now()
+    });
+    S.chat.turns = S.chat.turns.slice(0, 8);
+  }
+
+  function useMemoryCrop(q){
+    if(!S.chat?.lastCrop) return null;
+    const t = cleanText(q);
+    if(/\b(it|that|this|same crop|previous crop|what about it|how about it)\b/.test(t)) return S.chat.lastCrop;
+    return null;
+  }
+
+  function loadAgroKeyFromStorage(){
+    const existing = localStorage.getItem('agro_key') || S.agroKey || '';
+    S.agroKey = existing.trim();
+    return S.agroKey;
+  }
+
+  function getAgroPolygon(lat, lon, delta=0.02){
+    return {
+      name: `Aarambh AI X ${S.place || 'Farm'}`,
+      geo_json: {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[
+            [lon - delta, lat - delta],
+            [lon + delta, lat - delta],
+            [lon + delta, lat + delta],
+            [lon - delta, lat + delta],
+            [lon - delta, lat - delta]
+          ]]
+        }
+      }
+    };
+  }
+
+  async function ensureAgroPolygon(){
+    const key = loadAgroKeyFromStorage();
+    if(!key) return null;
+
+    const lat = S.lat, lon = S.lon;
+    if(lat == null || lon == null) return null;
+
+    const cacheKey = `agro_polygon_${Math.round(lat*1000)}_${Math.round(lon*1000)}`;
+    const existing = localStorage.getItem(cacheKey);
+    if(existing) return existing;
+
+    try{
+      const body = JSON.stringify(getAgroPolygon(lat, lon));
+      const res = await fetch(`https://api.agromonitoring.com/agro/1.0/polygons?appid=${encodeURIComponent(key)}&duplicated=true`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body
+      });
+      const data = await res.json();
+      const polyId = data?.id || null;
+      if(polyId) localStorage.setItem(cacheKey, polyId);
+      return polyId;
+    }catch(e){
+      return null;
+    }
+  }
+
+  async function loadAgroData(){
+    const key = loadAgroKeyFromStorage();
+    if(!key){
+      S.agro = { ndvi:null, moisture0:null, soilTemp0:null, polygonId:null, updatedAt:null };
+      return null;
+    }
+    try{
+      const polyId = await ensureAgroPolygon();
+      if(!polyId){
+        S.agro = { ndvi:null, moisture0:null, soilTemp0:null, polygonId:null, updatedAt:null };
+        return null;
+      }
+
+      const now = Math.floor(Date.now()/1000);
+      const start = now - 15*24*3600;
+      const end = now;
+
+      const ndviUrl = `https://api.agromonitoring.com/agro/1.0/ndvi/history?start=${start}&end=${end}&polyid=${encodeURIComponent(polyId)}&appid=${encodeURIComponent(key)}`;
+      const weatherUrl = `https://api.agromonitoring.com/agro/1.0/weather/history?start=${start}&end=${end}&polyid=${encodeURIComponent(polyId)}&appid=${encodeURIComponent(key)}`;
+
+      const [ndviData, weatherData] = await Promise.all([
+        fetch(ndviUrl).then(r => r.ok ? r.json() : null).catch(()=>null),
+        fetch(weatherUrl).then(r => r.ok ? r.json() : null).catch(()=>null)
+      ]);
+
+      const ndviLatest = Array.isArray(ndviData) ? ndviData
+        .filter(x => x && x.data && (x.data.mean != null || x.data.median != null))
+        .sort((a,b) => (b.dt || 0) - (a.dt || 0))[0] : null;
+
+      const weatherLatest = Array.isArray(weatherData) ? weatherData
+        .filter(x => x && x.main)
+        .sort((a,b) => (b.dt || 0) - (a.dt || 0))[0] : null;
+
+      S.agro = {
+        ndvi: ndviLatest ? safe(ndviLatest?.data?.mean ?? ndviLatest?.data?.median ?? ndviLatest?.mean ?? null, null) : null,
+        moisture0: weatherLatest?.soil?.moisture?.[0] ?? weatherLatest?.soil_moisture ?? null,
+        soilTemp0: weatherLatest?.soil?.temp?.[0] ?? weatherLatest?.soil_temperature ?? null,
+        polygonId: polyId,
+        updatedAt: Date.now()
+      };
+      return S.agro;
+    }catch(e){
+      S.agro = { ndvi:null, moisture0:null, soilTemp0:null, polygonId:null, updatedAt:null };
+      return null;
+    }
+  }
+
+  function findCropProfileByName(name){
+    const t = cleanText(name);
+    if(!t) return null;
+    return FARM_GUIDES.find(g =>
+      cleanText(g.title) === t ||
+      cleanText(g.crop) === t ||
+      (g.keywords || []).some(k => cleanText(k) === t)
+    ) || fuzzyCropMatch(t);
+  }
+
+  function extractCompareTargets(q){
+    const t = cleanText(q);
+    const candidates = [];
+    for(const g of FARM_GUIDES){
+      const tokens = [g.title, g.crop, ...(g.keywords || [])].map(cleanText);
+      if(tokens.some(k => k && t.includes(k))) candidates.push(g);
+    }
+    const unique = [];
+    for(const c of candidates){
+      if(!unique.some(u => cleanText(u.crop) === cleanText(c.crop))) unique.push(c);
+    }
+    return unique.slice(0, 2);
+  }
+
+  function compareCrops(a, b){
+    const sa = cropSuitability(a);
+    const sb = cropSuitability(b);
+    const lines = [
+      `📊 Comparison: ${a.crop} vs ${b.crop}`,
+      ``,
+      `Factor | ${a.crop} | ${b.crop}`,
+      `Water | ${a.water} | ${b.water}`,
+      `Current suitability | ${sa.score}/100 | ${sb.score}/100`,
+      `Ideal temperature | ${a.idealTemp[0]}–${a.idealTemp[1]}°C | ${b.idealTemp[0]}–${b.idealTemp[1]}°C`,
+      `Rainfall range | ${a.rain[0]}–${a.rain[1]} mm | ${b.rain[0]}–${b.rain[1]} mm`,
+      `Soil | ${a.soil.join(', ')} | ${b.soil.join(', ')}`,
+      ``,
+      `Best fit right now: ${sa.score >= sb.score ? a.crop : b.crop}`,
+      `Why: ${sa.score >= sb.score ? formatCropSentence(a, sa) : formatCropSentence(b, sb)}`
+    ];
+    return lines.join('<br>');
+  }
+
+  function smartAdvisorReply(question){
+    const q = cleanText(question);
+    const topic = detectTopic(q);
+    const explicitCrop = detectCrop(q);
+    const memoryCrop = useMemoryCrop(q);
+    const cropProfile = explicitCrop || (memoryCrop ? findCropProfileByName(memoryCrop) : null);
+
+    const rankingList = ranking();
+    const bestRanking = rankingList && rankingList.length ? rankingList[0] : { crop:{name:'Millet', emoji:'🌿', note:'Resilient in hot and dry conditions.'}, score:75 };
+    const risk = currentRisk();
+    const temp = round((S.wx?.temp ?? 25) + (S.future?.t ?? 0), 1);
+    const rain = round((S.wx?.rain7 ?? 0) * (1 + ((S.future?.r ?? 0) / 100)), 0);
+    const hum = clamp(Math.round((S.wx?.hum ?? 50) + (S.future?.h ?? 0)), 0, 100);
+    const wind = round(S.wx?.wind ?? 0, 0);
+    const aqi = S.aq?.aqi;
+    const place = S.place || 'your area';
+    const soil = ($('soil')?.value || 'loam').toLowerCase();
+    const season = ($('season')?.value || 'rabi').toLowerCase();
+    const ndvi = S.agro?.ndvi;
+    const moisture = S.agro?.moisture0;
+    const soilTemp = S.agro?.soilTemp0;
+    const aqiText = aqi == null ? 'unavailable' : `${aqi} (${fmtAqi(aqi)})`;
+
+    const greetings = [
+      `👋 Hello! I checked the latest farm data for ${place}. Current risk is ${risk}/100 and ${bestRanking.crop.name} is leading the crop chart today.`,
+      `🌱 Welcome back. The dashboard has live weather, air quality, and crop ranking for ${place}. Ask me about irrigation, fertilizer, or risk.`,
+      `🚜 Aarambh AI X is ready. I can help with crop planning, rainfall outlook, climate risk, soil guidance, and satellite NDVI.`,
+      `🌾 Hi! I have already reviewed the weather and crop suitability for your location.`
+    ];
+
+    const shortWeather = `Temperature ${temp}°C, humidity ${hum}%, rainfall ${rain} mm, wind ${wind} km/h, AQI ${aqiText}.`;
+    const soilLine = moisture == null ? '' : ` Soil moisture is about ${round(moisture * 100, 1)}%.`;
+    const soilTempLine = soilTemp == null ? '' : ` Soil temperature is ${round(soilTemp,1)}°C.`;
+
+    if(!q || ['hi','hello','hey','yo','hii'].some(x => q === x || q.startsWith(x + ' '))){
+      return greetings[Math.floor(Math.random() * greetings.length)];
+    }
+
+    const compareMatch = extractCompareTargets(q);
+    if((q.includes('compare') || q.includes('vs') || q.includes('versus') || q.includes('difference between')) && compareMatch.length >= 2){
+      return compareCrops(compareMatch[0], compareMatch[1]);
+    }
+
+    if(cropProfile){
+      const s = cropSuitability(cropProfile);
+      const verdict = s.score >= 75 ? 'Yes, this crop looks suitable.' : s.score >= 50 ? 'Possible, but it needs some management.' : 'Not the best match right now.';
+      const action = s.score >= 75
+        ? `Keep doing the basics well: timely irrigation, weed control, and balanced nutrition.`
+        : `If you still want to grow it, improve irrigation and choose a better soil/season match.`;
+      return `🌾 ${cropProfile.crop} for ${place}: ${verdict}<br><br>Suitability score: ${s.score}/100.<br>${shortWeather}<br><br>Why: ${formatCropSentence(cropProfile, s)}.<br><br>${cropProfile.note} ${action}`;
+    }
+
+    if(q.includes('best crop') || q.includes('which crop') || q.includes('best crop now') || q.includes('best crop today')){
+      const explain = bestRanking ? `${bestRanking.crop.emoji} ${bestRanking.crop.name} fits the current weather and soil best.` : 'The current conditions are balanced for several crops.';
+      return `🏆 For ${place}, the best crop right now is ${bestRanking.crop.emoji} ${bestRanking.crop.name} with a suitability score of ${bestRanking.score}/100.<br><br>${shortWeather}<br><br>${explain} ${bestRanking.crop.note}<br><br>Try asking: “can I grow tomato”, “what irrigation do I need”, or “why is risk high?”`;
+    }
+
+    if(q.includes('why is risk high') || q.includes('risk') || q.includes('danger') || q.includes('why risk')){
+      return `🛡️ Current farm risk is ${risk}/100.<br><br>Risk is being driven by ${explainRiskDrivers()}.<br><br>${risk < 35 ? 'Conditions are favorable for cultivation with low climate stress.' : risk < 60 ? 'Moderate climate stress exists. Monitor irrigation and rainfall carefully.' : 'High climate stress is present. Consider drought-tolerant crops, mulching, and stronger water management.'}`;
+    }
+
+    if(q.includes('irrigation') || q.includes('water') || q.includes('how much water')){
+      if(rain < 20) return `💧 Rainfall is expected to stay low. Drip irrigation or early-morning sprinkler irrigation is recommended for ${bestRanking.crop.name}. ${soil === 'sandy' ? 'Because the soil drains fast, smaller and more frequent watering is better.' : ''}`;
+      if(rain < 60) return `💧 Moderate rainfall is expected. Supplemental irrigation may still be needed depending on soil type, crop stage, and root depth.`;
+      return `💧 Natural rainfall looks decent. Avoid over-irrigation because it can cause waterlogging and root disease. ${soil === 'clay' ? 'Clay soil holds water longer, so water more carefully.' : ''}`;
+    }
+
+    if(q.includes('aqi') || q.includes('air') || q.includes('pollution')){
+      return `💨 Current AQI is ${aqiText}.<br><br>${aqi == null ? 'Air data is not available right now.' : aqi < 50 ? 'Air quality is excellent and should not stress crops.' : aqi < 100 ? 'Moderate pollution may slightly reduce photosynthesis in sensitive crops.' : 'Poor air quality can stress crops and reduce productivity over time.'}`;
+    }
+
+    if(q.includes('soil')){
+      return `🌱 Soil guidance for ${soil} soil:<br><br>${soil === 'black' ? 'Black soil holds moisture well and works very well for cotton and soybean.' : soil === 'sandy' ? 'Sandy soil drains quickly, so drought-tolerant crops like millet and groundnut are safer.' : soil === 'clay' ? 'Clay soil holds water well, which can help rice but needs careful drainage.' : 'Loam is the most versatile soil for wheat, maize, tomato, and pulses.'}${soilLine}${soilTempLine}`;
+    }
+
+    if(q.includes('compare') || q.includes('vs') || q.includes('versus')){
+      const targets = extractCompareTargets(q);
+      if(targets.length >= 2){
+        return compareCrops(targets[0], targets[1]);
+      }
+      return `📊 I can compare two crops directly if you name both of them, for example: “compare tomato and millet”.`;
+    }
+
+    if(q.includes('crop rotation') || q.includes('rotation')){
+      return `🔁 Crop rotation means changing crops on the same field across seasons to improve soil fertility and reduce pests and diseases.<br><br>${(FARM_TOPICS?.rotation || []).join('<br>')}`;
+    }
+
+    if(q.includes('hydroponic') || q.includes('hydroponics')){
+      return `💧 Hydroponics grows plants without soil using nutrient-rich water.<br><br>${(FARM_TOPICS?.hydroponics || []).join('<br>')}`;
+    }
+
+    if(q.includes('greenhouse') || q.includes('polyhouse')){
+      return `🏠 Greenhouse farming protects crops from harsh weather and can improve yield consistency.<br><br>${(FARM_TOPICS?.greenhouse || []).join('<br>')}`;
+    }
+
+    if(q.includes('organic')){
+      return `🌱 Organic farming uses compost, green manure, crop rotation, and biological pest control instead of relying heavily on synthetic chemicals.<br><br>${(FARM_TOPICS?.organic || []).join('<br>')}`;
+    }
+
+    if(q.includes('precision farming') || q.includes('smart farming')){
+      return `📡 Precision farming uses weather, soil, and sensor data to apply water and fertilizer more efficiently.<br><br>${(FARM_TOPICS?.precision || []).join('<br>')}`;
+    }
+
+    if(q.includes('scheme') || q.includes('government')){
+      return `🏛️ Government schemes can support irrigation, insurance, seeds, machinery, and farm improvements.<br><br>${(FARM_TOPICS?.schemes || []).join('<br>')}`;
+    }
+
+    if(q.includes('what is ndvi') || q.includes('ndvi means') || q.includes('meaning of ndvi')){
+      return `🛰️ NDVI means Normalized Difference Vegetation Index.<br><br>${(FARM_TOPICS?.glossary || []).find(x => x.includes('NDVI')) || 'It measures vegetation health from satellite data.'}`;
+    }
+
+    if(q.includes('what is aqi') || q.includes('aqi means')){
+      return `💨 AQI means Air Quality Index. It measures pollution levels in the air.<br><br>${(FARM_TOPICS?.glossary || []).find(x => x.includes('AQI')) || 'Lower AQI is better for people and crops.'}`;
+    }
+
+    if(q.includes('ipm') || q.includes('integrated pest management')){
+      return `🐛 IPM means Integrated Pest Management.<br><br>${(FARM_TOPICS?.glossary || []).find(x => x.includes('IPM')) || 'It combines scouting, biological control, crop rotation, and careful chemical use.'}`;
+    }
+
+    if(q.includes('fertilizer') || q.includes('manure') || q.includes('npk')){
+      const fertilizerHint = cropProfile ? `${cropProfile.crop} usually responds well to balanced NPK plus compost.` : `${bestRanking.crop.name} usually responds well to balanced NPK plus compost.`;
+      return `🧪 Fertilizer advice for ${cropProfile ? cropProfile.crop : bestRanking.crop.name}: use balanced NPK with compost.<br><br>${fertilizerHint}<br>Apply nitrogen during vegetative growth and potassium before flowering for stronger yield and better plant health.`;
+    }
+
+    if(q.includes('disease') || q.includes('pest') || q.includes('fungal') || q.includes('blight')){
+      if(hum > 80 && temp > 24){
+        return `🦠 Warm temperatures with high humidity increase fungal disease risk.<br><br>Monitor leaves regularly, improve airflow, avoid overhead irrigation, and keep the field clean from infected residue.`;
+      }
+      return `🦠 Current disease risk looks low under the present conditions. Keep scouting weekly and watch for leaf spots, wilting, and pest damage.`;
+    }
+
+    if(q.includes('rain') || q.includes('forecast') || q.includes('weather')){
+      return `🌧 Expected rainfall this week is about ${rain} mm.<br><br>${rain < 20 ? 'Dry conditions are likely, so irrigation planning matters.' : rain < 60 ? 'Moderate rainfall is expected over the coming days.' : 'Rainfall outlook is favorable for most seasonal crops.'}`;
+    }
+
+    if(q.includes('temperature') || q.includes('heat') || q.includes('hot')){
+      return `🌡 Current temperature is ${temp}°C.<br><br>${temp < 15 ? 'Cool weather favors wheat and peas.' : temp < 28 ? 'Temperature is suitable for many crops.' : 'Heat may increase water demand and crop stress.'}`;
+    }
+
+    if(q.includes('wind')){
+      return `💨 Wind speed is ${wind} km/h.<br><br>${wind < 15 ? 'Wind conditions are stable for farming operations.' : 'Stronger winds may increase evaporation and crop stress.'}`;
+    }
+
+    if(q.includes('ndvi') || q.includes('satellite') || q.includes('vegetation') || q.includes('crop health')){
+      return ndvi == null
+        ? `🛰️ Satellite NDVI is not available yet. Add your Agromonitoring API key and the app will create a field polygon around your current location, then load NDVI automatically.`
+        : `🛰️ The satellite NDVI for ${place} is ${round(ndvi,3)}, which means ${ndvi > 0.5 ? 'healthy' : 'sparse'} vegetation.${soilLine}${moisture == null ? '' : ` Soil moisture is ${round(moisture * 100, 1)}%.`}`;
+    }
+
+    if(q.includes('what to avoid') || q.includes('avoid') || q.includes('not good') || q.includes('bad crop')){
+      const weak = ranking().filter(x => x.score < 50).slice(0, 3);
+      const weakText = weak.length ? weak.map(x => x.crop.name).join(', ') : 'none of the current crops look completely wrong';
+      return `❌ Right now I would avoid pushing these crops first: ${weakText}.<br><br>${risk < 35 ? 'Conditions are fairly safe overall.' : 'The weather is leaning against a few crops, so choose drought or heat tolerant options.'}<br>${followUpHint('general', bestRanking)}`;
+    }
+
+    if(topic !== 'general'){
+      const docs = kbSearch(q, 4);
+      const docText = docs.length
+        ? docs.map(d => `• ${d.title}: ${d.note}`).join('<br>')
+        : '• I did not find a strong agriculture match in the local knowledge base.';
+      return `🌾 I checked the local agriculture knowledge base and the live farm readings for ${place}.<br><br>${docText}<br><br>${shortWeather}<br><br>${followUpHint(topic, bestRanking)}`;
+    }
+
+    const docs = kbSearch(q, 2);
+    const docLine = docs.length
+      ? `<br><br>Relevant notes: ${docs.map(d => d.title).join(', ')}`
+      : '';
+    return `🌾 Based on today's environmental conditions around ${place}, the best crop is ${bestRanking.crop.emoji} ${bestRanking.crop.name} (${bestRanking.score}/100).<br><br>${shortWeather}<br><br>${bestRanking.crop.note}${docLine}<br><br>${followUpHint('general', bestRanking)}<br><br>I'm still learning and improving in areas where the knowledge base is not confident enough.`;
+  }
+
   function buildSystemPrompt(){
-    const risk=currentRisk(),list=ranking();
-    const temp=round((S.wx?.temp??26)+(S.future?.t??0),1);
-    const rain=round((S.wx?.rain7??42)*(1+((S.future?.r??0)/100)),0);
-    const hum=clamp(Math.round((S.wx?.hum??52)+(S.future?.h??0)),0,100);
-    const best=list&&list.length?list[0]:{crop:{name:'Millet',note:'Resilient in hot and dry conditions.'},score:75};
+    const risk = currentRisk();
+    const list = ranking();
+    const temp = round((S.wx?.temp ?? 26) + (S.future?.t ?? 0), 1);
+    const rain = round((S.wx?.rain7 ?? 42) * (1 + ((S.future?.r ?? 0) / 100)), 0);
+    const hum = clamp(Math.round((S.wx?.hum ?? 52) + (S.future?.h ?? 0)), 0, 100);
+    const best = list && list.length ? list[0] : { crop: { name: 'Millet', note: 'Resilient in hot and dry conditions.' }, score: 75 };
+
     return `You are Aarambh AI X, a friendly and professional agriculture advisor.
 
-Use the live farm data below to answer clearly and practically. Always explain why.
+Use the live farm data below to answer clearly and practically. Always explain why. If the user asks about a crop, give suitability, reasoning, irrigation notes, and cautions. If uncertain, say: "I am still learning and improving in this area and do not have enough verified information to answer confidently."
 
 LIVE FARM DATA:
 - Location: ${S.place}
-- Elevation: ${S.elev!=null?S.elev+'m':'unknown'}
+- Elevation: ${S.elev != null ? S.elev + 'm' : 'unknown'}
 - Temperature: ${temp}°C
 - Humidity: ${hum}%
 - 7-day rainfall: ${rain} mm
-- Wind speed: ${S.wx?.wind??0} km/h
-- Weather: ${wxLabel(S.wx?.code??0)}
-- AQI: ${S.aq?.aqi!=null?S.aq.aqi+' ('+fmtAqi(S.aq.aqi)+')':'unavailable'}
+- Wind speed: ${S.wx?.wind ?? 0} km/h
+- Weather: ${wxLabel(S.wx?.code ?? 0)}
+- Air Quality Index (AQI): ${S.aq?.aqi != null ? S.aq.aqi + ' (' + fmtAqi(S.aq.aqi) + ')' : 'unavailable'}
 - Farm risk score: ${risk}/100
-- Season: ${$('season').value}
+- Season selected: ${$('season').value}
 - Soil type: ${$('soil').value}
 
-TOP CROP RIGHT NOW: ${best.crop.name} — ${best.score}/100 — ${best.crop.note}
+TOP CROP RIGHT NOW:
+- ${best.crop.name}: ${best.score}/100 — ${best.crop.note}
 
-Keep responses concise, practical, and friendly. Use short paragraphs or bullets.`;
+GUIDELINES:
+- Keep responses concise and useful.
+- Use short paragraphs or bullets.
+- Do not invent data beyond the farm data above.
+- Be calm, human, and professional.`;
   }
 
   async function askAI(question){
     if(S.aiLoading) return;
-    S.aiLoading=true;
-    $('sendBtn').disabled=true;
-    saveChatMessage('user',question);
-    const typingRow=appendTyping();
+    S.aiLoading = true;
+    $('sendBtn').disabled = true;
+
+    const typingRow = appendTyping();
     try{
-      const response=await fetch('/api/chat',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({question,context:buildSystemPrompt()})
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question,
+          context: buildSystemPrompt()
+        })
       });
-      const data=await response.json();
+
+      const data = await response.json();
       typingRow.remove();
+
       if(data?.answer){
-        appendMsg(data.answer,'bot');
-        saveChatMessage('bot',data.answer);
+        appendMsg(data.answer, 'bot');
       }else if(data?.error){
-        appendMsg(`⚠️ ${data.error}`,'bot');
+        appendMsg(`⚠️ ${data.error}`, 'bot');
       }else{
-        appendMsg('⚠️ AI service returned an empty response. Please try again.','bot');
+        appendMsg('⚠️ AI service returned an empty response. Please try again.', 'bot');
       }
     }catch(err){
       typingRow.remove();
-      appendMsg('⚠️ AI server unavailable right now. Please try again in a moment.','bot');
-      console.error(err);
+      // Fallback to local FarmGPT if API fails
+      const fallbackReply = smartAdvisorReply(question);
+      appendMsg(fallbackReply, 'bot');
+      console.error('API failed, used local advisor logic:', err);
     }finally{
-      S.aiLoading=false;
-      $('sendBtn').disabled=false;
+      S.aiLoading = false;
+      $('sendBtn').disabled = false;
     }
   }
 
-  // ── Copy Report ──────────────────────────────────────────────────────────
+
+  // ───────────────────────────────── COPY REPORT ──────────────────────────
   function copyReport(){
-    const best=ranking()[0],risk=currentRisk();
+    const best=ranking()[0];
+    const risk=currentRisk();
     const temp=round(S.wx.temp+S.future.t,1);
     const rain=round(S.wx.rain7*(1+S.future.r/100),0);
     const hum=clamp(Math.round(S.wx.hum+S.future.h),0,100);
+    const date=new Date().toLocaleString();
     const report=[
       '── AARAMBH AI X FARM REPORT ──',
-      `Date: ${new Date().toLocaleString()}`,
+      `Date: ${date}`,
       `Location: ${S.place}`,
       `Elevation: ${S.elev??'--'} m`,
       `Temperature: ${temp}°C`,
       `Humidity: ${hum}%`,
       `7-day Rainfall: ${rain} mm`,
       `Wind: ${S.wx.wind} km/h`,
+      `Weather: ${wxLabel(S.wx.code)}`,
       `AQI: ${S.aq.aqi??'--'} (${fmtAqi(S.aq.aqi)})`,
       `Farm Risk: ${risk}/100`,
       `Season: ${$('season').value}`,
       `Soil: ${$('soil').value}`,
-      ``,`─ CROP RANKINGS ─`,
+      ``,
+      `─ CROP RANKINGS ─`,
       ...ranking().map((i,n)=>`${n+1}. ${i.crop.name}: ${i.score}/100`),
-      ``,`─ RECOMMENDATION ─`,
+      ``,
+      `─ RECOMMENDATION ─`,
       `Best crop: ${best.crop.name} (${best.score}/100)`,
       best.crop.note
     ].join('\n');
+
     if(navigator.clipboard?.writeText){
       navigator.clipboard.writeText(report)
         .then(()=>toast('📋 Report copied to clipboard!','success'))
         .catch(()=>toast('Copy failed — try manually.','error'));
-    }else{toast('Clipboard not available in this browser.','error');}
-  }
-
-  // ── Auth UI helpers ──────────────────────────────────────────────────────
-  function showAuthError(msg){
-    $('authError').textContent=msg;
-  }
-
-  function updateNavForUser(user, isGuest){
-    const navUser  = $('navUser');
-    const signOutBtn = $('signOutBtn');
-    const guestBanner = $('guestBanner');
-
-    if(isGuest){
-      navUser.textContent = '👤 Guest';
-      navUser.style.display = 'block';
-      signOutBtn.style.display = 'block';
-      guestBanner.style.display = 'flex';
-    } else if(user){
-      const name = user.displayName || user.email || 'Farmer';
-      navUser.textContent = `🌱 ${name.split(' ')[0]}`;
-      navUser.style.display = 'block';
-      signOutBtn.style.display = 'block';
-      guestBanner.style.display = 'none';
+    }else{
+      toast('Clipboard not available in this browser.','error');
     }
   }
 
-  async function onUserReady(user, isGuest){
-    S.user = user;
-    S.isGuest = isGuest;
-
-    // Hide auth screen, show app
-    $('authScreen').style.display = 'none';
-    $('appShell').style.display = 'block';
-
-    updateNavForUser(user, isGuest);
-
-    // Load preferences from Firestore (fills season/soil/city)
-    await loadPreferences();
-
-    // Start the dashboard
-    applyTheme(S.theme);
-    wireEvents();
-    seedChat();
-    renderAll();
-    $('status').textContent = 'Getting your location…';
-    await startGeo();
-    setTimeout(initMap, 100);
-    setTimeout(drawChart, 600);
-  }
-
-  // ── Wire events ──────────────────────────────────────────────────────────
+  // ───────────────────────────────── WIRE EVENTS ──────────────────────────
   function wireEvents(){
     $('themeBtn').addEventListener('click',()=>applyTheme(S.theme==='dark'?'light':'dark'));
     $('copyReportBtn').addEventListener('click',copyReport);
-    $('signOutBtn').addEventListener('click',async()=>{
-      try{
-        await signOut(auth);
-        // Reload page to show auth screen cleanly
-        window.location.reload();
-      }catch(e){ toast('Sign out failed.','error'); }
-    });
-
-    $('signUpLink')?.addEventListener('click',()=>{
-      // Sign out of guest and trigger Google sign-in
-      signOut(auth).then(()=>{
-        $('appShell').style.display = 'none';
-        $('authScreen').style.display = 'grid';
-      });
-    });
 
     $('analyzeBtn').addEventListener('click',()=>analyze($('city').value));
-    $('city').addEventListener('keydown',e=>{if(e.key==='Enter')analyze($('city').value);});
+    $('city').addEventListener('keydown',e=>{ if(e.key==='Enter') analyze($('city').value); });
 
     ['t','r','h'].forEach(id=>{
       $(id).addEventListener('input',()=>{
-        S.future={t:safe($('t').value,0),r:safe($('r').value,0),h:safe($('h').value,0)};
+        S.future={ t:safe($('t').value,0), r:safe($('r').value,0), h:safe($('h').value,0) };
         renderAll();
       });
     });
     ['season','soil'].forEach(id=>{
-      $(id).addEventListener('change',()=>{renderAll();savePreferences();});
+      $(id).addEventListener('change',renderAll);
     });
 
     $('simReset').addEventListener('click',()=>{
-      $('t').value=0;$('r').value=0;$('h').value=0;
-      S.future={t:0,r:0,h:0};renderAll();
+      $('t').value=0; $('r').value=0; $('h').value=0;
+      S.future={t:0,r:0,h:0};
+      renderAll();
       toast('Sliders reset to baseline.');
     });
 
@@ -1361,7 +2056,7 @@ Keep responses concise, practical, and friendly. Use short paragraphs or bullets
       $('q').value='';
       askAI(q);
     });
-    $('q').addEventListener('keydown',e=>{if(e.key==='Enter')$('sendBtn').click();});
+    $('q').addEventListener('keydown',e=>{ if(e.key==='Enter') $('sendBtn').click(); });
 
     document.querySelectorAll('.suggestion').forEach(btn=>{
       btn.addEventListener('click',()=>{
@@ -1377,52 +2072,36 @@ Keep responses concise, practical, and friendly. Use short paragraphs or bullets
     });
   }
 
+  // ───────────────────────────────── SEED ─────────────────────────────────
   function seedChat(){
-    appendMsg(`👋 Hello! I'm your AI farm advisor. I have live data for your location — ask me anything about crops, weather, soil, irrigation, or risk.\n\nTry one of the quick questions above, or just type your own.`,'bot');
+    appendMsg(`👋 Hello! I'm your AI farm advisor. I have live data for your location — ask me anything about crops, weather, soil, irrigation, or risk.
+
+Try one of the quick questions above, or just type your own.`,'bot');
   }
 
-  // ── Auth button handlers ─────────────────────────────────────────────────
-  $('googleSignInBtn').addEventListener('click', async()=>{
-    showAuthError('');
-    $('googleSignInBtn').textContent = 'Signing in…';
-    $('googleSignInBtn').disabled = true;
-    try{
-      const result = await signInWithPopup(auth, gProvider);
-      await onUserReady(result.user, false);
-      toast(`Welcome, ${result.user.displayName?.split(' ')[0] || 'Farmer'}! 🌱`,'success');
-    }catch(e){
-      console.error(e);
-      showAuthError(e.code === 'auth/popup-closed-by-user' ? 'Sign-in cancelled.' : 'Sign-in failed. Please try again.');
-      $('googleSignInBtn').innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:20px;height:20px" alt="Google"> Sign in with Google';
-      $('googleSignInBtn').disabled = false;
+  // ───────────────────────────────── INIT APP ─────────────────────────────
+  async function initApp() {
+    applyTheme(S.theme);
+    wireEvents();
+    seedChat();
+    renderAll();
+    $('status').textContent='Getting your location…';
+    if(!loadAgroKeyFromStorage()){
+      // Ask once if the user wants satellite NDVI and soil history.
+      const key = window.prompt('Paste your Agromonitoring API key to unlock NDVI / soil / satellite data (optional):', '');
+      if(key && key.trim()){
+        S.agroKey = key.trim();
+        localStorage.setItem('agro_key', S.agroKey);
+      }
     }
-  });
+    await startGeo();
+    setTimeout(initMap,100);
+    setTimeout(drawChart,600);
+  }
 
-  $('guestBtn').addEventListener('click', async()=>{
-    showAuthError('');
-    $('guestBtn').textContent = 'Loading…';
-    $('guestBtn').disabled = true;
-    try{
-      const result = await signInAnonymously(auth);
-      await onUserReady(result.user, true);
-    }catch(e){
-      console.error(e);
-      showAuthError('Could not start guest session. Please try again.');
-      $('guestBtn').textContent = 'Continue as Guest';
-      $('guestBtn').disabled = false;
-    }
-  });
-
-  // ── Auth state listener ──────────────────────────────────────────────────
-  // If user is already signed in from a previous session, skip auth screen
-  onAuthStateChanged(auth, async(user)=>{
-    if(user && $('appShell').style.display === 'none' && $('authScreen').style.display !== 'none'){
-      // Returning signed-in user
-      const isGuest = user.isAnonymous;
-      await onUserReady(user, isGuest);
-    }
-  });
-
+  // Set up auth buttons to wait for user interaction before initializing the heavy app
+  setupAuthUI();
+  
   </script>
 </body>
 </html>
