@@ -828,9 +828,13 @@
     agroKey: localStorage.getItem('agro_key') || ''
   };
 
-  // ───────────────────────────────── AUTH UI LOGIC ────────────────────────
+ // ───────────────────────────────── AUTH UI LOGIC ────────────────────────
+  // Add this variable at the top of your script section (outside the function)
+  let isGuest = false;
+
   function setupAuthUI() {
     $('guestBtn').addEventListener('click', () => {
+      isGuest = true; // Set to true for guest
       $('authScreen').style.display = 'none';
       $('appShell').style.display = 'block';
       $('guestBanner').style.display = 'flex';
@@ -841,11 +845,12 @@
 
     // Stub for Google Sign In
     $('googleSignInBtn').addEventListener('click', () => {
+      isGuest = false; // Set to false for logged-in user
       $('authScreen').style.display = 'none';
       $('appShell').style.display = 'block';
       $('guestBanner').style.display = 'none';
       $('navUser').style.display = 'inline-block';
-      $('navUser').textContent = 'Signed in as User';
+      $('navUser').textContent = 'Signed in as Shubham';
       $('signOutBtn').style.display = 'inline-block';
       initApp();
     });
@@ -853,6 +858,7 @@
     $('signOutBtn').addEventListener('click', () => {
       $('authScreen').style.display = 'grid';
       $('appShell').style.display = 'none';
+      isGuest = false; // Reset on sign out
     });
   }
 
