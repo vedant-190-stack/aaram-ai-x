@@ -2086,14 +2086,6 @@ Try one of the quick questions above, or just type your own.`,'bot');
     seedChat();
     renderAll();
     $('status').textContent='Getting your location…';
-    if(!loadAgroKeyFromStorage()){
-      // Ask once if the user wants satellite NDVI and soil history.
-      const key = window.prompt('Paste your Agromonitoring API key to unlock NDVI / soil / satellite data (optional):', '');
-      if(key && key.trim()){
-        S.agroKey = key.trim();
-        localStorage.setItem('agro_key', S.agroKey);
-      }
-    }
     await startGeo();
     setTimeout(initMap,100);
     setTimeout(drawChart,600);
