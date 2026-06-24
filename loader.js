@@ -1,7 +1,5 @@
 // loader.js
-async function detectLocationAndProceed() {
-  const status = document.getElementById('status');
-  
+async function detectLocationSilently() {
   try {
     // Attempt to get location with a 4-second timeout
     const pos = await new Promise((resolve, reject) => {
@@ -11,15 +9,10 @@ async function detectLocationAndProceed() {
     sessionStorage.setItem('lat', pos.coords.latitude);
     sessionStorage.setItem('lon', pos.coords.longitude);
     sessionStorage.setItem('geoDetected', 'true');
-    if(status) status.textContent = "Location synchronized!";
   } catch (e) {
     sessionStorage.setItem('geoDetected', 'false');
-    if(status) status.textContent = "Using default farm profile...";
   }
-
-  // Redirect to your main dashboard
-  window.location.href = "aarambh-ai-x.html";
 }
 
-// Run this as soon as the file loads
-detectLocationAndProceed();
+// Run this silently in the background
+detectLocationSilently();
