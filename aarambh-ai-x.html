@@ -659,7 +659,7 @@
     <section class="section" id="ask">
       <div class="section-head">
         <h2>AI farm advisor</h2>
-        <p>Ask anything about your crops, weather, risk, or best practices. Powered by Claude.</p>
+        <p>Ask anything about your crops, weather, risk, or best practices. Powered by Groq via /api/chat.</p>
       </div>
       <div class="chat-grid">
         <div class="panel pad">
@@ -703,7 +703,7 @@
       <span class="footer-links">
         <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>
         <a href="https://www.openstreetmap.org" target="_blank" rel="noopener">OpenStreetMap</a>
-        <a href="https://openai.com" target="_blank" rel="noopener">AI Engine</a>
+        <a href="https://groq.com" target="_blank" rel="noopener">AI Engine — Groq</a>
       </span>
     </footer>
 
@@ -1851,6 +1851,41 @@ function smartAdvisorReply(question){
     return `🌾 Based on today's environmental conditions around ${place}, the best crop is ${bestRanking.crop.emoji} ${bestRanking.crop.name} (${bestRanking.score}/100).<br><br>${shortWeather}<br><br>${bestRanking.crop.note}${docLine}<br><br>${followUpHint('general', bestRanking)}<br><br>I'm still learning and improving in areas where the knowledge base is not confident enough.`;
   }
 
+  function buildSystemPrompt(){
+    const risk = currentRisk();
+    const list = ranking();
+    const temp = round((S.wx?.temp ?? 26) + (S.future?.t ?? 0), 1);
+    const rain = round((S.wx?.rain7 ?? 42) * (1 + ((S.future?.r ?? 0) / 100)), 0);
+    const hum = clamp(Math.round((S.wx?.hum ?? 52) + (S.future?.h ?? 0)), 0, 100);
+    const best = list && list.length ? list[0] : { crop: { name: 'Millet', note: 'Resilient in hot and dry conditions.' }, score: 75 };
+
+    return `You are Aarambh AI X, a friendly and professional agriculture advisor.
+
+Use the live farm data below to answer clearly and practically. Always explain why. If the user asks about a crop, give suitability, reasoning, irrigation notes, and cautions. If uncertain, say: "I am still learning and improving in this area and do not have enough verified information to answer confidently."
+
+LIVE FARM DATA:
+- Location: ${S.place}
+- Elevation: ${S.elev != null ? S.elev + 'm' : 'unknown'}
+- Temperature: ${temp}°C
+- Humidity: ${hum}%
+- 7-day rainfall: ${rain} mm
+- Wind speed: ${S.wx?.wind ?? 0} km/h
+- Weather: ${wxLabel(S.wx?.code ?? 0)}
+- Air Quality Index (AQI): ${S.aq?.aqi != null ? S.aq.aqi + ' (' + fmtAqi(S.aq.aqi) + ')' : 'unavailable'}
+- Farm risk score: ${risk}/100
+- Season selected: ${$('season').value}
+- Soil type: ${$('soil').value}
+
+TOP CROP RIGHT NOW:
+- ${best.crop.name}: ${best.score}/100 — ${best.crop.note}
+
+GUIDELINES:
+- Keep responses concise and useful.
+- Use short paragraphs or bullets.
+- Do not invent data beyond the farm data above.
+- Be calm, human, and professional.`;
+  }
+
   async function askAI(question){
     if(S.aiLoading) return;
     S.aiLoading = true;
@@ -1858,11 +1893,29 @@ function smartAdvisorReply(question){
 
     const typingRow = appendTyping();
     try{
-      const reply = smartAdvisorReply(question);
-      await new Promise(r => setTimeout(r, 350));
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question,
+          context: buildSystemPrompt()
+        })
+      });
+
+      const data = await response.json();
       typingRow.remove();
-      appendMsg(reply, 'bot');
-      rememberTurn(question, reply, detectTopic(question), detectCrop(question)?.crop || useMemoryCrop(question) || '');
+
+      if(data?.answer){
+        appendMsg(data.answer, 'bot');
+      }else if(data?.error){
+        appendMsg(`⚠️ ${data.error}`, 'bot');
+      }else{
+        appendMsg('⚠️ AI service returned an empty response. Please try again.', 'bot');
+      }
+    }catch(err){
+      typingRow.remove();
+      appendMsg('⚠️ AI server unavailable right now. Please try again in a moment.', 'bot');
+      console.error(err);
     }finally{
       S.aiLoading = false;
       $('sendBtn').disabled = false;
