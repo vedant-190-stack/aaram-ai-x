@@ -13,9 +13,6 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
   <style>
     :root {
@@ -410,52 +407,6 @@
     }
     @keyframes load{0%{width:0;margin-left:0}60%{width:100%;margin-left:0}100%{width:0;margin-left:100%}}
 
-    .hidden{display:none !important}
-    .route-page{display:none;padding:18px 0 28px}
-    .route-page.active{display:block}
-    .page-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:20px}
-    .stack{display:grid;gap:12px}
-    .touch{min-height:44px}
-    .guest-banner{display:none;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--warn) 12%,var(--bg));}
-    .guest-banner.show{display:block}
-    .guest-banner-inner{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;color:var(--text);font-size:.88rem}
-    .guest-banner-actions{display:flex;gap:8px;flex-wrap:wrap}
-    .pill-btn{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--border2);background:var(--surface);min-height:36px;cursor:pointer;position:relative}
-    .pill-avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--surface2);font-size:.88rem;font-weight:700;overflow:hidden}
-    .pill-avatar img{width:100%;height:100%;object-fit:cover}
-    .user-menu{position:relative}
-    .user-dropdown{position:absolute;top:calc(100% + 8px);right:0;min-width:180px;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:8px;display:none;z-index:200}
-    .user-dropdown.show{display:block}
-    .user-dropdown button{width:100%;text-align:left;padding:10px;border-radius:10px;cursor:pointer;min-height:44px}
-    .user-dropdown button:hover{background:var(--surface2)}
-    .user-dropdown .muted{opacity:.55;cursor:not-allowed}
-    .auth-overlay{position:fixed;inset:0;z-index:9999;background:color-mix(in srgb,var(--bg) 90%,transparent);display:flex;align-items:center;justify-content:center;padding:16px}
-    .auth-card{width:min(460px,100%);background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:18px;display:grid;gap:12px}
-    .auth-head{text-align:center}
-    .auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--surface2);border:1px solid var(--border);padding:4px;border-radius:12px;gap:4px}
-    .auth-tabs button{padding:10px;border-radius:10px;min-height:44px;cursor:pointer}
-    .auth-tabs button.active{background:var(--surface);border:1px solid var(--border2)}
-    .auth-form{display:grid;gap:10px}
-    .auth-field label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:5px}
-    .auth-field input{width:100%;padding:11px 12px;border-radius:12px;background:var(--surface2);border:1px solid var(--border2);min-height:44px}
-    .pwd-wrap{display:grid;grid-template-columns:1fr auto;gap:8px}
-    .btn-lite{background:var(--surface2);border:1px solid var(--border2);color:var(--text)}
-    .btn-google{display:flex;justify-content:center;align-items:center;gap:8px}
-    .auth-error{min-height:18px;color:var(--bad);font-size:.82rem}
-    .auth-divider{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.8rem}
-    .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
-    .spinner{width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--text);border-radius:50%;display:inline-block;animation:spin .8s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .onboard-grid{display:grid;gap:10px}
-    .step-tabs{display:flex;gap:8px;flex-wrap:wrap}
-    .step-tabs span{padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-size:.8rem;color:var(--muted)}
-    .step-tabs span.active{color:var(--text);border-color:var(--primary)}
-    .dash-addons{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;padding:0 0 16px}
-    .mini-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:12px}
-    .temp-badges{display:flex;gap:8px;flex-wrap:wrap}
-    .temp-badge{padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-size:.78rem}
-    .lang-toggle{display:inline-flex;align-items:center;gap:8px;padding:8px;border-radius:10px;background:var(--surface2);border:1px solid var(--border)}
-    .share-row{display:flex;gap:8px;flex-wrap:wrap}
     /* ── Responsive ── */
     @media(max-width:960px){
       .hero,.grid2,.chat-grid,.input-row{grid-template-columns:1fr}
@@ -484,45 +435,6 @@
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
-  <div class="auth-overlay" id="authOverlay">
-    <section class="auth-card" aria-label="Authentication">
-      <div class="auth-head">
-        <div class="brand" style="justify-content:center">
-          <div class="brand-icon">🌱</div>
-          <div class="brand-name">Aarambh AI X<small>Your farm's second brain.</small></div>
-        </div>
-      </div>
-      <div class="auth-tabs">
-        <button id="tabSignIn" class="active" type="button">Sign In</button>
-        <button id="tabRegister" type="button">Create Account</button>
-      </div>
-      <form class="auth-form" id="authSignInForm">
-        <div class="auth-field"><label for="authSignInEmail">Email</label><input id="authSignInEmail" type="email" autocomplete="email" required></div>
-        <div class="auth-field"><label for="authSignInPassword">Password</label><div class="pwd-wrap"><input id="authSignInPassword" type="password" autocomplete="current-password" required><button class="btn btn-lite touch" id="toggleSignInPassword" type="button">Show</button></div></div>
-        <button class="btn btn-pri touch" id="signInBtn" type="submit">Sign in</button>
-        <div class="auth-divider">or</div>
-        <button class="btn btn-lite btn-google touch" id="googleSignInBtn" type="button"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 11v3.9h5.5c-.2 1.3-1.5 3.9-5.5 3.9-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 4.3 14.6 3.4 12 3.4a8.6 8.6 0 1 0 0 17.2c5 0 8.3-3.5 8.3-8.5 0-.6-.1-1-.1-1.1z"/></svg>Continue with Google</button>
-        <button class="btn btn-ghost touch" id="guestSignInBtn" type="button">Continue as guest →</button>
-        <small style="color:var(--muted)">No account needed. Your data won't be saved.</small>
-        <div class="auth-error" id="authSignInError"></div>
-      </form>
-      <form class="auth-form hidden" id="authRegisterForm">
-        <div class="auth-field"><label for="authName">First name</label><input id="authName" type="text" autocomplete="given-name" required></div>
-        <div class="auth-field"><label for="authRegisterEmail">Email</label><input id="authRegisterEmail" type="email" autocomplete="email" required></div>
-        <div class="auth-field"><label for="authRegisterPassword">Password</label><div class="pwd-wrap"><input id="authRegisterPassword" type="password" autocomplete="new-password" required><button class="btn btn-lite touch" id="toggleRegisterPassword" type="button">Show</button></div></div>
-        <div class="auth-field"><label for="authRegisterConfirm">Confirm password</label><input id="authRegisterConfirm" type="password" autocomplete="new-password" required></div>
-        <button class="btn btn-pri touch" id="registerBtn" type="submit">Create account</button>
-        <div class="auth-divider">or</div>
-        <button class="btn btn-lite btn-google touch" id="googleRegisterBtn" type="button"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 11v3.9h5.5c-.2 1.3-1.5 3.9-5.5 3.9-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 4.3 14.6 3.4 12 3.4a8.6 8.6 0 1 0 0 17.2c5 0 8.3-3.5 8.3-8.5 0-.6-.1-1-.1-1.1z"/></svg>Continue with Google</button>
-        <button class="btn btn-ghost touch" id="guestRegisterBtn" type="button">Continue as guest →</button>
-        <small style="color:var(--muted)">No account needed. Your data won't be saved.</small>
-        <div class="auth-error" id="authRegisterError"></div>
-      </form>
-    </section>
-  </div>
-
-  <div class="guest-banner" id="guestBanner"><div class="wrap guest-banner-inner"><span>👤 Guest mode — your data won't be saved.</span><div class="guest-banner-actions"><button class="btn btn-pri touch" id="guestCreateBtn">Create free account →</button><button class="btn btn-ghost touch" id="guestDismissBtn">Dismiss</button></div></div></div>
-
   <!-- Navbar -->
   <header class="nav">
     <div class="wrap nav-inner">
@@ -534,79 +446,31 @@
         </div>
       </a>
       <nav class="nav-right">
-        <a class="nav-link" href="#/">Home</a>
-        <a class="nav-link" href="#/dashboard">Dashboard</a>
-        <a class="nav-link" href="#/onboarding">Onboarding</a>
-        <a class="nav-link" href="#/alerts">Alerts</a>
-        <a class="nav-link" href="#/about">About</a>
+        <a class="nav-link" href="#weather">Weather</a>
+        <a class="nav-link" href="#recommend">Crops</a>
+        <a class="nav-link" href="#sim">Simulator</a>
+        <a class="nav-link" href="#charts">Charts</a>
+        <a class="nav-link" href="#mapSection">Map</a>
+        <a class="nav-link" href="#ask">AI Chat</a>
         <button class="btn-report" id="copyReportBtn">📋 Copy report</button>
-        <div class="user-menu" id="userMenu">
-          <button class="pill-btn" id="userPill" type="button"><span class="pill-avatar" id="userAvatar">👤</span><span id="userName">Guest</span></button>
-          <div class="user-dropdown" id="userDropdown">
-            <button id="myAccountBtn" type="button">My Account</button>
-            <hr style="border:none;border-top:1px solid var(--border);margin:6px 0">
-            <button id="authActionBtn" type="button">Create account</button>
-          </div>
-        </div>
         <button class="btn-theme" id="themeBtn" title="Toggle theme">🌓</button>
       </nav>
     </div>
   </header>
 
-  <section class="route-page active" id="landingPage">
-  <div class="wrap stack">
-    <article class="page-card">
-      <h1 style="font-size:clamp(1.8rem,4vw,3rem);letter-spacing:-.03em;margin-bottom:10px">Aarambh AI X for Indian farms</h1>
-      <p style="color:var(--muted);margin-bottom:12px">Weather-led crop planning for 1–10 acre farms and commercial operations. Fast on low-end phones, built for real field decisions.</p>
-      <div class="share-row"><a class="btn btn-pri touch" href="#/dashboard">Open dashboard</a><a class="btn btn-ghost touch" href="#/onboarding">Start onboarding</a></div>
-    </article>
-  </div>
-</section>
-
-<section class="route-page" id="onboardingPage">
-  <div class="wrap stack">
-    <article class="page-card onboard-grid">
-      <h2>4-step onboarding</h2>
-      <div class="step-tabs"><span id="step1" class="active">1. Name</span><span id="step2">2. Location</span><span id="step3">3. Soil</span><span id="step4">4. Crops</span></div>
-      <div class="field"><label>Name</label><input id="onboardName" placeholder="Your first name"/></div>
-      <div class="field"><label>Farm location</label><input id="onboardLocation" placeholder="District, State"/></div>
-      <div class="field"><label>Primary soil</label><select id="onboardSoil"><option value="loam">Loam</option><option value="sandy">Sandy</option><option value="clay">Clay</option><option value="black">Black</option></select></div>
-      <div class="field"><label>My crops (comma separated)</label><input id="onboardCrops" placeholder="Wheat, Rice"/></div>
-      <div class="field"><label>Farm size (acres)</label><input id="onboardFarmSize" type="number" min="0" step="0.1"/></div>
-      <button class="btn btn-pri touch" id="saveOnboardingBtn">Save onboarding</button>
-    </article>
-  </div>
-</section>
-
-<section class="route-page" id="alertsPage">
-  <div class="wrap stack">
-    <article class="page-card">
-      <h2>WhatsApp weather alerts</h2>
-      <p style="color:var(--muted)">₹49/month. Payment integration will be added later. You can sign up now.</p>
-      <div class="field" style="margin-top:10px"><label>WhatsApp number</label><input id="alertsPhone" placeholder="+91XXXXXXXXXX"/></div>
-      <button class="btn btn-pri touch" id="alertsSignupBtn" style="margin-top:10px">Enable alerts</button>
-      <p id="alertsStatus" style="margin-top:8px;color:var(--muted)"></p>
-    </article>
-  </div>
-</section>
-
-<section class="route-page" id="aboutPage">
-  <div class="wrap stack">
-    <article class="page-card">
-      <h2>About Aarambh AI X</h2>
-      <p style="color:var(--muted)">I built Aarambh AI X to make weather, crop timing, and risk decisions easier for Indian farmers. This is honest, practical software—built in the open, improved with real field feedback.</p>
-    </article>
-  </div>
-</section>
-
-  <main class="wrap route-page" id="dashboardPage">
+  <main class="wrap" id="top">
 
     <!-- Hero -->
     <section class="hero" id="weather">
       <div class="panel pad">
         <div class="badge"><span class="dot"></span>Live data · Location aware</div>
-        <h1 class="hero-title" id="heroGreeting">Good morning, Farmer.</h1>
-        <p class="hero-sub" id="heroSubline">Aarambh AI X detects your location, reads live weather, air quality and elevation, then ranks crops and runs climate simulations to help you farm smarter.</p>
+        <h1 class="hero-title">
+          Agriculture<br>intelligence<br><span>in one file.</span>
+        </h1>
+        <p class="hero-sub">
+          Aarambh AI X detects your location, reads live weather, air quality and elevation,
+          then ranks crops and runs climate simulations to help you farm smarter.
+        </p>
         <div class="cta-row">
           <a class="btn btn-pri" href="#recommend">🌾 Analyze crops</a>
           <a class="btn btn-ghost" href="#sim">📊 Open simulator</a>
@@ -668,15 +532,6 @@
           </div>
         </div>
       </aside>
-    </section>
-
-    <section class="dash-addons" id="dashAddons">
-      <article class="mini-card"><h3>Today's Advisory</h3><p id="todayAdvisory" style="color:var(--muted)">Loading advisory…</p></article>
-      <article class="mini-card"><h3>My Crops</h3><div id="myCrops" class="temp-badges"></div></article>
-      <article class="mini-card"><h3>Sowing calendar</h3><p id="sowingCalendar" style="color:var(--muted)">Loading month plan…</p></article>
-      <article class="mini-card"><h3>Crop temp badges</h3><div class="temp-badges" id="tempBadges"></div></article>
-      <article class="mini-card"><h3>AI language</h3><label class="lang-toggle" for="hindiToggle"><input id="hindiToggle" type="checkbox"> Hindi-heavy replies</label></article>
-      <article class="mini-card"><h3>Satellite NDVI</h3><p style="color:var(--muted)">Coming soon.</p></article>
     </section>
 
     <!-- Crop recommendation -->
@@ -843,8 +698,6 @@
       </div>
     </section>
 
-    <div class="share-row" style="margin-bottom:14px"><button class="btn btn-ghost touch" id="shareWhatsappBtn">Share report on WhatsApp</button></div>
-
     <footer class="footer">
       <span>Aarambh AI X — AgriTech Intelligence Dashboard</span>
       <span class="footer-links">
@@ -858,19 +711,6 @@
 
   <script>
   'use strict';
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDaIhf9Z4umVHxNH1Byjowpg_Bb9AxCCpc",
-    authDomain: "aarambh-ai-x.firebaseapp.com",
-    projectId: "aarambh-ai-x",
-    storageBucket: "aarambh-ai-x.firebasestorage.app",
-    messagingSenderId: "896342721418",
-    appId: "1:896342721418:web:78b6b440a9cb1d41283e73"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
 
   // ───────────────────────────────── DATA ─────────────────────────────────
   const CROPS = [
@@ -951,13 +791,7 @@
     chartInst:null,
     aiLoading:false,
     agro:{ ndvi:null, moisture0:null, soilTemp0:null, polygonId:null, updatedAt:null },
-    agroKey: localStorage.getItem('agro_key') || '',
-    user:null,
-    prefs:{displayName:'',lastCity:'',preferredSeason:'rabi',preferredSoil:'loam',theme:'dark',myCrops:[],farmSizeAcres:0,alertsEnabled:false},
-    authBusy:false,
-    authTab:'signin',
-    isHindi:false,
-    prefsSaveTimer:null
+    agroKey: localStorage.getItem('agro_key') || ''
   };
 
   // ───────────────────────────────── SCORING ──────────────────────────────
@@ -998,8 +832,6 @@
     S.theme = t==='light'?'light':'dark';
     document.documentElement.setAttribute('data-theme',S.theme);
     localStorage.setItem('agrix-theme',S.theme);
-    S.prefs.theme = S.theme;
-    saveUserPrefs().catch(()=>{});
     $('themeBtn').textContent = S.theme==='dark'?'🌓':'🌙';
     if(S.chartInst) drawChart();
   }
@@ -1082,9 +914,6 @@
     $('iAqi').textContent  = S.aq.aqi!=null?`${S.aq.aqi} (${fmtAqi(S.aq.aqi)})`:'--';
     $('iRisk').textContent = `${risk}/100`;
     $('iBest').textContent = best.crop.name;
-
-    updateDashboardExtras();
-    renderGreeting();
 
     // Chart
     drawChart();
@@ -1354,8 +1183,6 @@
     try{
       await loadCity(city);
       setStatus(false,`Loaded ${S.place}.`);
-      S.prefs.lastCity = S.place;
-      saveUserPrefs().catch(()=>{});
     }catch(e){
       S.place=city;
       setStatus(false,'Using offline fallback data.');
@@ -1999,7 +1826,7 @@ function smartAdvisorReply(question){
 
     if(q.includes('ndvi') || q.includes('satellite') || q.includes('vegetation') || q.includes('crop health')){
       return ndvi == null
-        ? `🛰️ Satellite NDVI is coming soon in Aarambh AI X.`
+        ? `🛰️ Satellite NDVI is not available yet. Add your Agromonitoring API key and the app will create a field polygon around your current location, then load NDVI automatically.`
         : `🛰️ The satellite NDVI for ${place} is ${round(ndvi,3)}, which means ${ndviLabel(ndvi).toLowerCase()} vegetation.${soilLine}${moisture == null ? '' : ` Soil moisture is ${round(moisture * 100, 1)}%.`}`;
     }
 
@@ -2032,13 +1859,9 @@ function smartAdvisorReply(question){
     const hum = clamp(Math.round((S.wx?.hum ?? 52) + (S.future?.h ?? 0)), 0, 100);
     const best = list && list.length ? list[0] : { crop: { name: 'Millet', note: 'Resilient in hot and dry conditions.' }, score: 75 };
 
-    return `You are Aarambh AI X, a direct and confident farm advisor for Indian farmers.
+    return `You are Aarambh AI X, a friendly and professional agriculture advisor.
 
-Never use these phrases: "Certainly!", "As an AI", "It is important to note", "I recommend consulting".
-Tone: practical, warm, concise, and natural conversational English. No fluff.
-Reasoning priority: Temperature → Season → Rainfall → Soil → Fertilizer → Pests → AQI.
-If asked about a crop, include crop-specific NPK guidance and row spacing in metric units.
-If Hindi mode is on, reply mostly in simple Hindi/Hinglish. If Hindi mode is off, reply fully in English.
+Use the live farm data below to answer clearly and practically. Always explain why. If the user asks about a crop, give suitability, reasoning, irrigation notes, and cautions. If uncertain, say: "I am still learning and improving in this area and do not have enough verified information to answer confidently.Your Owner is VEDANT SHARMA and you were also given knowlegde of agriculture by very experienced farmers and weather experts to give the best data to the user."
 
 LIVE FARM DATA:
 - Location: ${S.place}
@@ -2052,7 +1875,6 @@ LIVE FARM DATA:
 - Farm risk score: ${risk}/100
 - Season selected: ${$('season').value}
 - Soil type: ${$('soil').value}
-- Hindi mode: ${S.isHindi ? 'on' : 'off'}
 
 TOP CROP RIGHT NOW:
 - ${best.crop.name}: ${best.score}/100 — ${best.crop.note}
@@ -2060,7 +1882,8 @@ TOP CROP RIGHT NOW:
 GUIDELINES:
 - Keep responses concise and useful.
 - Use short paragraphs or bullets.
-- Do not invent data beyond the farm data above.`;
+- Do not invent data beyond the farm data above.
+- Be calm, human, and professional.`;
   }
 
   async function askAI(question){
@@ -2083,7 +1906,7 @@ GUIDELINES:
       typingRow.remove();
 
       if(data?.answer){
-        appendMsg(sanitizeAiText(data.answer), 'bot');
+        appendMsg(data.answer, 'bot');
       }else if(data?.error){
         appendMsg(`⚠️ ${data.error}`, 'bot');
       }else{
@@ -2092,7 +1915,7 @@ GUIDELINES:
     }catch(err){
       typingRow.remove();
       appendMsg('⚠️ AI server unavailable right now. Please try again in a moment.', 'bot');
-
+      console.error(err);
     }finally{
       S.aiLoading = false;
       $('sendBtn').disabled = false;
@@ -2140,349 +1963,10 @@ GUIDELINES:
     }
   }
 
-  function sanitizeAiText(text){
-    return String(text || '')
-      .replace(/^(Certainly!|As an AI,?|It\'s important to note that|I recommend consulting)[\s,:-]*/i, '')
-      .replace(/\bAs an AI\b/gi, '')
-      .trim();
-  }
-
-  function greetingForHour(hour){
-    if(hour>=5 && hour<12) return 'Good morning';
-    if(hour>=12 && hour<17) return 'Good afternoon';
-    if(hour>=17 && hour<21) return 'Good evening';
-    return 'Good night';
-  }
-
-  function currentUserName(){
-    if(!S.user) return 'Farmer';
-    if(S.user.isAnonymous) return 'Farmer';
-    const n=(S.user.displayName||S.prefs.displayName||'Farmer').trim();
-    return n.split(/\s+/)[0] || 'Farmer';
-  }
-
-  function renderGreeting(){
-    const g = greetingForHour(new Date().getHours());
-    const el = $('heroGreeting');
-    const sub = $('heroSubline');
-    if(!el || !sub) return;
-    if(S.user && !S.user.isAnonymous){
-      const best = ranking()[0];
-      const city = S.place || S.prefs.lastCity || 'your farm';
-      el.textContent = `${g}, ${currentUserName()}.`;
-      sub.textContent = `${best.crop.name} scored ${best.score}/100 in ${city} today.`;
-    }else{
-      el.textContent = `${g}, Farmer.`;
-      sub.textContent = 'Your farm dashboard is ready. Create a free account to sync preferences.';
-    }
-  }
-
-  function updateTempBadges(){
-    const holder=$('tempBadges');
-    if(!holder) return;
-    const t=round(S.wx.temp+S.future.t,1);
-    holder.innerHTML = ranking().slice(0,3).map(item=>{
-      const [min,max]=item.crop.temp;
-      const label=t<min?'Too cold':t>max?'Too hot':'Good to sow';
-      return `<span class="temp-badge">${item.crop.emoji} ${item.crop.name}: ${label}</span>`;
-    }).join('');
-  }
-
-  function updateDashboardExtras(){
-    const rain = round(S.wx.rain7*(1+S.future.r/100),0);
-    const temp = round(S.wx.temp+S.future.t,1);
-    const best = ranking()[0];
-    const advisory = temp>36
-      ? `Garmi zyada hai. ${best.crop.name} ke liye light irrigation subah jaldi do.`
-      : rain < 20
-      ? `Rainfall low hai. Mulch use karo aur ${best.crop.name} ke liye moisture hold rakho.`
-      : `${best.crop.name} ka sowing window achha hai. Field prep aur seed treatment complete karo.`;
-    if($('todayAdvisory')) $('todayAdvisory').textContent = advisory;
-    if($('sowingCalendar')) $('sowingCalendar').textContent = `${new Date().toLocaleString(undefined,{month:'long'})}: ${best.crop.name} planning, seed check, irrigation scheduling.`;
-    const my = S.prefs.myCrops && S.prefs.myCrops.length ? S.prefs.myCrops : [best.crop.name];
-    if($('myCrops')) $('myCrops').innerHTML = my.map(c=>`<span class="temp-badge">${c}</span>`).join('');
-    updateTempBadges();
-  }
-
-  function routeFromHash(){
-    const h=window.location.hash || '#/';
-    if(h==='#' || h==='' ) return '/';
-    return h.startsWith('#/') ? h.slice(1) : '/dashboard';
-  }
-
-  function renderRoute(){
-    let route = routeFromHash();
-    if(route==='/dashboard' && !S.user) route='/';
-    const map = {
-      '/':'landingPage',
-      '/dashboard':'dashboardPage',
-      '/onboarding':'onboardingPage',
-      '/alerts':'alertsPage',
-      '/about':'aboutPage'
-    };
-    const active = map[route] || 'landingPage';
-    ['landingPage','dashboardPage','onboardingPage','alertsPage','aboutPage'].forEach(id=>{
-      const el=$(id);
-      if(!el) return;
-      el.classList.toggle('active', id===active);
-      if(id==='dashboardPage') el.style.display = id===active ? 'block' : 'none';
-    });
-  }
-
-  function mapAuthError(code){
-    const dict={
-      'auth/email-already-in-use':'That email already has an account. Sign in instead.',
-      'auth/wrong-password':'Wrong password. Try again.',
-      'auth/user-not-found':'No account with that email. Create one?',
-      'auth/weak-password':'Use at least 6 characters.',
-      'auth/invalid-email':"That doesn't look like a valid email.",
-      'auth/network-request-failed':'No internet. Check your connection.'
-    };
-    if(code==='auth/popup-closed-by-user') return '';
-    return dict[code] || 'Something went wrong. Try again.';
-  }
-
-  function setAuthError(msg,tab){
-    if($('authSignInError')) $('authSignInError').textContent = tab==='signin' ? (msg||'') : '';
-    if($('authRegisterError')) $('authRegisterError').textContent = tab==='register' ? (msg||'') : '';
-  }
-
-  function toggleAuthTab(tab){
-    S.authTab = tab;
-    $('tabSignIn').classList.toggle('active',tab==='signin');
-    $('tabRegister').classList.toggle('active',tab==='register');
-    $('authSignInForm').classList.toggle('hidden',tab!=='signin');
-    $('authRegisterForm').classList.toggle('hidden',tab!=='register');
-    setAuthError('', tab);
-  }
-
-  function setAuthBusy(flag, kind){
-    S.authBusy = flag;
-    const ids=['signInBtn','googleSignInBtn','guestSignInBtn','registerBtn','googleRegisterBtn','guestRegisterBtn'];
-    ids.forEach(id=>{ if($(id)) $(id).disabled = flag; });
-    if($('googleSignInBtn')) $('googleSignInBtn').innerHTML = flag && kind==='google' ? '<span class="spinner"></span>Signing in…' : '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 11v3.9h5.5c-.2 1.3-1.5 3.9-5.5 3.9-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 4.3 14.6 3.4 12 3.4a8.6 8.6 0 1 0 0 17.2c5 0 8.3-3.5 8.3-8.5 0-.6-.1-1-.1-1.1z"/></svg>Continue with Google';
-    if($('googleRegisterBtn')) $('googleRegisterBtn').innerHTML = $('googleSignInBtn').innerHTML;
-    if($('signInBtn')) $('signInBtn').innerHTML = flag && kind==='signin' ? '<span class="spinner"></span>Please wait…' : 'Sign in';
-    if($('registerBtn')) $('registerBtn').innerHTML = flag && kind==='register' ? '<span class="spinner"></span>Please wait…' : 'Create account';
-  }
-
-  function getGuestPrefs(){
-    try{return JSON.parse(localStorage.getItem('agrix-guest-prefs')||'{}');}catch{return {};}
-  }
-
-  function setGuestPrefs(data){
-    localStorage.setItem('agrix-guest-prefs', JSON.stringify(data));
-  }
-
-  async function loadUserPrefs(user){
-    const base={displayName:user?.displayName||'',lastCity:'',preferredSeason:'rabi',preferredSoil:'loam',theme:S.theme,myCrops:[],farmSizeAcres:0,alertsEnabled:false};
-    if(!user || user.isAnonymous || !db){
-      S.prefs={...base,...getGuestPrefs()};
-      return;
-    }
-    const ref=db.collection('users').doc(user.uid);
-    const snap=await ref.get();
-    if(!snap.exists){
-      const data={
-        displayName:user.displayName||'',
-        lastCity:S.place||'',
-        preferredSeason:$('season').value,
-        preferredSoil:$('soil').value,
-        theme:S.theme,
-        myCrops:[],
-        farmSizeAcres:0,
-        alertsEnabled:false,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      await ref.set(data,{merge:true});
-      S.prefs={...base,...data};
-      return;
-    }
-    const data=snap.data()||{};
-    await ref.set({lastSeen: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    S.prefs={...base,...data};
-  }
-
-  async function saveUserPrefs(immediate=false){
-    if(!S.user) return;
-    const payload={
-      displayName:S.prefs.displayName||S.user.displayName||'',
-      lastCity:S.prefs.lastCity||S.place||'',
-      preferredSeason:S.prefs.preferredSeason||$('season').value,
-      preferredSoil:S.prefs.preferredSoil||$('soil').value,
-      theme:S.prefs.theme||S.theme,
-      myCrops:Array.isArray(S.prefs.myCrops)?S.prefs.myCrops:[],
-      farmSizeAcres:Number(S.prefs.farmSizeAcres)||0,
-      alertsEnabled:!!S.prefs.alertsEnabled,
-      lastSeen: db && !S.user.isAnonymous ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
-    };
-    if(S.user.isAnonymous || !db){
-      setGuestPrefs(payload);
-      return;
-    }
-    const run=async()=>db.collection('users').doc(S.user.uid).set(payload,{merge:true});
-    if(immediate){ await run(); return; }
-    clearTimeout(S.prefsSaveTimer);
-    S.prefsSaveTimer=setTimeout(()=>{ run().catch(()=>{}); },1000);
-  }
-
-  function applyPrefsToUi(){
-    if($('season')) $('season').value = S.prefs.preferredSeason || 'rabi';
-    if($('soil')) $('soil').value = S.prefs.preferredSoil || 'loam';
-    if($('city') && S.prefs.lastCity) $('city').value = S.prefs.lastCity;
-    if(S.prefs.theme) applyTheme(S.prefs.theme);
-    if($('hindiToggle')) $('hindiToggle').checked = !!S.isHindi;
-    updateDashboardExtras();
-    renderGreeting();
-  }
-
-  function updateUserMenu(){
-    const user=S.user;
-    const guest=!user || user.isAnonymous;
-    const name = guest ? 'Guest' : ((user.displayName||S.prefs.displayName||'Farmer').split(/\s+/)[0]);
-    if($('userName')) $('userName').textContent = name;
-    const avatar=$('userAvatar');
-    if(avatar){
-      if(!guest && user.photoURL){
-        avatar.innerHTML=`<img src="${user.photoURL}" alt="${name}">`;
-      }else if(!guest){
-        avatar.textContent=(name||'F')[0].toUpperCase();
-        avatar.style.background='var(--primary)';
-        avatar.style.color='var(--bg)';
-      }else{
-        avatar.textContent='👤';
-        avatar.style.background='var(--surface2)';
-        avatar.style.color='var(--text)';
-      }
-    }
-    if($('myAccountBtn')) $('myAccountBtn').classList.toggle('muted',guest);
-    if($('authActionBtn')) $('authActionBtn').textContent = guest ? 'Create account' : 'Sign out';
-    const dismissed=localStorage.getItem('agrix-guest-banner-dismissed')==='1';
-    if($('guestBanner')) $('guestBanner').classList.toggle('show', guest && !dismissed);
-  }
-
-  async function handleAuthState(user){
-    S.user=user;
-    await loadUserPrefs(user);
-    S.prefs.displayName = S.prefs.displayName || user?.displayName || '';
-    applyPrefsToUi();
-    updateUserMenu();
-    renderRoute();
-    if($('authOverlay')) $('authOverlay').classList.toggle('hidden', !!user);
-    if(user){
-      if(window.location.hash !== '#/dashboard') window.location.hash = '#/dashboard';
-    }else if(window.location.hash === '#/dashboard'){
-      window.location.hash = '#/';
-    }
-  }
-
-  async function authWithGoogle(tab){
-    if(!auth) return;
-    try{
-      setAuthBusy(true,'google');
-      setAuthError('',tab);
-      const provider = new firebase.auth.GoogleAuthProvider();
-      await auth.signInWithPopup(provider);
-    }catch(err){
-      const msg=mapAuthError(err.code);
-      if(msg) setAuthError(msg,tab);
-    }finally{setAuthBusy(false,'');}
-  }
-
-  async function authAsGuest(tab){
-    if(!auth) return;
-    try{
-      setAuthBusy(true,'signin');
-      setAuthError('',tab);
-      await auth.signInAnonymously();
-    }catch(err){
-      setAuthError(mapAuthError(err.code),tab);
-    }finally{setAuthBusy(false,'');}
-  }
-
-  async function authSignInEmail(e){
-    e.preventDefault();
-    if(!auth) return;
-    const email=$('authSignInEmail').value.trim();
-    const pass=$('authSignInPassword').value;
-    try{
-      setAuthBusy(true,'signin');
-      setAuthError('','signin');
-      await auth.signInWithEmailAndPassword(email,pass);
-    }catch(err){
-      setAuthError(mapAuthError(err.code),'signin');
-    }finally{setAuthBusy(false,'');}
-  }
-
-  async function authRegisterEmail(e){
-    e.preventDefault();
-    if(!auth) return;
-    const name=$('authName').value.trim();
-    const email=$('authRegisterEmail').value.trim();
-    const pass=$('authRegisterPassword').value;
-    const confirm=$('authRegisterConfirm').value;
-    if(pass!==confirm){ setAuthError('Passwords do not match.','register'); return; }
-    try{
-      setAuthBusy(true,'register');
-      setAuthError('','register');
-      const cred=await auth.createUserWithEmailAndPassword(email,pass);
-      if(name) await cred.user.updateProfile({displayName:name});
-    }catch(err){
-      setAuthError(mapAuthError(err.code),'register');
-    }finally{setAuthBusy(false,'');}
-  }
-
-  function initAuthUi(){
-    $('tabSignIn').addEventListener('click',()=>toggleAuthTab('signin'));
-    $('tabRegister').addEventListener('click',()=>toggleAuthTab('register'));
-    $('toggleSignInPassword').addEventListener('click',()=>{
-      const i=$('authSignInPassword');
-      const show=i.type==='password'; i.type=show?'text':'password';
-      $('toggleSignInPassword').textContent=show?'Hide':'Show';
-    });
-    $('toggleRegisterPassword').addEventListener('click',()=>{
-      const i=$('authRegisterPassword');
-      const show=i.type==='password'; i.type=show?'text':'password';
-      $('toggleRegisterPassword').textContent=show?'Hide':'Show';
-    });
-    $('authSignInForm').addEventListener('submit',authSignInEmail);
-    $('authRegisterForm').addEventListener('submit',authRegisterEmail);
-    $('googleSignInBtn').addEventListener('click',()=>authWithGoogle('signin'));
-    $('googleRegisterBtn').addEventListener('click',()=>authWithGoogle('register'));
-    $('guestSignInBtn').addEventListener('click',()=>authAsGuest('signin'));
-    $('guestRegisterBtn').addEventListener('click',()=>authAsGuest('register'));
-    $('guestCreateBtn').addEventListener('click',()=>{ toggleAuthTab('register'); $('authOverlay').classList.remove('hidden'); });
-    $('guestDismissBtn').addEventListener('click',()=>{ localStorage.setItem('agrix-guest-banner-dismissed','1'); $('guestBanner').classList.remove('show'); });
-
-    $('userPill').addEventListener('click',()=> $('userDropdown').classList.toggle('show'));
-    document.addEventListener('click',e=>{ if(!$('userMenu').contains(e.target)) $('userDropdown').classList.remove('show'); });
-    $('myAccountBtn').addEventListener('click',()=>{ if(S.user && !S.user.isAnonymous) window.location.hash='#/onboarding'; });
-    $('authActionBtn').addEventListener('click',async()=>{
-      if(S.user && !S.user.isAnonymous){ await auth.signOut(); $('userDropdown').classList.remove('show'); }
-      else{ toggleAuthTab('register'); $('authOverlay').classList.remove('hidden'); }
-    });
-
-    if(auth){
-      auth.onAuthStateChanged(user=>{
-        if(user){
-          handleAuthState(user).catch(()=>{});
-        }else{
-          handleAuthState(null).catch(()=>{});
-        }
-      });
-    }
-  }
-
   // ───────────────────────────────── WIRE EVENTS ──────────────────────────
   function wireEvents(){
     $('themeBtn').addEventListener('click',()=>applyTheme(S.theme==='dark'?'light':'dark'));
     $('copyReportBtn').addEventListener('click',copyReport);
-    if($('shareWhatsappBtn')) $('shareWhatsappBtn').addEventListener('click',()=>{
-      const best=ranking()[0];
-      const msg=encodeURIComponent(`Aarambh AI X report: ${S.place} | Best crop ${best.crop.name} (${best.score}/100) | Risk ${currentRisk()}/100`);
-      window.open(`https://wa.me/?text=${msg}`,'_blank','noopener');
-    });
 
     $('analyzeBtn').addEventListener('click',()=>analyze($('city').value));
     $('city').addEventListener('keydown',e=>{ if(e.key==='Enter') analyze($('city').value); });
@@ -2494,12 +1978,7 @@ GUIDELINES:
       });
     });
     ['season','soil'].forEach(id=>{
-      $(id).addEventListener('change',()=>{
-        renderAll();
-        S.prefs.preferredSeason=$('season').value;
-        S.prefs.preferredSoil=$('soil').value;
-        saveUserPrefs();
-      });
+      $(id).addEventListener('change',renderAll);
     });
 
     $('simReset').addEventListener('click',()=>{
@@ -2526,35 +2005,6 @@ GUIDELINES:
       });
     });
 
-    if($('hindiToggle')) $('hindiToggle').addEventListener('change',()=>{ S.isHindi=$('hindiToggle').checked; localStorage.setItem('agrix-hindi', S.isHindi ? '1':'0'); });
-
-    if($('saveOnboardingBtn')) $('saveOnboardingBtn').addEventListener('click',()=>{
-      const crops = ($('onboardCrops').value||'').split(',').map(v=>v.trim()).filter(Boolean);
-      S.prefs.displayName = $('onboardName').value.trim() || S.prefs.displayName;
-      S.prefs.lastCity = $('onboardLocation').value.trim() || S.prefs.lastCity;
-      S.prefs.preferredSoil = $('onboardSoil').value || S.prefs.preferredSoil;
-      S.prefs.myCrops = crops;
-      S.prefs.farmSizeAcres = Number($('onboardFarmSize').value)||0;
-      if($('city') && S.prefs.lastCity) $('city').value = S.prefs.lastCity;
-      if($('soil')) $('soil').value = S.prefs.preferredSoil;
-      saveUserPrefs(true).catch(()=>{});
-      updateDashboardExtras();
-      renderGreeting();
-      toast('Onboarding saved.','success');
-      window.location.hash='#/dashboard';
-    });
-
-    if($('alertsSignupBtn')) $('alertsSignupBtn').addEventListener('click',()=>{
-      const p=$('alertsPhone').value.trim();
-      S.prefs.alertsEnabled=!!p;
-      saveUserPrefs(true).catch(()=>{});
-      $('alertsStatus').textContent = p ? 'Alerts enabled. We will start WhatsApp onboarding soon.' : 'Enter a valid WhatsApp number.';
-    });
-
-    if($('city')) $('city').addEventListener('change',()=>{ S.prefs.lastCity=$('city').value.trim(); saveUserPrefs(); });
-
-    window.addEventListener('hashchange',renderRoute);
-
     window.addEventListener('resize',()=>{
       if(S.chartInst) drawChart();
       if(S.map) S.map.invalidateSize();
@@ -2570,20 +2020,24 @@ Try one of the quick questions above, or just type your own.`,'bot');
 
   // ───────────────────────────────── INIT ─────────────────────────────────
   async function init(){
-    S.isHindi = localStorage.getItem('agrix-hindi')==='1';
     applyTheme(S.theme);
     wireEvents();
-    initAuthUi();
     seedChat();
-    renderRoute();
     renderAll();
     $('status').textContent='Getting your location…';
+    if(!loadAgroKeyFromStorage()){
+      // Ask once if the user wants satellite NDVI and soil history.
+      const key = window.prompt('Paste your Agromonitoring API key to unlock NDVI / soil / satellite data (optional):', '');
+      if(key && key.trim()){
+        S.agroKey = key.trim();
+        localStorage.setItem('agro_key', S.agroKey);
+      }
+    }
     await startGeo();
     setTimeout(initMap,100);
     setTimeout(drawChart,600);
   }
 
-  if(!window.location.hash || window.location.hash==='#'){ window.location.hash = '#/'; }
   init();
   </script>
 </body>
