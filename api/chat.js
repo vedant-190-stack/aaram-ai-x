@@ -23,7 +23,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: 'system',
-            content: context || 'You are Aarambh AI X, an expert agricultural advisor. Respond in clear conversational English unless the user explicitly asks for another language.'
+            content: context || 'You are Aarambh AI X, an expert agricultural advisor.'
           },
           {
             role: 'user',
