@@ -1,0 +1,26 @@
+Firebase Console Setup Checklist
+
+[ ] Create Firebase project
+[ ] Enable Authentication providers:
+    - Google
+    - Email/Password
+    - Anonymous
+[ ] Create Firestore database in production mode
+[ ] Add Web App and copy config values
+[ ] Replace placeholders in /home/runner/work/aaram-ai-x/aaram-ai-x/aarambh-ai-x.html:
+    - apiKey
+    - authDomain
+    - projectId
+    - storageBucket
+    - messagingSenderId
+    - appId
+[ ] Publish Firestore rules from /home/runner/work/aaram-ai-x/aaram-ai-x/firestore.rules
+
+CDN Scripts Added
+
+1) https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js
+   - Initializes Firebase app in a single-file, no-build setup.
+2) https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js
+   - Enables Google, Email/Password, and Anonymous authentication flows.
+3) https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js
+   - Enables user preference storage in Firestore.
