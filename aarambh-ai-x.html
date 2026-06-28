@@ -13,9 +13,9 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
   <style>
     :root {
@@ -429,7 +429,7 @@
     .user-dropdown button{width:100%;text-align:left;padding:10px;border-radius:10px;cursor:pointer;min-height:44px}
     .user-dropdown button:hover{background:var(--surface2)}
     .user-dropdown .muted{opacity:.55;cursor:not-allowed}
-    .auth-overlay{position:fixed;inset:0;z-index:9999;background:color-mix(in srgb,var(--bg) 90%,transparent);display:grid;place-items:center;padding:16px}
+    .auth-overlay{position:fixed;inset:0;z-index:9999;background:color-mix(in srgb,var(--bg) 90%,transparent);display:flex;align-items:center;justify-content:center;padding:16px}
     .auth-card{width:min(460px,100%);background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:18px;display:grid;gap:12px}
     .auth-head{text-align:center}
     .auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--surface2);border:1px solid var(--border);padding:4px;border-radius:12px;gap:4px}
@@ -860,21 +860,17 @@
   'use strict';
 
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyDaIhf9Z4umVHxNH1Byjowpg_Bb9AxCCpc",
+    authDomain: "aarambh-ai-x.firebaseapp.com",
+    projectId: "aarambh-ai-x",
+    storageBucket: "aarambh-ai-x.firebasestorage.app",
+    messagingSenderId: "896342721418",
+    appId: "1:896342721418:web:78b6b440a9cb1d41283e73"
   };
 
-  let auth = null;
-  let db = null;
-  if (window.firebase) {
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth();
-    db = firebase.firestore();
-  }
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
   // ───────────────────────────────── DATA ─────────────────────────────────
   const CROPS = [
@@ -2215,7 +2211,8 @@ GUIDELINES:
   }
 
   function renderRoute(){
-    const route = routeFromHash();
+    let route = routeFromHash();
+    if(route==='/dashboard' && !S.user) route='/';
     const map = {
       '/':'landingPage',
       '/dashboard':'dashboardPage',
@@ -2373,7 +2370,11 @@ GUIDELINES:
     updateUserMenu();
     renderRoute();
     if($('authOverlay')) $('authOverlay').classList.toggle('hidden', !!user);
-    if(user && window.location.hash !== '#/dashboard') window.location.hash = '#/dashboard';
+    if(user){
+      if(window.location.hash !== '#/dashboard') window.location.hash = '#/dashboard';
+    }else if(window.location.hash === '#/dashboard'){
+      window.location.hash = '#/';
+    }
   }
 
   async function authWithGoogle(tab){
@@ -2462,7 +2463,15 @@ GUIDELINES:
       else{ toggleAuthTab('register'); $('authOverlay').classList.remove('hidden'); }
     });
 
-    if(auth){ auth.onAuthStateChanged(u=>{ handleAuthState(u).catch(()=>{}); }); }
+    if(auth){
+      auth.onAuthStateChanged(user=>{
+        if(user){
+          handleAuthState(user).catch(()=>{});
+        }else{
+          handleAuthState(null).catch(()=>{});
+        }
+      });
+    }
   }
 
   // ───────────────────────────────── WIRE EVENTS ──────────────────────────
@@ -2572,7 +2581,6 @@ Try one of the quick questions above, or just type your own.`,'bot');
     await startGeo();
     setTimeout(initMap,100);
     setTimeout(drawChart,600);
-    if(!auth){ handleAuthState({isAnonymous:true,displayName:'Guest'}).catch(()=>{}); }
   }
 
   if(!window.location.hash || window.location.hash==='#'){ window.location.hash = '#/'; }
