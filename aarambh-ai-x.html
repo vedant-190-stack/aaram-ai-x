@@ -2082,8 +2082,7 @@ GUIDELINES:
             appendMsg(`⚠️ ${data.error}`, 'bot');
           } else {
             appendMsg('⚠️ Unable to detect plant disease. Please try another image.', 'bot');
-          }
-        } catch (err) {
+       } catch (err) {
           typingRow.remove();
           appendMsg('⚠️ API server unavailable or payload too large. Check Vercel logs.', 'bot');
           console.error('Disease Detection Error:', err);
@@ -2093,6 +2092,8 @@ GUIDELINES:
         }
       });
     }
+  } // <--- THIS IS THE MISSING BRACE! IT CLOSES THE wireEvents() FUNCTION.
+
   // ───────────────────────────────── SEED ─────────────────────────────────
   function seedChat(){
     appendMsg(`👋 Hello! I'm your AI farm advisor. I have live data for your location — ask me anything about crops, weather, soil, irrigation, or risk.
