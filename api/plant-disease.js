@@ -1,16 +1,7 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// /api/plant-disease.js
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Increase the body size limit so users can upload high-res plant photos
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '4mb', 
-    },
-  },
-};
-
-export default async function handler(req, res) {
-  // Only allow POST requests
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -22,7 +13,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'No image was provided.' });
     }
 
-    // Initialize Gemini using your Vercel Environment Variable
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
@@ -55,19 +45,17 @@ If the plant appears completely healthy, return:
 <b>🌿 Plant:</b> [Plant Name]<br><br>
 <b>✅ Status:</b> Healthy Plant. Keep up the good work!`;
 
-    const imageParts = [
+    const result = await model.generateContent([
+      prompt,
       {
         inlineData: {
           data: imageBase64,
           mimeType: mimeType || 'image/jpeg',
-        },
-      },
-    ];
+        }
+      }
+    ]);
 
-    const result = await model.generateContent([prompt, ...imageParts]);
     let responseText = result.response.text();
-
-    // Clean up any accidental markdown formatting from Gemini
     responseText = responseText.replace(/```html/g, '').replace(/```/g, '').trim();
 
     return res.status(200).json({ answer: responseText });
@@ -76,4 +64,13 @@ If the plant appears completely healthy, return:
     console.error('Gemini API Error:', error);
     return res.status(500).json({ error: 'Unable to detect plant disease. Please try another image.' });
   }
-}
+};
+
+// Ensure Vercel allows up to 4MB payloads just in case
+module.exports.config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '4mb',
+    },
+  },
+};
