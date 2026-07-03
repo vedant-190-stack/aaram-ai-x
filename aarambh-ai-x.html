@@ -422,7 +422,6 @@
 </head>
 <body>
 
-  <!-- Loading screen -->
   <div class="loader" id="loader">
     <div class="loader-inner">
       <div class="loader-icon">🌱</div>
@@ -432,10 +431,8 @@
     </div>
   </div>
 
-  <!-- Toast -->
   <div class="toast" id="toast"></div>
 
-  <!-- Navbar -->
   <header class="nav">
     <div class="wrap nav-inner">
       <a class="brand" href="#top">
@@ -460,7 +457,6 @@
 
   <main class="wrap" id="top">
 
-    <!-- Hero -->
     <section class="hero" id="weather">
       <div class="panel pad">
         <div class="badge"><span class="dot"></span>Live data · Location aware</div>
@@ -534,7 +530,6 @@
       </aside>
     </section>
 
-    <!-- Crop recommendation -->
     <section class="section" id="recommend">
       <div class="section-head">
         <h2>Crop recommendation</h2>
@@ -574,7 +569,6 @@
       </div>
     </section>
 
-    <!-- Climate simulator -->
     <section class="section" id="sim">
       <div class="section-head">
         <h2>Future climate simulator</h2>
@@ -631,7 +625,6 @@
       </div>
     </section>
 
-    <!-- Charts -->
     <section class="section" id="charts">
       <div class="section-head">
         <h2>Crop suitability chart</h2>
@@ -644,7 +637,6 @@
       </div>
     </section>
 
-    <!-- Map -->
     <section class="section" id="mapSection">
       <div class="section-head">
         <h2>Farm map</h2>
@@ -655,7 +647,6 @@
       </div>
     </section>
 
-    <!-- AI Chat -->
     <section class="section" id="ask">
       <div class="section-head">
         <h2>AI farm advisor</h2>
@@ -664,6 +655,8 @@
       <div class="chat-grid">
         <div class="panel pad">
           <div class="suggestion-chips" id="suggestions">
+            <button class="suggestion" id="detectDiseaseBtn" style="border-color: rgba(61,227,162,.4); color: var(--good);">📷 Detect Plant Disease</button>
+            <input type="file" id="plantImage" accept="image/*" capture="environment" hidden />
             <button class="suggestion" data-q="What's the best crop for my location right now?">🌾 Best crop now?</button>
             <button class="suggestion" data-q="How is the air quality affecting my farm?">💨 Air quality impact?</button>
             <button class="suggestion" data-q="What's the current farm risk level and what causes it?">🛡️ Why is risk high?</button>
@@ -1558,7 +1551,7 @@
           ]]
         }
       }
-    };
+    }
   }
 
   async function ensureAgroPolygon(){
@@ -1678,8 +1671,6 @@
     return lines.join('<br>');
   }
 
-
-  
 function smartAdvisorReply(question){
     const q = cleanText(question);
     const topic = detectTopic(q);
@@ -2009,6 +2000,58 @@ GUIDELINES:
       if(S.chartInst) drawChart();
       if(S.map) S.map.invalidateSize();
     });
+
+    // ───────────────────────────────── ADDED: PLANT DISEASE DETECTION
+    const detectBtn = $('detectDiseaseBtn');
+    const imageInput = $('plantImage');
+
+    if (detectBtn && imageInput) {
+      detectBtn.addEventListener('click', () => imageInput.click());
+      
+      imageInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Clear input to allow re-uploading the same file if needed
+        e.target.value = '';
+
+        // Show user action in chat
+        appendMsg(`📷 Uploaded image for disease detection: ${file.name}`, 'user');
+        
+        // Show loading state
+        const typingRow = appendTyping();
+        S.aiLoading = true;
+        $('sendBtn').disabled = true;
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+          const response = await fetch('/api/plant-disease', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const data = await response.json();
+          typingRow.remove();
+
+          if (data?.answer) {
+            appendMsg(data.answer, 'bot');
+          } else if (data?.error) {
+            appendMsg(`⚠️ ${data.error}`, 'bot');
+          } else {
+            appendMsg('⚠️ Unable to detect plant disease. Please try another image.', 'bot');
+          }
+        } catch (err) {
+          typingRow.remove();
+          appendMsg('⚠️ API server unavailable right now. Please try another image.', 'bot');
+          console.error('Disease Detection Error:', err);
+        } finally {
+          S.aiLoading = false;
+          $('sendBtn').disabled = false;
+        }
+      });
+    }
   }
 
   // ───────────────────────────────── SEED ─────────────────────────────────
