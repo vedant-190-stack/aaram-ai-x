@@ -2005,6 +2005,39 @@ GUIDELINES:
     const detectBtn = $('detectDiseaseBtn');
     const imageInput = $('plantImage');
 
+    // Helper function to dynamically compress image to avoid Vercel 4.5MB limit
+    const compressImageToBase64 = file => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1000; // Safe resolution for AI vision
+          const MAX_HEIGHT = 1000;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+          } else {
+            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Export as highly compressed JPEG
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.onerror = error => reject(error);
+      };
+      reader.onerror = error => reject(error);
+    });
+
     if (detectBtn && imageInput) {
       detectBtn.addEventListener('click', () => imageInput.click());
       
@@ -2012,26 +2045,34 @@ GUIDELINES:
         const file = e.target.files[0];
         if (!file) return;
 
-        // Clear input to allow re-uploading the same file if needed
-        e.target.value = '';
-
-        // Show user action in chat
+        e.target.value = ''; // Reset input
         appendMsg(`📷 Uploaded image for disease detection: ${file.name}`, 'user');
         
-        // Show loading state
         const typingRow = appendTyping();
         S.aiLoading = true;
         $('sendBtn').disabled = true;
 
-        const formData = new FormData();
-        formData.append('image', file);
-
         try {
+          // Compress the image before converting to Base64
+          const base64String = await compressImageToBase64(file);
+          const base64Data = base64String.split(',')[1];
+
           const response = await fetch('/api/plant-disease', {
             method: 'POST',
-            body: formData
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+              imageBase64: base64Data, 
+              mimeType: 'image/jpeg' 
+            })
           });
           
+          // Check if Vercel returned a server error page instead of JSON
+          if (!response.ok && !response.headers.get('content-type')?.includes('application/json')) {
+            throw new Error(`Server returned status ${response.status}`);
+          }
+
           const data = await response.json();
           typingRow.remove();
 
@@ -2044,7 +2085,7 @@ GUIDELINES:
           }
         } catch (err) {
           typingRow.remove();
-          appendMsg('⚠️ API server unavailable right now. Please try another image.', 'bot');
+          appendMsg('⚠️ API server unavailable or payload too large. Check Vercel logs.', 'bot');
           console.error('Disease Detection Error:', err);
         } finally {
           S.aiLoading = false;
@@ -2052,8 +2093,6 @@ GUIDELINES:
         }
       });
     }
-  }
-
   // ───────────────────────────────── SEED ─────────────────────────────────
   function seedChat(){
     appendMsg(`👋 Hello! I'm your AI farm advisor. I have live data for your location — ask me anything about crops, weather, soil, irrigation, or risk.
