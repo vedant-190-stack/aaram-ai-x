@@ -538,11 +538,11 @@
       <div class="panel pad">
         <div class="input-row">
           <div class="field">
-            <label>City or region</label>
+            <label for="city">City or region</label>
             <input id="city" placeholder="Delhi, Pune, Nashik, Jaipur…" autocomplete="off" />
           </div>
           <div class="field">
-            <label>Season</label>
+            <label for="season">Season</label>
             <select id="season">
               <option value="kharif">Kharif (Jun–Sep)</option>
               <option value="rabi" selected>Rabi (Nov–Apr)</option>
@@ -550,12 +550,26 @@
             </select>
           </div>
           <div class="field">
-            <label>Soil type</label>
+            <label for="soil">Soil type</label>
             <select id="soil">
-              <option value="loam" selected>Loam</option>
-              <option value="sandy">Sandy</option>
-              <option value="clay">Clay</option>
-              <option value="black">Black (Regur)</option>
+              <option value="alluvial" selected>Alluvial Soil — Indo-Gangetic plains</option>
+              <option value="black">Black Cotton Soil (Regur) — Deccan plateau</option>
+              <option value="red">Red Soil — Tamil Nadu, AP, Karnataka</option>
+              <option value="laterite">Laterite Soil — Kerala, Goa, hills</option>
+              <option value="arid">Desert / Arid Soil — Rajasthan</option>
+              <option value="forest">Forest / Mountain Soil — Himalayas, NE</option>
+              <option value="saline">Saline / Alkaline Soil — waterlogged areas</option>
+              <option value="peaty">Peaty / Marshy Soil — coastal deltas</option>
+              <option value="sandy">Sandy Soil — coastal, Rajasthan</option>
+              <option value="clay">Clay Soil — river basins</option>
+              <option value="loam">Loam Soil — mixed fertile zones</option>
+              <option value="mixed_red_black">Mixed Red and Black Soil — Maharashtra</option>
+              <option value="sub_mountain">Sub-Mountain Soil — Himalayan foothills</option>
+              <option value="grey_brown">Grey and Brown Soil — semi-arid zones</option>
+              <option value="calcareous">Calcareous Soil — limestone regions</option>
+              <option value="sub_tropical">Sub-tropical Meadow Soil — valley meadows</option>
+              <option value="snowfield">Glacial / Snowfield Soil — high altitude</option>
+              <option value="yellow">Red and Yellow Soil — central India</option>
             </select>
           </div>
           <button class="btn btn-pri" id="analyzeBtn">Analyze</button>
@@ -666,6 +680,7 @@
           <div class="chat-log" id="log"></div>
           <div class="chat-input-row">
             <div class="field" style="flex:1">
+              <label for="q" style="display:none">Ask a question</label>
               <input id="q" placeholder="Ask about crops, weather, risk, soil…" autocomplete="off" />
             </div>
             <button class="btn btn-pri" id="sendBtn">Send ↗</button>
@@ -704,6 +719,8 @@
 
   <script>
   'use strict';
+  
+  const AGRO_KEY = '0633bbb4b603d24b52676fcd6fa6901e';
 
   // ───────────────────────────────── DATA ─────────────────────────────────
   const CROPS = [
@@ -711,7 +728,7 @@
       name:'Wheat', emoji:'🌾',
       seasons:['rabi'],
       temp:[8,24],rain:[300,900],hum:[35,65],
-      soil:['loam','clay'],
+      soil:['alluvial','loam','clay','grey_brown','sub_mountain'],
       water:'Moderate',
       note:'Thrives in cool, dry winters with moderate rainfall.'
     },
@@ -719,7 +736,7 @@
       name:'Rice', emoji:'🍚',
       seasons:['kharif'],
       temp:[20,34],rain:[900,2000],hum:[55,95],
-      soil:['clay','black'],
+      soil:['alluvial','clay','peaty','red','black','laterite'],
       water:'High',
       note:'Needs warm, wet conditions and standing water.'
     },
@@ -727,7 +744,7 @@
       name:'Maize', emoji:'🌽',
       seasons:['kharif','zaid'],
       temp:[18,32],rain:[500,1200],hum:[40,75],
-      soil:['loam','black'],
+      soil:['alluvial','loam','red','black','forest'],
       water:'Moderate',
       note:'A flexible staple suited to many Indian climates.'
     },
@@ -735,7 +752,7 @@
       name:'Millet', emoji:'🌿',
       seasons:['kharif','zaid'],
       temp:[20,38],rain:[200,700],hum:[25,65],
-      soil:['sandy','loam','black'],
+      soil:['arid','sandy','red','laterite','loam','black','mixed_red_black'],
       water:'Low',
       note:'Drought-resilient, ideal for arid and semi-arid zones.'
     },
@@ -743,7 +760,7 @@
       name:'Pulses', emoji:'🫘',
       seasons:['rabi','kharif'],
       temp:[15,30],rain:[250,900],hum:[30,75],
-      soil:['loam','black'],
+      soil:['alluvial','loam','black','red','mixed_red_black','grey_brown'],
       water:'Low',
       note:'Nitrogen-fixing legumes for water-limited farms.'
     },
@@ -751,7 +768,7 @@
       name:'Soybean', emoji:'🌱',
       seasons:['kharif'],
       temp:[20,30],rain:[600,1000],hum:[50,80],
-      soil:['loam','black'],
+      soil:['black','loam','alluvial','mixed_red_black'],
       water:'Moderate',
       note:'Rich oilseed crop for black soil regions.'
     },
@@ -759,7 +776,7 @@
       name:'Cotton', emoji:'☁️',
       seasons:['kharif'],
       temp:[22,38],rain:[500,1000],hum:[35,70],
-      soil:['black','clay'],
+      soil:['black','clay','mixed_red_black','alluvial','red'],
       water:'Moderate',
       note:'High-value cash crop for warm, long-season zones.'
     }
@@ -784,7 +801,7 @@
     chartInst:null,
     aiLoading:false,
     agro:{ ndvi:null, moisture0:null, soilTemp0:null, polygonId:null, updatedAt:null },
-    agroKey: localStorage.getItem('agro_key') || ''
+    agroKey: ''
   };
 
   // ───────────────────────────────── SCORING ──────────────────────────────
@@ -1207,22 +1224,22 @@
 
   // ───────────────────────────────── LOCAL FARMGPT ────────────────────────
   const FARM_GUIDES = [
-    { title:'Tomato', keywords:['tomato','tamatar','tomatoes'], crop:'Tomato', idealTemp:[18,30], rain:[450,900], hum:[50,75], soil:['loam','sandy loam'], season:['rabi','zaid'], water:'Moderate', scoreBoost:1.1, note:'Tomato prefers warm days, cool nights, moderate water, and well-drained loam. Very sensitive to excess heat and very poor air quality.' },
-    { title:'Mango', keywords:['mango','aam','am'], crop:'Mango', idealTemp:[24,38], rain:[700,2200], hum:[50,85], soil:['loam','sandy loam'], season:['kharif','zaid'], water:'Moderate', scoreBoost:0.98, note:'Mango is a tropical fruit crop that prefers warm weather, moderate humidity, deep well-drained soil, and careful irrigation during flowering and fruit setting.' },
-    { title:'Wheat', keywords:['wheat','gehun'], crop:'Wheat', idealTemp:[8,24], rain:[250,900], hum:[35,65], soil:['loam','clay'], season:['rabi'], water:'Moderate', scoreBoost:1.0, note:'Wheat performs best in cool, dry winter conditions with good soil moisture at sowing.' },
-    { title:'Rice', keywords:['rice','paddy','chawal'], crop:'Rice', idealTemp:[20,34], rain:[900,2200], hum:[55,95], soil:['clay','black'], season:['kharif'], water:'High', scoreBoost:1.0, note:'Rice needs high water, warm weather, and heavy soil that can hold moisture.' },
-    { title:'Millet', keywords:['millet','bajra','jowar','sorghum'], crop:'Millet', idealTemp:[20,38], rain:[180,700], hum:[20,65], soil:['sandy','loam','black'], season:['kharif','zaid'], water:'Low', scoreBoost:1.05, note:'Millet is a strong choice for hot, dry, low-rainfall farms.' },
-    { title:'Maize', keywords:['maize','corn','makka'], crop:'Maize', idealTemp:[18,32], rain:[450,1200], hum:[40,80], soil:['loam','black'], season:['kharif','zaid'], water:'Moderate', scoreBoost:1.0, note:'Maize is flexible and works well when rainfall is moderate and soil is fertile.' },
-    { title:'Pulses', keywords:['pulses','lentil','gram','chana','dal'], crop:'Pulses', idealTemp:[15,30], rain:[220,900], hum:[30,75], soil:['loam','black'], season:['rabi','kharif'], water:'Low', scoreBoost:1.08, note:'Pulses are resilient, improve soil nitrogen, and are excellent for water-limited conditions.' },
-    { title:'Soybean', keywords:['soybean','soya'], crop:'Soybean', idealTemp:[20,30], rain:[500,1100], hum:[45,80], soil:['black','loam'], season:['kharif'], water:'Moderate', scoreBoost:1.02, note:'Soybean likes warm weather, balanced rainfall, and black soil.' },
-    { title:'Cotton', keywords:['cotton'], crop:'Cotton', idealTemp:[22,38], rain:[450,1000], hum:[35,75], soil:['black','clay'], season:['kharif'], water:'Moderate', scoreBoost:0.95, note:'Cotton needs a long warm season, but too much humidity can increase pest and disease pressure.' },
-    { title:'Potato', keywords:['potato','aloo'], crop:'Potato', idealTemp:[12,24], rain:[250,700], hum:[55,85], soil:['loam','sandy loam'], season:['rabi'], water:'Moderate', scoreBoost:1.0, note:'Potato prefers cool weather and loose soil for tuber growth.' },
-    { title:'Onion', keywords:['onion','pyaz'], crop:'Onion', idealTemp:[13,28], rain:[250,650], hum:[45,75], soil:['loam','sandy loam'], season:['rabi','zaid'], water:'Low', scoreBoost:1.0, note:'Onion prefers dry air around harvest time and well-drained soil.' },
+    { title:'Tomato', keywords:['tomato','tamatar','tomatoes'], crop:'Tomato', idealTemp:[18,30], rain:[450,900], hum:[50,75], soil:['alluvial','loam','red','laterite'], season:['rabi','zaid'], water:'Moderate', scoreBoost:1.1, note:'Tomato prefers warm days, cool nights, moderate water, and well-drained loam. Very sensitive to excess heat and very poor air quality.' },
+    { title:'Mango', keywords:['mango','aam','am'], crop:'Mango', idealTemp:[24,38], rain:[700,2200], hum:[50,85], soil:['alluvial','loam','red','laterite','black'], season:['kharif','zaid'], water:'Moderate', scoreBoost:0.98, note:'Mango is a tropical fruit crop that prefers warm weather, moderate humidity, deep well-drained soil, and careful irrigation during flowering and fruit setting.' },
+    { title:'Wheat', keywords:['wheat','gehun'], crop:'Wheat', idealTemp:[8,24], rain:[250,900], hum:[35,65], soil:['alluvial','loam','clay','grey_brown','sub_mountain'], season:['rabi'], water:'Moderate', scoreBoost:1.0, note:'Wheat performs best in cool, dry winter conditions with good soil moisture at sowing.' },
+    { title:'Rice', keywords:['rice','paddy','chawal'], crop:'Rice', idealTemp:[20,34], rain:[900,2200], hum:[55,95], soil:['alluvial','clay','peaty','red','black','laterite'], season:['kharif'], water:'High', scoreBoost:1.0, note:'Rice needs high water, warm weather, and heavy soil that can hold moisture.' },
+    { title:'Millet', keywords:['millet','bajra','jowar','sorghum'], crop:'Millet', idealTemp:[20,38], rain:[180,700], hum:[20,65], soil:['arid','sandy','red','laterite','loam','black','mixed_red_black'], season:['kharif','zaid'], water:'Low', scoreBoost:1.05, note:'Millet is a strong choice for hot, dry, low-rainfall farms.' },
+    { title:'Maize', keywords:['maize','corn','makka'], crop:'Maize', idealTemp:[18,32], rain:[450,1200], hum:[40,80], soil:['alluvial','loam','red','black','forest'], season:['kharif','zaid'], water:'Moderate', scoreBoost:1.0, note:'Maize is flexible and works well when rainfall is moderate and soil is fertile.' },
+    { title:'Pulses', keywords:['pulses','lentil','gram','chana','dal'], crop:'Pulses', idealTemp:[15,30], rain:[220,900], hum:[30,75], soil:['alluvial','loam','black','red','mixed_red_black','grey_brown'], season:['rabi','kharif'], water:'Low', scoreBoost:1.08, note:'Pulses are resilient, improve soil nitrogen, and are excellent for water-limited conditions.' },
+    { title:'Soybean', keywords:['soybean','soya'], crop:'Soybean', idealTemp:[20,30], rain:[500,1100], hum:[45,80], soil:['black','loam','alluvial','mixed_red_black'], season:['kharif'], water:'Moderate', scoreBoost:1.02, note:'Soybean likes warm weather, balanced rainfall, and black soil.' },
+    { title:'Cotton', keywords:['cotton'], crop:'Cotton', idealTemp:[22,38], rain:[450,1000], hum:[35,75], soil:['black','clay','mixed_red_black','alluvial','red'], season:['kharif'], water:'Moderate', scoreBoost:0.95, note:'Cotton needs a long warm season, but too much humidity can increase pest and disease pressure.' },
+    { title:'Potato', keywords:['potato','aloo'], crop:'Potato', idealTemp:[12,24], rain:[250,700], hum:[55,85], soil:['alluvial','loam','sandy','sub_mountain'], season:['rabi'], water:'Moderate', scoreBoost:1.0, note:'Potato prefers cool weather and loose soil for tuber growth.' },
+    { title:'Onion', keywords:['onion','pyaz'], crop:'Onion', idealTemp:[13,28], rain:[250,650], hum:[45,75], soil:['alluvial','loam','red','black'], season:['rabi','zaid'], water:'Low', scoreBoost:1.0, note:'Onion prefers dry air around harvest time and well-drained soil.' },
     { title:'Chilli', keywords:['chilli','chili','mirchi'], crop:'Chilli', idealTemp:[18,32], rain:[400,900], hum:[45,80], soil:['loam','black'], season:['kharif'], water:'Moderate', scoreBoost:1.0, note:'Chilli likes warmth and good drainage, but very high heat can reduce fruit set.' },
-    { title:'Sugarcane', keywords:['sugarcane','ganna'], crop:'Sugarcane', idealTemp:[20,35], rain:[1200,2500], hum:[55,90], soil:['loam','clay','black'], season:['kharif'], water:'High', scoreBoost:0.95, note:'Sugarcane needs plenty of water and a long growing season.' },
-    { title:'Mustard', keywords:['mustard','sarson'], crop:'Mustard', idealTemp:[10,25], rain:[200,600], hum:[30,70], soil:['loam','clay'], season:['rabi'], water:'Low', scoreBoost:1.0, note:'Mustard prefers cool weather and moderate water.' },
-    { title:'Groundnut', keywords:['groundnut','peanut','mungfali'], crop:'Groundnut', idealTemp:[20,35], rain:[500,1100], hum:[40,80], soil:['sandy','loam'], season:['kharif'], water:'Moderate', scoreBoost:1.0, note:'Groundnut is best in light soil with warm weather and moderate rain.' },
-    { title:'Chickpea', keywords:['chickpea', 'gram', 'चना', 'chana'], crop:'Chickpea', idealTemp:[15, 28], rain:[250, 700], hum:[30, 70], soil:["loam", "black"], season:["rabi"], water:'Low', scoreBoost:1.05, note:'Chickpea is a cool-season pulse that improves soil nitrogen and works well after the monsoon.' },
+    { title:'Sugarcane', keywords:['sugarcane','ganna'], crop:'Sugarcane', idealTemp:[20,35], rain:[1200,2500], hum:[55,90], soil:['alluvial','black','loam','clay','red'], season:['kharif'], water:'High', scoreBoost:0.95, note:'Sugarcane needs plenty of water and a long growing season.' },
+    { title:'Mustard', keywords:['mustard','sarson'], crop:'Mustard', idealTemp:[10,25], rain:[200,600], hum:[30,70], soil:['alluvial','loam','clay'], season:['rabi'], water:'Low', scoreBoost:1.0, note:'Mustard prefers cool weather and moderate water.' },
+    { title:'Groundnut', keywords:['groundnut','peanut','mungfali'], crop:'Groundnut', idealTemp:[20,35], rain:[500,1100], hum:[40,80], soil:['sandy','red','loam','arid','laterite'], season:['kharif'], water:'Moderate', scoreBoost:1.0, note:'Groundnut is best in light soil with warm weather and moderate rain.' },
+    { title:'Chickpea', keywords:['chickpea', 'gram', 'चना', 'chana'], crop:'Chickpea', idealTemp:[15, 28], rain:[250, 700], hum:[30, 70], soil:['alluvial','loam','black','red','grey_brown'], season:["rabi"], water:'Low', scoreBoost:1.05, note:'Chickpea is a cool-season pulse that improves soil nitrogen and works well after the monsoon.' },
     { title:'Lentil', keywords:['lentil', 'masoor'], crop:'Lentil', idealTemp:[12, 26], rain:[200, 600], hum:[30, 70], soil:["loam", "clay"], season:["rabi"], water:'Low', scoreBoost:1.03, note:'Lentil prefers cool weather, light watering, and well-drained soil.' },
     { title:'Pea', keywords:['pea', 'peas', 'matar'], crop:'Pea', idealTemp:[10, 24], rain:[250, 700], hum:[40, 75], soil:["loam", "sandy loam"], season:["rabi"], water:'Low', scoreBoost:1.02, note:'Pea does best in cool weather and fertile, well-drained soil.' },
     { title:'Cabbage', keywords:['cabbage', 'patta gobhi'], crop:'Cabbage', idealTemp:[12, 25], rain:[300, 800], hum:[50, 80], soil:["loam", "clay"], season:["rabi"], water:'Moderate', scoreBoost:1.0, note:'Cabbage likes cool weather, regular watering, and fertile soil.' },
@@ -1231,9 +1248,8 @@
     { title:'Okra', keywords:['okra', 'bhindi'], crop:'Okra', idealTemp:[20, 35], rain:[400, 1000], hum:[40, 75], soil:["loam", "sandy loam"], season:["kharif", "zaid"], water:'Moderate', scoreBoost:1.0, note:'Okra likes warm weather and well-drained soil.' },
     { title:'Brinjal', keywords:['brinjal', 'eggplant', 'baingan'], crop:'Brinjal', idealTemp:[20, 35], rain:[500, 1000], hum:[45, 80], soil:["loam", "sandy loam"], season:["kharif", "zaid"], water:'Moderate', scoreBoost:1.0, note:'Brinjal grows well in warm weather with steady moisture.' },
     { title:'Garlic', keywords:['garlic', 'lahsun'], crop:'Garlic', idealTemp:[12, 28], rain:[250, 700], hum:[35, 70], soil:["loam", "sandy loam"], season:["rabi"], water:'Low', scoreBoost:1.0, note:'Garlic prefers cool weather, careful watering, and loose soil.' },
-    { title:'Ginger', keywords:['ginger', 'adrak'], crop:'Ginger', idealTemp:[20, 30], rain:[1200, 2500], hum:[60, 90], soil:["loam", "sandy loam"], season:["kharif"], water:'High', scoreBoost:0.98, note:'Ginger needs warm, humid weather, shade-friendly management, and rich soil.' },
-    { title:'Turmeric', keywords:['turmeric', 'haldi'], crop:'Turmeric', idealTemp:[20, 30], rain:[1200, 2500], hum:[60, 90], soil:["loam", "clay loam"], season:["kharif"], water:'High', scoreBoost:0.98, note:'Turmeric likes warm humid weather and soil that holds moisture but drains well.' },
-    { title:'Groundnut', keywords:['groundnut', 'peanut', 'mungfali'], crop:'Groundnut', idealTemp:[20, 35], rain:[500, 1000], hum:[35, 70], soil:["sandy", "loam"], season:["kharif"], water:'Moderate', scoreBoost:1.0, note:'Groundnut prefers light soil and warm weather with moderate rainfall.' },
+    { title:'Ginger', keywords:['ginger', 'adrak'], crop:'Ginger', idealTemp:[20, 30], rain:[1200, 2500], hum:[60, 90], soil:['laterite','loam','forest','red'], season:["kharif"], water:'High', scoreBoost:0.98, note:'Ginger needs warm, humid weather, shade-friendly management, and rich soil.' },
+    { title:'Turmeric', keywords:['turmeric', 'haldi'], crop:'Turmeric', idealTemp:[20, 30], rain:[1200, 2500], hum:[60, 90], soil:['laterite','loam','forest','red','alluvial'], season:["kharif"], water:'High', scoreBoost:0.98, note:'Turmeric likes warm humid weather and soil that holds moisture but drains well.' },
     { title:'Sesame', keywords:['sesame', 'til'], crop:'Sesame', idealTemp:[24, 38], rain:[300, 800], hum:[30, 70], soil:["sandy", "loam", "black"], season:["kharif", "zaid"], water:'Low', scoreBoost:1.0, note:'Sesame is drought-tolerant and fits warm, semi-dry climates.' },
     { title:'Sunflower', keywords:['sunflower'], crop:'Sunflower', idealTemp:[18, 30], rain:[400, 900], hum:[35, 75], soil:["loam", "black"], season:["rabi", "kharif"], water:'Moderate', scoreBoost:1.0, note:'Sunflower is flexible and does well in moderate climate conditions.' },
     { title:'Watermelon', keywords:['watermelon', 'tarbooz'], crop:'Watermelon', idealTemp:[22, 35], rain:[300, 700], hum:[35, 70], soil:["sandy", "loam"], season:["zaid", "kharif"], water:'Moderate', scoreBoost:1.0, note:'Watermelon likes warm weather, sandy soil, and careful water control.' },
@@ -1241,7 +1257,9 @@
     { title:'Apple', keywords:['apple'], crop:'Apple', idealTemp:[10, 24], rain:[500, 1200], hum:[40, 75], soil:["loam"], season:["rabi"], water:'Moderate', scoreBoost:0.96, note:'Apple is a cool-climate orchard crop that needs chilling and careful management.' },
     { title:'Papaya', keywords:['papaya'], crop:'Papaya', idealTemp:[20, 35], rain:[800, 2000], hum:[50, 85], soil:["loam", "sandy loam"], season:["kharif", "zaid"], water:'Moderate', scoreBoost:1.0, note:'Papaya likes warm tropical conditions and good drainage.' },
     { title:'Guava', keywords:['guava'], crop:'Guava', idealTemp:[20, 34], rain:[600, 1800], hum:[45, 85], soil:["loam", "sandy loam"], season:["kharif", "zaid"], water:'Moderate', scoreBoost:1.0, note:'Guava is hardy and can tolerate a range of tropical conditions.' },
-    { title:'Spinach', keywords:['spinach', 'palak'], crop:'Spinach', idealTemp:[10, 24], rain:[250, 700], hum:[40, 75], soil:["loam", "sandy loam"], season:["rabi"], water:'Moderate', scoreBoost:1.0, note:'Spinach grows best in cool weather with regular watering and fertile soil.' }
+    { title:'Spinach', keywords:['spinach', 'palak'], crop:'Spinach', idealTemp:[10, 24], rain:[250, 700], hum:[40, 75], soil:["loam", "sandy loam"], season:["rabi"], water:'Moderate', scoreBoost:1.0, note:'Spinach grows best in cool weather with regular watering and fertile soil.' },
+    { title:'Banana', keywords:['banana','kela'], crop:'Banana', idealTemp:[20, 35], rain:[1500, 2500], hum:[50, 90], soil:['alluvial','loam','laterite','red'], season:['kharif', 'zaid'], water:'High', scoreBoost:1.0, note:'Banana needs rich soil, high water, and wind protection.' },
+    { title:'Coconut', keywords:['coconut','nariyal'], crop:'Coconut', idealTemp:[20, 34], rain:[1000, 2250], hum:[60, 95], soil:['sandy','laterite','alluvial','red'], season:['kharif', 'zaid'], water:'High', scoreBoost:1.0, note:'Coconut thrives in coastal sandy soils with high humidity.' }
   ];
 
   const AGRO_TOPICS = [
@@ -1529,9 +1547,8 @@
   }
 
   function loadAgroKeyFromStorage(){
-    const existing = localStorage.getItem('agro_key') || S.agroKey || '';
-    S.agroKey = existing.trim();
-    return S.agroKey;
+    S.agroKey = AGRO_KEY;
+    return AGRO_KEY;
   }
 
   function getAgroPolygon(lat, lon, delta=0.02){
@@ -1671,7 +1688,15 @@
     return lines.join('<br>');
   }
 
-function smartAdvisorReply(question){
+  function ndviLabel(v){
+    if(v==null) return 'Unknown';
+    if(v>=0.6) return 'Healthy dense';
+    if(v>=0.4) return 'Moderate';
+    if(v>=0.2) return 'Sparse';
+    return 'Very low or bare soil';
+  }
+
+  function smartAdvisorReply(question){
     const q = cleanText(question);
     const topic = detectTopic(q);
     const explicitCrop = detectCrop(q);
@@ -1743,7 +1768,28 @@ function smartAdvisorReply(question){
     }
 
     if(q.includes('soil')){
-      return `🌱 Soil guidance for ${soil} soil:<br><br>${soil === 'black' ? 'Black soil holds moisture well and works very well for cotton and soybean.' : soil === 'sandy' ? 'Sandy soil drains quickly, so drought-tolerant crops like millet and groundnut are safer.' : soil === 'clay' ? 'Clay soil holds water well, which can help rice but needs careful drainage.' : 'Loam is the most versatile soil for wheat, maize, tomato, and pulses.'}${soilLine}${soilTempLine}`;
+      const soilGuide = {
+        alluvial: 'Alluvial soil is the most fertile in India. Found in Indo-Gangetic plains. Best for wheat, rice, sugarcane, and vegetables. Loamy texture, good drainage.',
+        black: 'Black (Regur) soil has high water retention. Best for cotton and soybean. Rich in calcium, magnesium, potassium. Cracks when dry — irrigate carefully.',
+        red: 'Red soil is low in nitrogen and organic matter. Best for millet, groundnut, and pulses. Add compost before sowing. Good drainage.',
+        laterite: 'Laterite soil is acidic and low in nutrients. Best for coconut, cashew, rubber, and tea. Add lime to raise pH. Heavy organic amendment needed.',
+        arid: 'Desert/arid soil drains extremely fast. Millet, sesame, and drought-tolerant crops only. Frequent small irrigations. Heavy mulching essential.',
+        forest: 'Forest/mountain soil is rich in organic matter. Good for ginger, turmeric, potato, and apple. Slightly acidic. Excellent structure.',
+        saline: 'Saline/alkaline soil is difficult. Only salt-tolerant crops: barley, beet, dhaincha. Leach with good water before sowing. Gypsum application helps.',
+        peaty: 'Peaty/marshy soil has very high organic matter but is waterlogged. Needs drainage improvement. Good for rice in managed conditions.',
+        sandy: 'Sandy soil drains very fast. Water and nutrients leach quickly. Add organic matter. Drip irrigation essential. Groundnut, sesame, watermelon work well.',
+        clay: 'Clay holds water very well but compacts easily. Good for rice and sugarcane. Avoid overwatering. Add gypsum to improve structure.',
+        loam: 'Loam is the ideal farm soil — balanced drainage and moisture retention. Suits almost all crops. Maintain organic matter with compost.',
+        mixed_red_black: 'Mixed red and black soil is common in Maharashtra. Moderate fertility. Good for cotton, soybean, jowar. Properties vary by field.',
+        sub_mountain: 'Sub-mountain soil at Himalayan foothills is deep and moderately fertile. Good for wheat, maize, potato, and fruit crops.',
+        grey_brown: 'Grey and brown soil found in semi-arid zones. Low organic matter. Suited for millets, pulses, mustard with careful fertilization.',
+        calcareous: 'Calcareous soil is alkaline and calcium-rich. Common in Rajasthan and UP. Add sulphur or gypsum to lower pH. Pulses and wheat tolerate it.',
+        sub_tropical: 'Sub-tropical meadow soil in valley areas is moderately fertile. Good for vegetables, wheat, and fodder crops.',
+        snowfield: 'Glacial/snowfield soil is undeveloped and very cold. Limited farming — only hardy vegetables and fodder at lower altitudes.',
+        yellow: 'Red and yellow soil in central India is low in N and P. Good for millet, pulses, groundnut. Phosphorus application is critical.'
+      };
+      const info = soilGuide[soil] || soilGuide['loam'];
+      return `🌱 <strong>${soil} soil — ${place}:</strong><br><br>${info}${soilLine}${soilTempLine}<br><br>Mitti ka test zaroor karo before heavy fertilizer application.`;
     }
 
 
@@ -1756,39 +1802,39 @@ function smartAdvisorReply(question){
     }
 
     if(q.includes('crop rotation') || q.includes('rotation')){
-      return `🔁 Crop rotation means changing crops on the same field across seasons to improve soil fertility and reduce pests and diseases.<br><br>${(FARM_TOPICS.rotation || []).join('<br>')}`;
+      return `🔁 Crop rotation means changing crops on the same field across seasons to improve soil fertility and reduce pests and diseases.<br><br>Rotate wheat → pulses → maize to break pest cycles and restore nitrogen naturally.`;
     }
 
     if(q.includes('hydroponic') || q.includes('hydroponics')){
-      return `💧 Hydroponics grows plants without soil using nutrient-rich water.<br><br>${(FARM_TOPICS.hydroponics || []).join('<br>')}`;
+      return `💧 Hydroponics uses nutrient solution instead of soil. 90% less water. Good for leafy greens and tomatoes.`;
     }
 
     if(q.includes('greenhouse') || q.includes('polyhouse')){
-      return `🏠 Greenhouse farming protects crops from harsh weather and can improve yield consistency.<br><br>${(FARM_TOPICS.greenhouse || []).join('<br>')}`;
+      return `🏠 Polyhouse controls temperature and humidity. Extends growing season. Good for off-season vegetables.`;
     }
 
     if(q.includes('organic')){
-      return `🌱 Organic farming uses compost, green manure, crop rotation, and biological pest control instead of relying heavily on synthetic chemicals.<br><br>${(FARM_TOPICS.organic || []).join('<br>')}`;
+      return `🌱 Use FYM, vermicompost, green manure, Trichoderma. Avoid synthetic chemicals. Takes 2–3 seasons to transition.`;
     }
 
     if(q.includes('precision farming') || q.includes('smart farming')){
-      return `📡 Precision farming uses weather, soil, and sensor data to apply water and fertilizer more efficiently.<br><br>${(FARM_TOPICS.precision || []).join('<br>')}`;
+      return `📡 Precision farming uses sensors and satellite data to apply water and fertilizer only where needed.`;
     }
 
     if(q.includes('scheme') || q.includes('government')){
-      return `🏛️ Government schemes can support irrigation, insurance, seeds, machinery, and farm improvements.<br><br>${(FARM_TOPICS.schemes || []).join('<br>')}`;
+      return `🏛️ PM-KISAN: ₹6000/year. PMFBY: crop insurance. PM-KUSUM: solar pumps. PKVY: organic support. Check state portals for local subsidies.`;
     }
 
     if(q.includes('what is ndvi') || q.includes('ndvi means') || q.includes('meaning of ndvi')){
-      return `🛰️ NDVI means Normalized Difference Vegetation Index.<br><br>${(FARM_TOPICS.glossary || []).find(x => x.includes('NDVI')) || 'It measures vegetation health from satellite data.'}`;
+      return `🛰️ NDVI 0.6–1.0 = healthy dense crop. 0.3–0.6 = moderate. Below 0.3 = stress or bare soil.`;
     }
 
     if(q.includes('what is aqi') || q.includes('aqi means')){
-      return `💨 AQI means Air Quality Index. It measures pollution levels in the air.<br><br>${(FARM_TOPICS.glossary || []).find(x => x.includes('AQI')) || 'Lower AQI is better for people and crops.'}`;
+      return `💨 AQI below 50 = good. 50–100 = moderate. Above 100 = unhealthy. Above 150 reduces photosynthesis.`;
     }
 
     if(q.includes('ipm') || q.includes('integrated pest management')){
-      return `🐛 IPM means Integrated Pest Management.<br><br>${(FARM_TOPICS.glossary || []).find(x => x.includes('IPM')) || 'It combines scouting, biological control, crop rotation, and careful chemical use.'}`;
+      return `🐛 IPM: scout weekly, use resistant varieties, release Trichogramma wasps, spray only above economic threshold.`;
     }
 
     if(q.includes('fertilizer') || q.includes('manure') || q.includes('npk')){
@@ -1817,7 +1863,7 @@ function smartAdvisorReply(question){
 
     if(q.includes('ndvi') || q.includes('satellite') || q.includes('vegetation') || q.includes('crop health')){
       return ndvi == null
-        ? `🛰️ Satellite NDVI is not available yet. Add your Agromonitoring API key and the app will create a field polygon around your current location, then load NDVI automatically.`
+        ? `🛰️ Satellite NDVI is loading for ${place}. If no data appears, no recent clear satellite pass exists for your area. Try again in 24 hours.`
         : `🛰️ The satellite NDVI for ${place} is ${round(ndvi,3)}, which means ${ndviLabel(ndvi).toLowerCase()} vegetation.${soilLine}${moisture == null ? '' : ` Soil moisture is ${round(moisture * 100, 1)}%.`}`;
     }
 
@@ -1988,7 +2034,7 @@ GUIDELINES:
     });
     $('q').addEventListener('keydown',e=>{ if(e.key==='Enter') $('sendBtn').click(); });
 
-    document.querySelectorAll('.suggestion').forEach(btn=>{
+    document.querySelectorAll('.suggestion[data-q]').forEach(btn=>{
       btn.addEventListener('click',()=>{
         const q=btn.dataset.q;
         $('q').value=q;
@@ -2082,7 +2128,8 @@ GUIDELINES:
             appendMsg(`⚠️ ${data.error}`, 'bot');
           } else {
             appendMsg('⚠️ Unable to detect plant disease. Please try another image.', 'bot');
-       } catch (err) {
+          }
+        } catch (err) {
           typingRow.remove();
           appendMsg('⚠️ API server unavailable or payload too large. Check Vercel logs.', 'bot');
           console.error('Disease Detection Error:', err);
@@ -2092,7 +2139,7 @@ GUIDELINES:
         }
       });
     }
-  } // <--- THIS IS THE MISSING BRACE! IT CLOSES THE wireEvents() FUNCTION.
+  }
 
   // ───────────────────────────────── SEED ─────────────────────────────────
   function seedChat(){
@@ -2108,14 +2155,7 @@ Try one of the quick questions above, or just type your own.`,'bot');
     seedChat();
     renderAll();
     $('status').textContent='Getting your location…';
-    if(!loadAgroKeyFromStorage()){
-      // Ask once if the user wants satellite NDVI and soil history.
-      const key = window.prompt('Paste your Agromonitoring API key to unlock NDVI / soil / satellite data (optional):', '');
-      if(key && key.trim()){
-        S.agroKey = key.trim();
-        localStorage.setItem('agro_key', S.agroKey);
-      }
-    }
+    
     await startGeo();
     setTimeout(initMap,100);
     setTimeout(drawChart,600);
