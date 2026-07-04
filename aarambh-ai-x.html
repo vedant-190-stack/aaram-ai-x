@@ -697,6 +697,7 @@
             <div class="info-row"><span class="key">AQI</span><span class="val" id="iAqi">—</span></div>
             <div class="info-row"><span class="key">Farm risk</span><span class="val" id="iRisk">—</span></div>
             <div class="info-row"><span class="key">Best crop</span><span class="val" id="iBest">—</span></div>
+            <div class="info-row"><span class="key">🛰️ NDVI</span><span class="val" id="iNdvi">Loading…</span></div>
           </div>
           <div style="height:12px"></div>
           <div style="font-size:0.8rem;color:var(--muted);line-height:1.7;padding:0 4px">
@@ -721,6 +722,7 @@
   'use strict';
   
   const AGRO_KEY = '0633bbb4b603d24b52676fcd6fa6901e';
+  const AGRO_DEFAULT_POLYGON = '6a315b4dfc4d163439b941bc';
 
   // ───────────────────────────────── DATA ─────────────────────────────────
   const CROPS = [
@@ -1574,21 +1576,27 @@
   async function ensureAgroPolygon(){
     const key = loadAgroKeyFromStorage();
     if(!key) return null;
-
     const lat = S.lat, lon = S.lon;
     if(lat == null || lon == null) return null;
 
+    // Check localStorage cache first (set when user changes location)
     const cacheKey = `agro_polygon_${Math.round(lat*1000)}_${Math.round(lon*1000)}`;
-    const existing = localStorage.getItem(cacheKey);
-    if(existing) return existing;
+    const cached = localStorage.getItem(cacheKey);
+    if(cached) return cached;
 
+    // For default location (Delhi area), use hardcoded polygon
+    // Covers roughly lat 28-29, lon 77-78
+    if(lat >= 28 && lat <= 29 && lon >= 77 && lon <= 78){
+      return AGRO_DEFAULT_POLYGON;
+    }
+
+    // For other locations, create a new polygon
     try{
       const body = JSON.stringify(getAgroPolygon(lat, lon));
-      const res = await fetch(`https://api.agromonitoring.com/agro/1.0/polygons?appid=${encodeURIComponent(key)}&duplicated=true`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body
-      });
+      const res = await fetch(
+        `https://api.agromonitoring.com/agro/1.0/polygons?appid=${encodeURIComponent(key)}&duplicated=true`,
+        { method:'POST', headers:{'Content-Type':'application/json'}, body }
+      );
       const data = await res.json();
       const polyId = data?.id || null;
       if(polyId) localStorage.setItem(cacheKey, polyId);
@@ -1638,6 +1646,15 @@
         polygonId: polyId,
         updatedAt: Date.now()
       };
+
+      if(S.agro.ndvi != null){
+        const ndviEl = document.getElementById('iNdvi');
+        if(ndviEl) ndviEl.textContent = `${round(S.agro.ndvi, 3)} — ${ndviLabel(S.agro.ndvi)}`;
+      } else {
+        const ndviEl = document.getElementById('iNdvi');
+        if(ndviEl) ndviEl.textContent = 'Unavailable';
+      }
+
       return S.agro;
     }catch(e){
       S.agro = { ndvi:null, moisture0:null, soilTemp0:null, polygonId:null, updatedAt:null };
@@ -1862,9 +1879,26 @@
     }
 
     if(q.includes('ndvi') || q.includes('satellite') || q.includes('vegetation') || q.includes('crop health')){
-      return ndvi == null
-        ? `🛰️ Satellite NDVI is loading for ${place}. If no data appears, no recent clear satellite pass exists for your area. Try again in 24 hours.`
-        : `🛰️ The satellite NDVI for ${place} is ${round(ndvi,3)}, which means ${ndviLabel(ndvi).toLowerCase()} vegetation.${soilLine}${moisture == null ? '' : ` Soil moisture is ${round(moisture * 100, 1)}%.`}`;
+      const ndvi = S.agro?.ndvi;
+      const moisture = S.agro?.moisture0;
+      const soilTemp = S.agro?.soilTemp0;
+      if(ndvi == null){
+        return `🛰️ Satellite data is loading for ${place}. 
+        No recent clear pass available yet. 
+        Check back in 24 hours or after a cloudless day.`;
+      }
+      const health = ndviLabel(ndvi);
+      const moistureText = moisture != null 
+        ? `Soil moisture: ${round(moisture*100,1)}%.` : '';
+      const soilTempText = soilTemp != null 
+        ? `Soil temperature: ${round(soilTemp,1)}°C.` : '';
+      return `🛰️ NDVI for ${place}: ${round(ndvi,3)} — ${health} vegetation.
+      ${moistureText} ${soilTempText}
+      ${ndvi < 0.3 
+        ? 'Low NDVI suggests crop stress, poor stand, or bare soil. Check field conditions.' 
+        : ndvi < 0.5 
+        ? 'Moderate NDVI — crop is growing but not at peak density. Monitor irrigation.' 
+        : 'Good NDVI — vegetation is healthy and dense.'}`;
     }
 
     if(q.includes('what to avoid') || q.includes('avoid') || q.includes('not good') || q.includes('bad crop')){
@@ -2141,6 +2175,35 @@ GUIDELINES:
     }
   }
 
+  // ───────────────────────────────── DUPLICATE CLEANUP ─────────────────────────────────
+  async function cleanupDuplicatePolygons(){
+    // Only run once, track in localStorage
+    if(localStorage.getItem('agro_cleanup_done')) return;
+    try{
+      const res = await fetch(
+        `https://api.agromonitoring.com/agro/1.0/polygons?appid=${encodeURIComponent(AGRO_KEY)}`
+      );
+      const polygons = await res.json();
+      if(!Array.isArray(polygons)) return;
+      
+      // Keep only the first Aarambh polygon, delete duplicates
+      const aarambhPolygons = polygons.filter(p => 
+        p.name && p.name.includes('Aarambh')
+      );
+      
+      // Delete all but the first one
+      for(let i = 1; i < aarambhPolygons.length; i++){
+        await fetch(
+          `https://api.agromonitoring.com/agro/1.0/polygons/${aarambhPolygons[i].id}?appid=${encodeURIComponent(AGRO_KEY)}`,
+          { method: 'DELETE' }
+        );
+      }
+      localStorage.setItem('agro_cleanup_done', '1');
+    }catch(e){
+      // Silent fail — cleanup is not critical
+    }
+  }
+
   // ───────────────────────────────── SEED ─────────────────────────────────
   function seedChat(){
     appendMsg(`👋 Hello! I'm your AI farm advisor. I have live data for your location — ask me anything about crops, weather, soil, irrigation, or risk.
@@ -2157,6 +2220,7 @@ Try one of the quick questions above, or just type your own.`,'bot');
     $('status').textContent='Getting your location…';
     
     await startGeo();
+    cleanupDuplicatePolygons(); // fire and forget, no await
     setTimeout(initMap,100);
     setTimeout(drawChart,600);
   }
