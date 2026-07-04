@@ -1,4 +1,3 @@
-// /api/plant-disease.js
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 module.exports = async function handler(req, res) {
@@ -13,37 +12,50 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'No image was provided.' });
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const apiKey = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key;
+    const genAI = new GoogleGenerativeAI(apiKey);
+    
+    // Updated to stable production vision model
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const prompt = `You are an agricultural plant pathologist.
-Analyze the provided image and identify the plant and any potential diseases.
-Return ONLY raw HTML. Do NOT wrap it in markdown block quotes like \`\`\`html.
+    const prompt = `You are an expert agricultural plant pathologist
+  with 30 years of field experience across Indian farms.
 
-Format the output strictly like this:
+  Analyze this plant image thoroughly. Be specific and practical.
 
-<b>🌿 Plant:</b> [Plant Name]<br><br>
-<b>🦠 Disease:</b> [Disease Name]<br><br>
-<b>📈 Confidence:</b> [Confidence %]<br><br>
+  Return ONLY raw HTML in exactly this format, no markdown:
 
-<b>Symptoms:</b><br>
-[Brief description of visual symptoms]<br><br>
+  <b>🌿 Plant:</b> [Exact plant name + local Indian name if known]<br><br>
+  <b>🦠 Disease:</b> [Disease name or "No disease detected"]<br><br>
+  <b>📈 Confidence:</b> [X%]<br><br>
+  <b>📍 Affected parts:</b> [leaves/stem/root/fruit etc]<br><br>
+  <b>🔬 Symptoms:</b><br>
+  [Detailed visual symptoms — color, texture, pattern, spread]<br><br>
+  <b>⚗️ Cause:</b><br>
+  [Pathogen name + scientific name + conditions that triggered it]<br><br>
+  <b>🚨 Severity:</b> [Mild / Moderate / Severe] — [brief reason]<br><br>
+  <b>🌱 Organic Treatment:</b><br>
+  • [Treatment 1 with dosage and timing]<br>
+  • [Treatment 2]<br>
+  • [Treatment 3 if applicable]<br><br>
+  <b>🧪 Chemical Treatment:</b><br>
+  • [Chemical name + dosage + frequency]<br>
+  • [Alternative chemical]<br><br>
+  <b>✅ Prevention:</b><br>
+  • [Tip 1]<br>
+  • [Tip 2]<br>
+  • [Tip 3]<br><br>
+  <b>📅 Expected recovery:</b> [Timeframe if treated properly]<br><br>
+  <b>⚠️ Watch out for:</b> [Secondary infections or complications]
 
-<b>Cause:</b><br>
-[Underlying cause (e.g., fungal, environmental)]<br><br>
+  If the plant is completely healthy return:
+  <b>🌿 Plant:</b> [Name]<br><br>
+  <b>✅ Status:</b> Healthy — no disease detected.<br><br>
+  <b>💡 Tip:</b> [One practical tip to keep this plant healthy]
 
-<b>🌱 Organic Treatment:</b><br>
-[Organic solutions]<br><br>
-
-<b>🧪 Chemical Treatment:</b><br>
-[Chemical solutions/fungicides]<br><br>
-
-<b>✅ Prevention:</b><br>
-[Prevention tips like watering habits]
-
-If the plant appears completely healthy, return:
-<b>🌿 Plant:</b> [Plant Name]<br><br>
-<b>✅ Status:</b> Healthy Plant. Keep up the good work!`;
+  If the image is not a plant return:
+  <b>❌ Error:</b> No plant detected. Please upload a clear photo
+  of a plant leaf, stem, or affected area.`;
 
     const result = await model.generateContent([
       prompt,
@@ -66,7 +78,6 @@ If the plant appears completely healthy, return:
   }
 };
 
-// Ensure Vercel allows up to 4MB payloads just in case
 module.exports.config = {
   api: {
     bodyParser: {
