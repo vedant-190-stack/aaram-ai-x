@@ -1623,36 +1623,29 @@
       const start = now - 15*24*3600;
       const end = now;
 
+      // 🚨 Removed the paid weather/history endpoint to prevent 401/400 errors
       const ndviUrl = `https://api.agromonitoring.com/agro/1.0/ndvi/history?start=${start}&end=${end}&polyid=${encodeURIComponent(polyId)}&appid=${encodeURIComponent(key)}`;
-      const weatherUrl = `https://api.agromonitoring.com/agro/1.0/weather/history?start=${start}&end=${end}&polyid=${encodeURIComponent(polyId)}&appid=${encodeURIComponent(key)}`;
 
-      const [ndviData, weatherData] = await Promise.all([
-        fetch(ndviUrl).then(r => r.ok ? r.json() : null).catch(()=>null),
-        fetch(weatherUrl).then(r => r.ok ? r.json() : null).catch(()=>null)
-      ]);
+      const res = await fetch(ndviUrl);
+      const ndviData = res.ok ? await res.json() : null;
 
       const ndviLatest = Array.isArray(ndviData) ? ndviData
         .filter(x => x && x.data && (x.data.mean != null || x.data.median != null))
         .sort((a,b) => (b.dt || 0) - (a.dt || 0))[0] : null;
 
-      const weatherLatest = Array.isArray(weatherData) ? weatherData
-        .filter(x => x && x.main)
-        .sort((a,b) => (b.dt || 0) - (a.dt || 0))[0] : null;
-
       S.agro = {
         ndvi: ndviLatest ? safe(ndviLatest?.data?.mean ?? ndviLatest?.data?.median ?? ndviLatest?.mean ?? null, null) : null,
-        moisture0: weatherLatest?.soil?.moisture?.[0] ?? weatherLatest?.soil_moisture ?? null,
-        soilTemp0: weatherLatest?.soil?.temp?.[0] ?? weatherLatest?.soil_temperature ?? null,
+        moisture0: null, // Removed paid soil data dependencies
+        soilTemp0: null, // Removed paid soil data dependencies
         polygonId: polyId,
         updatedAt: Date.now()
       };
 
-      if(S.agro.ndvi != null){
-        const ndviEl = document.getElementById('iNdvi');
-        if(ndviEl) ndviEl.textContent = `${round(S.agro.ndvi, 3)} — ${ndviLabel(S.agro.ndvi)}`;
-      } else {
-        const ndviEl = document.getElementById('iNdvi');
-        if(ndviEl) ndviEl.textContent = 'Unavailable';
+      const ndviEl = document.getElementById('iNdvi');
+      if(ndviEl) {
+        ndviEl.textContent = S.agro.ndvi != null 
+          ? `${round(S.agro.ndvi, 3)} — ${ndviLabel(S.agro.ndvi)}` 
+          : 'Unavailable';
       }
 
       return S.agro;
