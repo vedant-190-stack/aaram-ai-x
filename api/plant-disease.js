@@ -15,8 +15,8 @@ module.exports = async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key;
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // Updated to stable production vision model
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // Reverted to the active, supported Gemini 2.5 Flash model
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `You are an expert agricultural plant pathologist
   with 30 years of field experience across Indian farms.
@@ -68,16 +68,22 @@ module.exports = async function handler(req, res) {
     ]);
 
     let responseText = result.response.text();
+    // Strip markdown formatting if Gemini includes it
     responseText = responseText.replace(/```html/g, '').replace(/```/g, '').trim();
 
     return res.status(200).json({ answer: responseText });
 
   } catch (error) {
-    console.error('Gemini API Error:', error);
-    return res.status(500).json({ error: 'Unable to detect plant disease. Please try another image.' });
+    console.error('Gemini API Error details:', error.message);
+    
+    // Sends the exact error string back to the UI so you can debug missing keys/quotas
+    return res.status(500).json({ 
+      error: `Server error: ${error.message || 'Check Vercel Runtime Logs'}` 
+    });
   }
 };
 
+// Ensures Vercel allows up to 4MB payloads for the base64 image string
 module.exports.config = {
   api: {
     bodyParser: {
