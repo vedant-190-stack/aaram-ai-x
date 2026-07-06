@@ -186,7 +186,7 @@
     .section-head h2{font-size:1.2rem;font-weight:700;letter-spacing:-0.02em;margin-bottom:4px}
     .section-head p{font-size:0.88rem;color:var(--muted)}
 
-    /* ── Crop recommendation ── */
+    /* ── Forms & Input ── */
     .input-row{
       display:grid;
       grid-template-columns:1.2fr .75fr .75fr auto;
@@ -250,7 +250,7 @@
     .fc-day .fc-temp{font-weight:600;font-size:0.84rem}
     .fc-day .fc-rain{color:var(--pri2);font-size:0.76rem;margin-top:2px}
 
-    /* ── Simulator ── */
+    /* ── Simulator / Calculator ── */
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .slider-group{display:flex;flex-direction:column;gap:12px}
     .range-wrap{
@@ -274,6 +274,7 @@
       padding:18px;border-radius:18px;
       background:var(--surface2);border:1px solid var(--border);
       display:flex;flex-direction:column;gap:12px;
+      height: 100%;
     }
     .sim-meta{
       display:grid;grid-template-columns:1fr 1fr;gap:10px;
@@ -284,12 +285,18 @@
       text-align:center;
     }
     .sim-box .slabel{font-size:0.74rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
-    .sim-box .sval{font-size:1.2rem;font-weight:700;letter-spacing:-0.02em}
+    .sim-box .sval{font-size:1.2rem;font-weight:700;letter-spacing:-0.02em; font-family: var(--mono);}
     .sim-pills{display:flex;flex-wrap:wrap;gap:7px}
     .sim-pill{
       padding:5px 11px;border-radius:999px;font-size:0.82rem;font-weight:500;
       background:rgba(78,232,196,.08);border:1px solid rgba(78,232,196,.2);
       color:var(--primary);
+    }
+
+    /* Profit specific */
+    .profit-glow {
+      text-shadow: 0 0 12px var(--glow);
+      transition: color 0.3s, text-shadow 0.3s;
     }
 
     /* ── Chart ── */
@@ -446,6 +453,7 @@
       <nav class="nav-right">
         <a class="nav-link" href="#weather">Weather</a>
         <a class="nav-link" href="#recommend">Crops</a>
+        <a class="nav-link" href="#profit">Profit</a>
         <a class="nav-link" href="#sim">Simulator</a>
         <a class="nav-link" href="#charts">Charts</a>
         <a class="nav-link" href="#mapSection">Map</a>
@@ -470,7 +478,7 @@
         </p>
         <div class="cta-row">
           <a class="btn btn-pri" href="#recommend">🌾 Analyze crops</a>
-          <a class="btn btn-ghost" href="#sim">📊 Open simulator</a>
+          <a class="btn btn-ghost" href="#profit">₹ Profit Calculator</a>
           <a class="btn btn-ghost" href="#ask">💬 Ask AI</a>
         </div>
         <div class="divider"></div>
@@ -481,7 +489,7 @@
           <span class="tag">7-day forecast</span>
           <span class="tag">Crop scoring</span>
           <span class="tag">AI advisor</span>
-          <span class="tag">Climate simulator</span>
+          <span class="tag">Live profitability</span>
           <span class="tag">Interactive map</span>
         </div>
       </div>
@@ -581,6 +589,57 @@
 
         <div class="crop-grid" id="cropGrid"></div>
         <div class="forecast" id="forecast"></div>
+      </div>
+    </section>
+
+    <section class="section" id="profit">
+      <div class="section-head">
+        <h2>Live Profitability Calculator</h2>
+        <p>Estimate expected costs, revenue, and net profit based on live market support prices and typical yields.</p>
+      </div>
+      <div class="grid2">
+        <div class="panel pad slider-group">
+          <div class="field" style="margin-bottom:8px">
+            <label for="calcCrop">Select Crop</label>
+            <select id="calcCrop">
+               </select>
+          </div>
+          <div class="field" style="margin-bottom:8px">
+            <label for="calcArea">Farm Size (Hectares)</label>
+            <input type="number" id="calcArea" value="1" min="0.1" step="0.1" style="font-family:var(--mono);" />
+          </div>
+          <div class="range-wrap" style="margin-top:auto">
+            <div class="range-head"><strong>Expected Yield</strong><span class="range-val" id="calcYieldLab">Average</span></div>
+            <input id="calcYield" type="range" min="0.5" max="1.5" step="0.25" value="1">
+          </div>
+        </div>
+        <div class="panel pad">
+          <div class="sim-output">
+            <div style="font-size:0.78rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Financial Breakdown</div>
+            
+            <div class="sim-meta" style="grid-template-columns: 1fr;">
+              <div class="sim-box" style="display:flex; justify-content:space-between; align-items:center; padding:16px;">
+                <div class="slabel" style="margin:0">Estimated Revenue</div>
+                <div class="sval" id="outRev" style="color:var(--good); font-size:1.4rem;">₹0</div>
+              </div>
+              <div class="sim-box" style="display:flex; justify-content:space-between; align-items:center; padding:16px;">
+                <div class="slabel" style="margin:0">Estimated Costs</div>
+                <div class="sval" id="outCost" style="color:var(--bad); font-size:1.4rem;">₹0</div>
+              </div>
+            </div>
+            
+            <div class="divider" style="margin: 12px 0;"></div>
+            
+            <div class="sim-box" id="profitBox" style="background:rgba(78,232,196,.1); border-color:rgba(78,232,196,.3); padding:24px; transition: all 0.3s;">
+              <div class="slabel" id="profitLabel" style="color:var(--primary); font-size:0.9rem;">Net Profit</div>
+              <div class="sval profit-glow" id="outProfit" style="font-size:2.6rem; color:var(--primary);">₹0</div>
+            </div>
+            
+            <p style="font-size:0.82rem;color:var(--muted);line-height:1.6; text-align:center; margin-top:auto;">
+              Estimates are based on average Minimum Support Prices (MSP) and baseline regional input costs. Actual profits may vary.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -728,6 +787,7 @@
   const AGRO_DEFAULT_POLYGON = '6a315b4dfc4d163439b941bc';
 
   // ───────────────────────────────── DATA ─────────────────────────────────
+  // UPDATED: Added financial metrics (msp in INR per quintal, yield_ha in quintals, cost_ha in INR)
   const CROPS = [
     {
       name:'Wheat', emoji:'🌾',
@@ -735,7 +795,8 @@
       temp:[8,24],rain:[300,900],hum:[35,65],
       soil:['alluvial','loam','clay','grey_brown','sub_mountain'],
       water:'Moderate',
-      note:'Thrives in cool, dry winters with moderate rainfall.'
+      note:'Thrives in cool, dry winters with moderate rainfall.',
+      msp: 2275, yield_ha: 35, cost_ha: 30000
     },
     {
       name:'Rice', emoji:'🍚',
@@ -743,7 +804,8 @@
       temp:[20,34],rain:[900,2000],hum:[55,95],
       soil:['alluvial','clay','peaty','red','black','laterite'],
       water:'High',
-      note:'Needs warm, wet conditions and standing water.'
+      note:'Needs warm, wet conditions and standing water.',
+      msp: 2183, yield_ha: 40, cost_ha: 40000
     },
     {
       name:'Maize', emoji:'🌽',
@@ -751,7 +813,8 @@
       temp:[18,32],rain:[500,1200],hum:[40,75],
       soil:['alluvial','loam','red','black','forest'],
       water:'Moderate',
-      note:'A flexible staple suited to many Indian climates.'
+      note:'A flexible staple suited to many Indian climates.',
+      msp: 2090, yield_ha: 30, cost_ha: 25000
     },
     {
       name:'Millet', emoji:'🌿',
@@ -759,7 +822,8 @@
       temp:[20,38],rain:[200,700],hum:[25,65],
       soil:['arid','sandy','red','laterite','loam','black','mixed_red_black'],
       water:'Low',
-      note:'Drought-resilient, ideal for arid and semi-arid zones.'
+      note:'Drought-resilient, ideal for arid and semi-arid zones.',
+      msp: 2500, yield_ha: 15, cost_ha: 15000
     },
     {
       name:'Pulses', emoji:'🫘',
@@ -767,7 +831,8 @@
       temp:[15,30],rain:[250,900],hum:[30,75],
       soil:['alluvial','loam','black','red','mixed_red_black','grey_brown'],
       water:'Low',
-      note:'Nitrogen-fixing legumes for water-limited farms.'
+      note:'Nitrogen-fixing legumes for water-limited farms.',
+      msp: 5440, yield_ha: 12, cost_ha: 20000
     },
     {
       name:'Soybean', emoji:'🌱',
@@ -775,7 +840,8 @@
       temp:[20,30],rain:[600,1000],hum:[50,80],
       soil:['black','loam','alluvial','mixed_red_black'],
       water:'Moderate',
-      note:'Rich oilseed crop for black soil regions.'
+      note:'Rich oilseed crop for black soil regions.',
+      msp: 4600, yield_ha: 18, cost_ha: 28000
     },
     {
       name:'Cotton', emoji:'☁️',
@@ -783,7 +849,8 @@
       temp:[22,38],rain:[500,1000],hum:[35,70],
       soil:['black','clay','mixed_red_black','alluvial','red'],
       water:'Moderate',
-      note:'High-value cash crop for warm, long-season zones.'
+      note:'High-value cash crop for warm, long-season zones.',
+      msp: 6620, yield_ha: 20, cost_ha: 45000
     }
   ];
 
@@ -849,6 +916,7 @@
     localStorage.setItem('agrix-theme',S.theme);
     $('themeBtn').textContent = S.theme==='dark'?'🌓':'🌙';
     if(S.chartInst) drawChart();
+    updateProfitCalculator(); // Re-render colors for profit UI
   }
 
   // ───────────────────────────────── TOAST ────────────────────────────────
@@ -909,6 +977,9 @@
 
     // Forecast
     renderForecast();
+    
+    // Profitability
+    updateProfitCalculator();
 
     // Simulator output
     $('simTemp').textContent = `${temp}°C`;
@@ -949,6 +1020,66 @@
     $('tLab').textContent = `${S.future.t>=0?'+':''}${S.future.t}°C`;
     $('rLab').textContent = `${S.future.r>=0?'+':''}${S.future.r}%`;
     $('hLab').textContent = `${S.future.h>=0?'+':''}${S.future.h}%`;
+  }
+  
+  // ───────────────────────────────── PROFIT CALC ──────────────────────────
+  function initProfitDropdown() {
+    const select = $('calcCrop');
+    select.innerHTML = CROPS.map((c, i) => `<option value="${i}">${c.emoji} ${c.name}</option>`).join('');
+  }
+
+  function updateProfitCalculator() {
+    const cropIdx = $('calcCrop').value;
+    if (!cropIdx) return;
+    
+    const crop = CROPS[cropIdx];
+    const area = parseFloat($('calcArea').value) || 0;
+    const yieldMulti = parseFloat($('calcYield').value);
+
+    // Yield Labels
+    const yLabels = { '0.5':'Low', '0.75':'Below Avg', '1':'Average', '1.25':'Good', '1.5':'High' };
+    $('calcYieldLab').textContent = yLabels[$('calcYield').value] || 'Average';
+
+    // Math Engine
+    const baseYield = crop.yield_ha; // quintals per hectare
+    const actualYield = baseYield * yieldMulti * area;
+    const revenue = actualYield * crop.msp;
+
+    // Costs: assumed 20% of the cost is variable and tied to yield (e.g. harvesting labor, transport)
+    const baseCost = crop.cost_ha * area;
+    const variableCostDelta = baseCost * 0.2 * (yieldMulti - 1); 
+    const totalCost = baseCost + variableCostDelta;
+
+    const profit = revenue - totalCost;
+
+    // Formatting 
+    const fmt = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+
+    $('outRev').textContent = fmt.format(revenue);
+    $('outCost').textContent = fmt.format(totalCost);
+    $('outProfit').textContent = fmt.format(profit);
+
+    // Dynamic Styling for futuristic aesthetic
+    const pBox = $('profitBox');
+    const pLbl = $('profitLabel');
+    const pVal = $('outProfit');
+    const isDark = S.theme === 'dark';
+
+    if (profit >= 0) {
+      pVal.style.color = 'var(--primary)';
+      pLbl.style.color = 'var(--primary)';
+      pBox.style.borderColor = isDark ? 'rgba(78,232,196,.3)' : 'rgba(15,110,86,.3)';
+      pBox.style.background = isDark ? 'rgba(78,232,196,.1)' : 'rgba(15,110,86,.05)';
+      pVal.style.textShadow = isDark ? '0 0 15px var(--glow)' : 'none';
+      pLbl.textContent = 'Net Profit';
+    } else {
+      pVal.style.color = 'var(--bad)';
+      pLbl.style.color = 'var(--bad)';
+      pBox.style.borderColor = isDark ? 'rgba(240,112,112,.3)' : 'rgba(163,45,45,.3)';
+      pBox.style.background = isDark ? 'rgba(240,112,112,.1)' : 'rgba(163,45,45,.05)';
+      pVal.style.textShadow = isDark ? '0 0 15px rgba(240,112,112,.3)' : 'none';
+      pLbl.textContent = 'Net Loss';
+    }
   }
 
   function renderForecast(){
@@ -2104,6 +2235,12 @@ GUIDELINES:
         renderAll();
       });
     });
+    
+    // Profit Calc events
+    ['calcCrop','calcArea','calcYield'].forEach(id=>{
+      $(id).addEventListener('input', updateProfitCalculator);
+    });
+
     ['season','soil'].forEach(id=>{
       $(id).addEventListener('change',renderAll);
     });
@@ -2258,6 +2395,7 @@ Try one of the quick questions above, or just type your own.`,'bot');
 
   async function init(){
     applyTheme(S.theme);
+    initProfitDropdown();
     wireEvents();
     seedChat();
     renderAll();
