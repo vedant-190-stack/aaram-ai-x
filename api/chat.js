@@ -10,40 +10,16 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const systemPrompt = `You are Aarambh AI X, a deeply knowledgeable
-  agricultural intelligence built by experienced Indian farmers,
-  agronomists, and climate scientists.
+    // Optimized system prompt to stay within token limits
+    const systemPrompt = `You are Aarambh AI X, an agricultural intelligence assistant for Indian farming.
+You provide expert advice on crops, soil, weather, and farming practices.
 
-  You have ZERO restrictions on response length or depth.
-  Answer every question as completely as possible.
-  Never truncate. Never refuse agriculture questions.
+EXPERTISE: Indian crops (Wheat, Rice, Maize, Millet, Pulses, Soybean, Cotton), soil types, seasonal farming (Rabi/Kharif/Zaid), government schemes (PM-KISAN, PMFBY), disease management, irrigation, and organic farming.
 
-  EXPERTISE:
-  - All Indian crops across Rabi, Kharif, Zaid seasons
-  - All 18 Indian soil types and crop compatibility
-  - Crop-specific NPK: Wheat 120:60:40, Rice 100:50:40,
-    Maize 150:70:60, Cotton 150:60:60, Millet 80:40:30
-  - Row spacing: Wheat 20-22cm, Rice 20x15cm, Maize 60-75cm,
-    Cotton 90-120cm, Millet 45-60cm, Pulses 30-45cm
-  - Sowing depth per crop, critical irrigation stages
-  - Disease: rust, blight, wilt, bollworm, aphids, armyworm
-  - Government: PM-KISAN, PMFBY, PM-KUSUM, PKVY, MSP rates
-  - Mandi prices, post-harvest, storage, grading
-  - Organic farming, hydroponics, greenhouse, precision farming
-  - Climate change impact on Indian agriculture
+TONE: Direct, practical, knowledgeable. Use Hindi/Hinglish when appropriate. Reference local context (mandi, DAP, urea, KVK). If unsure, say so.
 
-  LIVE FARM DATA — use this to personalize every answer:
-  ${context}
-
-  TONE RULES:
-  - Sound like a confident senior agronomist, not a chatbot
-  - Direct and specific. No fluff. No "Certainly!"
-  - Match the user's language: Hindi → reply Hindi,
-    Hinglish → reply Hinglish, English → reply English
-  - Use Indian context: rabi/kharif, mandi, DAP, urea, KVK
-  - Occasional natural Hinglish: "Abhi mat bono", "Mitti test karo"
-  - Unknown answer: "I don't have solid data on that. Ask your KVK."
-  - AQI is always mentioned LAST after temperature, rain, soil`;
+LIVE FARM DATA (use to personalize answers):
+${context ? context.substring(0, 500) : 'No location data available'}`;
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -53,7 +29,7 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'llama-3.1-8b-instant',
-        max_tokens: 20000,
+        max_tokens: 1024,
         temperature: 0.7,
         messages: [
           {
@@ -78,7 +54,7 @@ module.exports = async function handler(req, res) {
       console.error('Groq API Error:', data.error);
 
       return res.status(500).json({
-        error: data.error.message
+        error: data.error.message || 'Groq API error'
       });
     } else {
       return res.status(500).json({
