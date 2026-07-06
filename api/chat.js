@@ -9,6 +9,28 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'No question provided' });
   }
 
+  // Sanitize input to prevent XSS
+  const sanitizeInput = (str) => {
+    if (typeof str !== 'string') return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+      .trim();
+  };
+
+  // Validate question length (prevent token overflow)
+  const sanitizedQuestion = sanitizeInput(question);
+  if (sanitizedQuestion.length === 0) {
+    return res.status(400).json({ error: 'Question cannot be empty' });
+  }
+
+  if (sanitizedQuestion.length > 2000) {
+    return res.status(400).json({ error: 'Question too long (max 2000 characters)' });
+  }
+
   try {
     // Optimized system prompt to stay within token limits
     const systemPrompt = `You are Aarambh AI X, an agricultural intelligence assistant for Indian farming.
@@ -38,7 +60,7 @@ ${context ? context.substring(0, 500) : 'No location data available'}`;
           },
           {
             role: 'user',
-            content: question
+            content: sanitizedQuestion
           }
         ]
       })
