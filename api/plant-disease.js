@@ -1,20 +1,96 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
+// Simple in-memory rate limiter
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const RATE_LIMIT_REQUESTS = 10; // 10 requests per minute per IP
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const key = `${ip}`;
+
+  if (!rateLimitMap.has(key)) {
+    rateLimitMap.set(key, []);
+  }
+
+  const timestamps = rateLimitMap.get(key);
+  const recentRequests = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW);
+
+  if (recentRequests.length >= RATE_LIMIT_REQUESTS) {
+    return false;
+  }
+
+  recentRequests.push(now);
+  rateLimitMap.set(key, recentRequests);
+
+  // Cleanup old entries
+  if (rateLimitMap.size > 1000) {
+    for (const [k, v] of rateLimitMap.entries()) {
+      const active = v.filter(t => now - t < RATE_LIMIT_WINDOW);
+      if (active.length === 0) {
+        rateLimitMap.delete(k);
+      } else {
+        rateLimitMap.set(k, active);
+      }
+    }
+  }
+
+  return true;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {
+    // Get client IP for rate limiting
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+
+    // Rate limiting check
+    if (!checkRateLimit(ip)) {
+      return res.status(429).json({
+        error: 'Too many requests. Please wait a moment before trying again.'
+      });
+    }
+
     const { imageBase64, mimeType } = req.body;
 
     if (!imageBase64) {
       return res.status(400).json({ error: 'No image was provided.' });
     }
 
+    // Validate image size (max 4MB)
+    const imageSizeInBytes = Buffer.byteLength(imageBase64, 'base64');
+    const maxSizeInBytes = 4 * 1024 * 1024; // 4MB
+
+    if (imageSizeInBytes > maxSizeInBytes) {
+      return res.status(400).json({
+        error: `Image too large. Maximum size is 4MB, received ${(imageSizeInBytes / (1024 * 1024)).toFixed(2)}MB`
+      });
+    }
+
+    // Validate MIME type
+    const validMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const finalMimeType = mimeType || 'image/jpeg';
+
+    if (!validMimeTypes.includes(finalMimeType)) {
+      return res.status(400).json({
+        error: `Invalid image format. Supported formats: ${validMimeTypes.join(', ')}`
+      });
+    }
+
     const apiKey = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key;
+
+    if (!apiKey) {
+      console.error('GEMINI_API_KEY not configured');
+      return res.status(500).json({
+        error: 'AI service not configured. Please contact support.'
+      });
+    }
+
     const genAI = new GoogleGenerativeAI(apiKey);
-    
+
     // Reverted to the active, supported Gemini 2.5 Flash model
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
@@ -57,28 +133,44 @@ module.exports = async function handler(req, res) {
   <b>❌ Error:</b> No plant detected. Please upload a clear photo
   of a plant leaf, stem, or affected area.`;
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: imageBase64,
-          mimeType: mimeType || 'image/jpeg',
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    try {
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            data: imageBase64,
+            mimeType: finalMimeType,
+          }
         }
+      ]);
+
+      clearTimeout(timeoutId);
+
+      let responseText = result.response.text();
+      // Strip markdown formatting if Gemini includes it
+      responseText = responseText.replace(/```html/g, '').replace(/```/g, '').trim();
+
+      return res.status(200).json({ answer: responseText });
+    } catch (timeoutError) {
+      clearTimeout(timeoutId);
+      if (timeoutError.name === 'AbortError') {
+        return res.status(504).json({
+          error: 'Request timeout. The AI service took too long to respond. Please try again.'
+        });
       }
-    ]);
-
-    let responseText = result.response.text();
-    // Strip markdown formatting if Gemini includes it
-    responseText = responseText.replace(/```html/g, '').replace(/```/g, '').trim();
-
-    return res.status(200).json({ answer: responseText });
+      throw timeoutError;
+    }
 
   } catch (error) {
     console.error('Gemini API Error details:', error.message);
-    
+
     // Sends the exact error string back to the UI so you can debug missing keys/quotas
-    return res.status(500).json({ 
-      error: `Server error: ${error.message || 'Check Vercel Runtime Logs'}` 
+    return res.status(500).json({
+      error: `Server error: ${error.message || 'Check Vercel Runtime Logs'}`
     });
   }
 };
