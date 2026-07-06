@@ -699,6 +699,8 @@
             <div class="info-row"><span class="key">Farm risk</span><span class="val" id="iRisk">—</span></div>
             <div class="info-row"><span class="key">Best crop</span><span class="val" id="iBest">—</span></div>
             <div class="info-row"><span class="key">🛰️ NDVI</span><span class="val" id="iNdvi">Loading…</span></div>
+            <div class="info-row"><span class="key">💧 Soil Moisture</span><span class="val" id="iMoist">—</span></div>
+            <div class="info-row"><span class="key">🌡️ Soil Temp</span><span class="val" id="iSoilT">—</span></div>
           </div>
           <div style="height:12px"></div>
           <div style="font-size:0.8rem;color:var(--muted);line-height:1.7;padding:0 4px">
@@ -927,6 +929,8 @@
     $('iAqi').textContent  = S.aq.aqi!=null?`${S.aq.aqi} (${fmtAqi(S.aq.aqi)})`:'--';
     $('iRisk').textContent = `${risk}/100`;
     $('iBest').textContent = best.crop.name;
+    $('iMoist').textContent = S.agro?.moisture0 != null ? `${round(S.agro.moisture0 * 100, 1)}%` : '--';
+    $('iSoilT').textContent = S.agro?.soilTemp0 != null ? `${round(S.agro.soilTemp0, 1)}°C` : '--';
 
     // Chart
     drawChart();
@@ -934,7 +938,7 @@
     // Map
     refreshMap();
 
-    // 🚀 UPGRADE 3: Fade in stats smoothly after loading map skeletons
+    // Fade in stats smoothly after loading map skeletons
     document.querySelectorAll('.stat').forEach(el => {
       el.style.transition = 'opacity 0.4s ease';
       el.style.opacity = '1';
@@ -1046,13 +1050,13 @@
     S.map.on('click',async e=>{
       const {lat,lng} = e.latlng;
       
-      // 🚀 UPGRADE 3: Pulse animation start for skeleton loading effect
       document.querySelectorAll('.stat').forEach(el => el.style.opacity = '0.4');
 
       try{
         const place = await fetchJSON(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`).catch(()=>null);
         const name = place ? bigDataName(place) : `${round(lat,3)}, ${round(lng,3)}`;
-        await loadCoords(lat,lng,name);
+        const stateName = place?.principalSubdivision;
+        await loadCoords(lat,lng,name, stateName);
         $('city').value = name;
         renderAll();
         toast(`📍 Switched to ${name}`,'success');
@@ -1092,9 +1096,9 @@
     return [d.city,d.locality,d.principalSubdivision,d.countryName].filter(Boolean).join(', ')||'Current location';
   }
 
-  async function loadCoords(lat,lon,name){
+  async function loadCoords(lat, lon, name, stateName){
     const [wx,aq,elev] = await Promise.all([
-      fetchJSON(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&forecast_days=7&timezone=auto`),
+      fetchJSON(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,soil_temperature_6cm,soil_moisture_3_to_9cm&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&forecast_days=7&timezone=auto`),
       fetchJSON(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=european_aqi,pm2_5,uv_index&timezone=auto`),
       fetchJSON(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`)
     ]);
@@ -1120,8 +1124,30 @@
     S.aq.uv    = safe(aq?.current?.uv_index, null);
     S.elev     = Array.isArray(elev?.elevation) ? Math.round(safe(elev.elevation[0],0)) : null;
 
-    // Load satellite / soil intelligence if an Agromonitoring key is available.
+    // Automatically assign Indian Soil Types based on the State mapping
+    if (stateName) {
+      const SOIL_MAP = {
+        'Punjab': 'alluvial', 'Haryana': 'alluvial', 'Uttar Pradesh': 'alluvial',
+        'Bihar': 'alluvial', 'West Bengal': 'alluvial', 'Assam': 'alluvial', 'Delhi': 'alluvial',
+        'Maharashtra': 'black', 'Gujarat': 'black', 'Madhya Pradesh': 'black',
+        'Tamil Nadu': 'red', 'Andhra Pradesh': 'red', 'Odisha': 'red', 'Jharkhand': 'red', 'Karnataka': 'red', 'Chhattisgarh': 'red',
+        'Kerala': 'laterite', 'Goa': 'laterite', 'Meghalaya': 'laterite',
+        'Rajasthan': 'arid',
+        'Himachal Pradesh': 'forest', 'Uttarakhand': 'forest', 'Sikkim': 'forest', 'Arunachal Pradesh': 'forest'
+      };
+      const mappedSoil = SOIL_MAP[stateName];
+      if (mappedSoil) {
+        const soilDropdown = document.getElementById('soil');
+        if(soilDropdown) soilDropdown.value = mappedSoil;
+      }
+    }
+
     await loadAgroData().catch(()=>{});
+
+    // 🚀 UPGRADE: Open-Meteo Zero-Key Live Soil Data Injection
+    if (!S.agro) S.agro = {};
+    S.agro.soilTemp0 = safe(wx?.current?.soil_temperature_6cm, null);
+    S.agro.moisture0 = safe(wx?.current?.soil_moisture_3_to_9cm, null);
   }
 
   async function searchCity(q){
@@ -1129,17 +1155,16 @@
     const d = await fetchJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q.trim())}&count=1&language=en&format=json`);
     const p = d?.results?.[0];
     if(!p) return null;
-    return {lat:p.latitude,lon:p.longitude,name:p.name||q};
+    return {lat:p.latitude, lon:p.longitude, name:p.name||q, state:p.admin1};
   }
 
   async function loadCity(q){
     const res = await searchCity(q).catch(()=>null);
     if(!res){
-      // fallback defaults
       S.place=q||'India'; S.wx={temp:26,hum:52,rain7:42,wind:9,code:0,daily:[]}; S.aq={aqi:null,pm25:null,uv:null}; S.elev=null;
       return;
     }
-    await loadCoords(res.lat,res.lon,res.name||q);
+    await loadCoords(res.lat, res.lon, res.name||q, res.state);
     $('city').value=res.name||q;
   }
 
@@ -1169,7 +1194,8 @@
           const lat=pos.coords.latitude, lon=pos.coords.longitude;
           const place=await fetchJSON(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`).catch(()=>null);
           const name=place?bigDataName(place):'Current location';
-          await loadCoords(lat,lon,name);
+          const stateName = place?.principalSubdivision;
+          await loadCoords(lat,lon,name, stateName);
           $('city').value=name;
           loaderMsg('Almost ready…');
           renderAll();
@@ -1192,7 +1218,6 @@
     );
   }
 
-  // ───────────────────────────────── ANALYZE ──────────────────────────────
   function setStatus(loading,msg){
     const btn=$('analyzeBtn');
     btn.disabled=loading;
@@ -1386,7 +1411,6 @@
   ];
 
   const FARM_KB = [...FARM_GUIDES, ...FARM_FACTS];
-
 
   function cleanText(s){
     return String(s || '')
@@ -1590,18 +1614,14 @@
     const lat = S.lat, lon = S.lon;
     if(lat == null || lon == null) return null;
 
-    // Check localStorage cache first (set when user changes location)
     const cacheKey = `agro_polygon_${Math.round(lat*1000)}_${Math.round(lon*1000)}`;
     const cached = localStorage.getItem(cacheKey);
     if(cached) return cached;
 
-    // For default location (Delhi area), use hardcoded polygon
-    // Covers roughly lat 28-29, lon 77-78
     if(lat >= 28 && lat <= 29 && lon >= 77 && lon <= 78){
       return AGRO_DEFAULT_POLYGON;
     }
 
-    // For other locations, create a new polygon
     try{
       const body = JSON.stringify(getAgroPolygon(lat, lon));
       const res = await fetch(
@@ -1634,7 +1654,6 @@
       const start = now - 15*24*3600;
       const end = now;
 
-      // 🚨 Removed the paid weather/history endpoint to prevent 401/400 errors
       const ndviUrl = `https://api.agromonitoring.com/agro/1.0/ndvi/history?start=${start}&end=${end}&polyid=${encodeURIComponent(polyId)}&appid=${encodeURIComponent(key)}`;
 
       const res = await fetch(ndviUrl);
@@ -1644,10 +1663,14 @@
         .filter(x => x && x.data && (x.data.mean != null || x.data.median != null))
         .sort((a,b) => (b.dt || 0) - (a.dt || 0))[0] : null;
 
+      // Keep Open-Meteo Soil data intact while updating NDVI
+      const existingTemp = S.agro?.soilTemp0;
+      const existingMoisture = S.agro?.moisture0;
+
       S.agro = {
         ndvi: ndviLatest ? safe(ndviLatest?.data?.mean ?? ndviLatest?.data?.median ?? ndviLatest?.mean ?? null, null) : null,
-        moisture0: null, // Removed paid soil data dependencies
-        soilTemp0: null, // Removed paid soil data dependencies
+        moisture0: existingMoisture, 
+        soilTemp0: existingTemp, 
         polygonId: polyId,
         updatedAt: Date.now()
       };
@@ -1661,7 +1684,6 @@
 
       return S.agro;
     }catch(e){
-      S.agro = { ndvi:null, moisture0:null, soilTemp0:null, polygonId:null, updatedAt:null };
       return null;
     }
   }
@@ -1813,7 +1835,6 @@
       return `🌱 <strong>${soil} soil — ${place}:</strong><br><br>${info}${soilLine}${soilTempLine}<br><br>Mitti ka test zaroor karo before heavy fertilizer application.`;
     }
 
-
     if(q.includes('compare') || q.includes('vs') || q.includes('versus')){
       const targets = extractCompareTargets(q);
       if(targets.length >= 2){
@@ -1883,19 +1904,14 @@
     }
 
     if(q.includes('ndvi') || q.includes('satellite') || q.includes('vegetation') || q.includes('crop health')){
-      const ndvi = S.agro?.ndvi;
-      const moisture = S.agro?.moisture0;
-      const soilTemp = S.agro?.soilTemp0;
       if(ndvi == null){
         return `🛰️ Satellite data is loading for ${place}. 
         No recent clear pass available yet. 
         Check back in 24 hours or after a cloudless day.`;
       }
       const health = ndviLabel(ndvi);
-      const moistureText = moisture != null 
-        ? `Soil moisture: ${round(moisture*100,1)}%.` : '';
-      const soilTempText = soilTemp != null 
-        ? `Soil temperature: ${round(soilTemp,1)}°C.` : '';
+      const moistureText = moisture != null ? `Soil moisture: ${round(moisture*100,1)}%.` : '';
+      const soilTempText = soilTemp != null ? `Soil temperature: ${round(soilTemp,1)}°C.` : '';
       return `🛰️ NDVI for ${place}: ${round(ndvi,3)} — ${health} vegetation.
       ${moistureText} ${soilTempText}
       ${ndvi < 0.3 
@@ -1933,6 +1949,10 @@
     const rain = round((S.wx?.rain7 ?? 42) * (1 + ((S.future?.r ?? 0) / 100)), 0);
     const hum = clamp(Math.round((S.wx?.hum ?? 52) + (S.future?.h ?? 0)), 0, 100);
     const best = list && list.length ? list[0] : { crop: { name: 'Millet', note: 'Resilient in hot and dry conditions.' }, score: 75 };
+    
+    // Inject the newly retrieved live soil data for the AI to analyze!
+    const moistureText = S.agro?.moisture0 != null ? `\n- Soil moisture (root zone): ${round(S.agro.moisture0 * 100, 1)}%` : '';
+    const soilTempText = S.agro?.soilTemp0 != null ? `\n- Soil temperature: ${round(S.agro.soilTemp0, 1)}°C` : '';
 
     return `You are Aarambh AI X, a friendly and professional agriculture advisor.
 
@@ -1949,7 +1969,7 @@ LIVE FARM DATA:
 - Air Quality Index (AQI): ${S.aq?.aqi != null ? S.aq.aqi + ' (' + fmtAqi(S.aq.aqi) + ')' : 'unavailable'}
 - Farm risk score: ${risk}/100
 - Season selected: ${$('season').value}
-- Soil type: ${$('soil').value}
+- Soil type: ${$('soil').value}${moistureText}${soilTempText}
 
 TOP CROP RIGHT NOW:
 - ${best.crop.name}: ${best.score}/100 — ${best.crop.note}
@@ -1961,7 +1981,6 @@ GUIDELINES:
 - Be calm, human, and professional.`;
   }
 
-  // 🚀 UPGRADE 2: Read SSE text stream and update UI smoothly
   async function askAI(question){
     if(S.aiLoading) return;
     S.aiLoading = true;
@@ -1978,7 +1997,6 @@ GUIDELINES:
         })
       });
 
-      // Fallback if backend throws a standard JSON error instead of streaming
       if (response.headers.get('content-type')?.includes('application/json')) {
          const data = await response.json();
          typingRow.remove();
@@ -2015,8 +2033,8 @@ GUIDELINES:
                 const json = JSON.parse(dataStr);
                 if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
                   fullAnswer += json.choices[0].delta.content;
-                  bubble.innerHTML = fullAnswer; // Parse incoming chunks natively
-                  log.scrollTop = log.scrollHeight; // Auto-scroll as it types
+                  bubble.innerHTML = fullAnswer; 
+                  log.scrollTop = log.scrollHeight; 
                 }
               } catch (e) {}
             }
@@ -2034,7 +2052,6 @@ GUIDELINES:
     }
   }
 
-  // ───────────────────────────────── COPY REPORT ──────────────────────────
   function copyReport(){
     const best=ranking()[0];
     const risk=currentRisk();
@@ -2074,7 +2091,6 @@ GUIDELINES:
     }
   }
 
-  // ───────────────────────────────── WIRE EVENTS ──────────────────────────
   function wireEvents(){
     $('themeBtn').addEventListener('click',()=>applyTheme(S.theme==='dark'?'light':'dark'));
     $('copyReportBtn').addEventListener('click',copyReport);
@@ -2121,11 +2137,9 @@ GUIDELINES:
       if(S.map) S.map.invalidateSize();
     });
 
-    // ───────────────────────────────── ADDED: PLANT DISEASE DETECTION
     const detectBtn = $('detectDiseaseBtn');
     const imageInput = $('plantImage');
 
-    // Helper function to dynamically compress image to avoid Vercel 4.5MB limit
     const compressImageToBase64 = file => new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -2134,7 +2148,7 @@ GUIDELINES:
         img.src = event.target.result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1000; // Safe resolution for AI vision
+          const MAX_WIDTH = 1000; 
           const MAX_HEIGHT = 1000;
           let width = img.width;
           let height = img.height;
@@ -2149,8 +2163,6 @@ GUIDELINES:
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          
-          // Export as highly compressed JPEG
           resolve(canvas.toDataURL('image/jpeg', 0.8));
         };
         img.onerror = error => reject(error);
@@ -2165,9 +2177,7 @@ GUIDELINES:
         const file = e.target.files[0];
         if (!file) return;
 
-        e.target.value = ''; // Reset input
-        
-        // 🚀 UPGRADE 1: Instant visual UI image preview injection
+        e.target.value = ''; 
         const imgURL = URL.createObjectURL(file);
         appendMsg(`<img src="${imgURL}" style="max-width:180px; border-radius:10px; margin-bottom:8px; border:1px solid var(--border);"><br>📷 Scanning for disease: ${file.name}`, 'user');
         
@@ -2176,7 +2186,6 @@ GUIDELINES:
         $('sendBtn').disabled = true;
 
         try {
-          // Compress the image before converting to Base64
           const base64String = await compressImageToBase64(file);
           const base64Data = base64String.split(',')[1];
 
@@ -2191,7 +2200,6 @@ GUIDELINES:
             })
           });
           
-          // Check if Vercel returned a server error page instead of JSON
           if (!response.ok && !response.headers.get('content-type')?.includes('application/json')) {
             throw new Error(`Server returned status ${response.status}`);
           }
@@ -2218,9 +2226,7 @@ GUIDELINES:
     }
   }
 
-  // ───────────────────────────────── DUPLICATE CLEANUP ─────────────────────────────────
   async function cleanupDuplicatePolygons(){
-    // Only run once, track in localStorage
     if(localStorage.getItem('agro_cleanup_done')) return;
     try{
       const res = await fetch(
@@ -2229,12 +2235,10 @@ GUIDELINES:
       const polygons = await res.json();
       if(!Array.isArray(polygons)) return;
       
-      // Keep only the first Aarambh polygon, delete duplicates
       const aarambhPolygons = polygons.filter(p => 
         p.name && p.name.includes('Aarambh')
       );
       
-      // Delete all but the first one
       for(let i = 1; i < aarambhPolygons.length; i++){
         await fetch(
           `https://api.agromonitoring.com/agro/1.0/polygons/${aarambhPolygons[i].id}?appid=${encodeURIComponent(AGRO_KEY)}`,
@@ -2243,18 +2247,15 @@ GUIDELINES:
       }
       localStorage.setItem('agro_cleanup_done', '1');
     }catch(e){
-      // Silent fail — cleanup is not critical
     }
   }
 
-  // ───────────────────────────────── SEED ─────────────────────────────────
   function seedChat(){
     appendMsg(`👋 Hello! I'm your AI farm advisor. I have live data for your location — ask me anything about crops, weather, soil, irrigation, or risk.
 
 Try one of the quick questions above, or just type your own.`,'bot');
   }
 
-  // ───────────────────────────────── INIT ─────────────────────────────────
   async function init(){
     applyTheme(S.theme);
     wireEvents();
@@ -2263,7 +2264,7 @@ Try one of the quick questions above, or just type your own.`,'bot');
     $('status').textContent='Getting your location…';
     
     await startGeo();
-    cleanupDuplicatePolygons(); // fire and forget, no await
+    cleanupDuplicatePolygons(); 
     setTimeout(initMap,100);
     setTimeout(drawChart,600);
   }
