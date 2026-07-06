@@ -162,6 +162,7 @@
     .stat{
       padding:14px;border-radius:16px;
       background:var(--surface2);border:1px solid var(--border);
+      transition: opacity 0.4s ease;
     }
     .stat .label{font-size:0.76rem;color:var(--muted);font-weight:500;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
     .stat .val{font-size:1.5rem;font-weight:700;letter-spacing:-0.03em;line-height:1}
@@ -932,6 +933,12 @@
 
     // Map
     refreshMap();
+
+    // 🚀 UPGRADE 3: Fade in stats smoothly after loading map skeletons
+    document.querySelectorAll('.stat').forEach(el => {
+      el.style.transition = 'opacity 0.4s ease';
+      el.style.opacity = '1';
+    });
   }
 
   function syncSliders(){
@@ -1038,6 +1045,10 @@
     // Click to teleport
     S.map.on('click',async e=>{
       const {lat,lng} = e.latlng;
+      
+      // 🚀 UPGRADE 3: Pulse animation start for skeleton loading effect
+      document.querySelectorAll('.stat').forEach(el => el.style.opacity = '0.4');
+
       try{
         const place = await fetchJSON(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`).catch(()=>null);
         const name = place ? bigDataName(place) : `${round(lat,3)}, ${round(lng,3)}`;
@@ -1950,6 +1961,7 @@ GUIDELINES:
 - Be calm, human, and professional.`;
   }
 
+  // 🚀 UPGRADE 2: Read SSE text stream and update UI smoothly
   async function askAI(question){
     if(S.aiLoading) return;
     S.aiLoading = true;
@@ -1966,16 +1978,52 @@ GUIDELINES:
         })
       });
 
-      const data = await response.json();
-      typingRow.remove();
-
-      if(data?.answer){
-        appendMsg(data.answer, 'bot');
-      }else if(data?.error){
-        appendMsg(`⚠️ ${data.error}`, 'bot');
-      }else{
-        appendMsg('⚠️ AI service returned an empty response. Please try again.', 'bot');
+      // Fallback if backend throws a standard JSON error instead of streaming
+      if (response.headers.get('content-type')?.includes('application/json')) {
+         const data = await response.json();
+         typingRow.remove();
+         if(data.error) appendMsg(`⚠️ ${data.error}`, 'bot');
+         else if(data.answer) appendMsg(data.answer, 'bot');
+         return;
       }
+
+      typingRow.remove();
+      const botRow = appendMsg('', 'bot');
+      const bubble = botRow.querySelector('.bubble');
+      const log = $('log');
+      let fullAnswer = '';
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n'); 
+        buffer = parts.pop(); 
+        
+        for (const part of parts) {
+          const lines = part.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const dataStr = line.slice(6).trim();
+              if (dataStr === '[DONE]') continue;
+              try {
+                const json = JSON.parse(dataStr);
+                if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
+                  fullAnswer += json.choices[0].delta.content;
+                  bubble.innerHTML = fullAnswer; // Parse incoming chunks natively
+                  log.scrollTop = log.scrollHeight; // Auto-scroll as it types
+                }
+              } catch (e) {}
+            }
+          }
+        }
+      }
+
     }catch(err){
       typingRow.remove();
       appendMsg('⚠️ AI server unavailable right now. Please try again in a moment.', 'bot');
@@ -1985,7 +2033,6 @@ GUIDELINES:
       $('sendBtn').disabled = false;
     }
   }
-
 
   // ───────────────────────────────── COPY REPORT ──────────────────────────
   function copyReport(){
@@ -2119,7 +2166,10 @@ GUIDELINES:
         if (!file) return;
 
         e.target.value = ''; // Reset input
-        appendMsg(`📷 Uploaded image for disease detection: ${file.name}`, 'user');
+        
+        // 🚀 UPGRADE 1: Instant visual UI image preview injection
+        const imgURL = URL.createObjectURL(file);
+        appendMsg(`<img src="${imgURL}" style="max-width:180px; border-radius:10px; margin-bottom:8px; border:1px solid var(--border);"><br>📷 Scanning for disease: ${file.name}`, 'user');
         
         const typingRow = appendTyping();
         S.aiLoading = true;
