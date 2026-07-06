@@ -9,39 +9,41 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'No question provided' });
   }
 
-  // Sanitize input to prevent XSS
-  const sanitizeInput = (str) => {
-    if (typeof str !== 'string') return '';
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;')
-      .trim();
-  };
-
-  // Validate question length (prevent token overflow)
-  const sanitizedQuestion = sanitizeInput(question);
-  if (sanitizedQuestion.length === 0) {
-    return res.status(400).json({ error: 'Question cannot be empty' });
-  }
-
-  if (sanitizedQuestion.length > 2000) {
-    return res.status(400).json({ error: 'Question too long (max 2000 characters)' });
-  }
-
   try {
-    // Optimized system prompt to stay within token limits
-    const systemPrompt = `You are Aarambh AI X, an agricultural intelligence assistant for Indian farming.
-You provide expert advice on crops, soil, weather, and farming practices.
+    const systemPrompt = `You are Aarambh AI X, a deeply knowledgeable
+  agricultural intelligence built by experienced Indian farmers,
+  agronomists, and climate scientists.
 
-EXPERTISE: Indian crops (Wheat, Rice, Maize, Millet, Pulses, Soybean, Cotton), soil types, seasonal farming (Rabi/Kharif/Zaid), government schemes (PM-KISAN, PMFBY), disease management, irrigation, and organic farming.
+  You have ZERO restrictions on response length or depth within your token budget.
+  Answer every question as completely as possible. Never refuse agriculture questions.
 
-TONE: Direct, practical, knowledgeable. Use Hindi/Hinglish when appropriate. Reference local context (mandi, DAP, urea, KVK). If unsure, say so.
+  LANGUAGE & TONE RULES (CRITICAL):
+  - Automatically detect the language of the user's question and match it perfectly.
+  - If the user writes in Hindi (Devanagari script), you must reply strictly in fluent Hindi.
+  - If the user writes in Hinglish (Hindi words using Latin script, e.g., "wheat ki sowing kab karein"), you must reply strictly in natural Hinglish.
+  - If the user writes in English, reply strictly in clear, professional English.
+  - Use accurate Indian agricultural terminology natively (e.g., rabi, kharif, zaid, mandi, DAP, urea, KVK, Krishi Vigyan Kendra).
+  - Sound like a confident senior agronomist, not a generic chatbot. Avoid conversational fluff like "Certainly!" or "I am happy to help." Go straight to the data.
 
-LIVE FARM DATA (use to personalize answers):
-${context ? context.substring(0, 500) : 'No location data available'}`;
+  EXPERTISE:
+  - All Indian crops across Rabi, Kharif, Zaid seasons
+  - All 18 Indian soil types and crop compatibility
+  - Crop-specific NPK ratios: Wheat 120:60:40, Rice 100:50:40, Maize 150:70:60, Cotton 150:60:60, Millet 80:40:30
+  - Row spacing metrics: Wheat 20-22cm, Rice 20x15cm, Maize 60-75cm, Cotton 90-120cm, Millet 45-60cm, Pulses 30-45cm
+  - Sowing depth per crop, germination criteria, and critical irrigation stages
+  - Disease tracking: rust, blight, wilt, bollworm, aphids, armyworm
+  - Government infrastructure: PM-KISAN, PMFBY, PM-KUSUM, PKVY, MSP rates
+  - Mandi pricing mechanics, post-harvest logistics, storage, and quality grading
+  - Organic farming, hydroponics, greenhouse optimization, and precision farming
+  - Climate change impact on Indian agriculture
+
+  LIVE FARM DATA — use this to personalize every answer:
+  ${context}
+
+  OUTPUT FORMATTING:
+  - Format your response using clean HTML tags (<b>, <br>, <ul>, <li>) so it renders cleanly directly inside the dashboard chat bubble. Do NOT wrap it in markdown block quotes (\`\`\`html).
+  - Always mention the Air Quality Index (AQI) impact LAST after presenting temperature, rainfall, and soil assessments.
+  - If an answer is completely unknown, state: "I don't have solid data on that. Ask your local KVK."`;
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -51,7 +53,7 @@ ${context ? context.substring(0, 500) : 'No location data available'}`;
       },
       body: JSON.stringify({
         model: 'llama-3.1-8b-instant',
-        max_tokens: 1024,
+        max_tokens: 1000, // Optimized to prevent 429 TPM rate-limits on the free tier
         temperature: 0.7,
         messages: [
           {
@@ -60,7 +62,7 @@ ${context ? context.substring(0, 500) : 'No location data available'}`;
           },
           {
             role: 'user',
-            content: sanitizedQuestion
+            content: question
           }
         ]
       })
@@ -76,16 +78,16 @@ ${context ? context.substring(0, 500) : 'No location data available'}`;
       console.error('Groq API Error:', data.error);
 
       return res.status(500).json({
-        error: data.error.message || 'Groq API error'
+        error: data.error.message
       });
     } else {
       return res.status(500).json({
-        error: 'No response from Groq'
+        error: 'No response received from Groq API'
       });
     }
 
   } catch (err) {
-    console.error('Groq error:', err);
+    console.error('Groq handler crash:', err);
 
     return res.status(500).json({
       error: 'Server error — please try again'
