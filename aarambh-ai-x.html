@@ -295,7 +295,7 @@
 
     /* Profit specific */
     .profit-glow {
-      text-shadow: 0 0 12px var(--glow);
+      text-shadow: 0 0 16px var(--glow);
       transition: color 0.3s, text-shadow 0.3s;
     }
 
@@ -595,7 +595,7 @@
     <section class="section" id="profit">
       <div class="section-head">
         <h2>Live Profitability Calculator</h2>
-        <p>Estimate expected costs, revenue, and net profit based on live market support prices and typical yields.</p>
+        <p>Estimate costs, revenue, and net profit based on live market support prices, local Indian farm units, and expected yields.</p>
       </div>
       <div class="grid2">
         <div class="panel pad slider-group">
@@ -604,40 +604,65 @@
             <select id="calcCrop">
                </select>
           </div>
-          <div class="field" style="margin-bottom:8px">
-            <label for="calcArea">Farm Size (Hectares)</label>
-            <input type="number" id="calcArea" value="1" min="0.1" step="0.1" style="font-family:var(--mono);" />
+          
+          <div class="input-row" style="grid-template-columns: 1fr 1fr; margin-bottom:8px; gap:14px;">
+            <div class="field">
+              <label for="calcArea">Farm Size</label>
+              <input type="number" id="calcArea" value="1" min="0.1" step="0.1" style="font-family:var(--mono);" />
+            </div>
+            <div class="field">
+              <label for="calcUnit">Land Unit</label>
+              <select id="calcUnit">
+                <option value="hectare">Hectares (ha)</option>
+                <option value="acre" selected>Acres</option>
+                <option value="bigha">Bigha (Standard)</option>
+                <option value="guntha">Guntha</option>
+                <option value="biswa">Biswa</option>
+                <option value="kanal">Kanal</option>
+                <option value="sqm">Square Meters</option>
+              </select>
+            </div>
           </div>
+
           <div class="range-wrap" style="margin-top:auto">
             <div class="range-head"><strong>Expected Yield</strong><span class="range-val" id="calcYieldLab">Average</span></div>
-            <input id="calcYield" type="range" min="0.5" max="1.5" step="0.25" value="1">
+            <input id="calcYield" type="range" min="0.5" max="1.5" step="0.1" value="1">
+            <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--muted); margin-top:5px; padding: 0 4px;">
+              <span>Poor</span><span>Avg</span><span>Excellent</span>
+            </div>
           </div>
         </div>
+        
         <div class="panel pad">
-          <div class="sim-output">
-            <div style="font-size:0.78rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Financial Breakdown</div>
+          <div class="sim-output" style="justify-content: space-between;">
             
-            <div class="sim-meta" style="grid-template-columns: 1fr;">
-              <div class="sim-box" style="display:flex; justify-content:space-between; align-items:center; padding:16px;">
-                <div class="slabel" style="margin:0">Estimated Revenue</div>
-                <div class="sval" id="outRev" style="color:var(--good); font-size:1.4rem;">₹0</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom: 6px;">
+              <div class="sim-box" style="padding:16px;">
+                <div class="slabel">Est. Revenue</div>
+                <div class="sval" id="outRev" style="color:var(--good); font-size:1.3rem;">₹0</div>
               </div>
-              <div class="sim-box" style="display:flex; justify-content:space-between; align-items:center; padding:16px;">
-                <div class="slabel" style="margin:0">Estimated Costs</div>
-                <div class="sval" id="outCost" style="color:var(--bad); font-size:1.4rem;">₹0</div>
+              <div class="sim-box" style="padding:16px;">
+                <div class="slabel">Est. Costs</div>
+                <div class="sval" id="outCost" style="color:var(--bad); font-size:1.3rem;">₹0</div>
               </div>
             </div>
             
-            <div class="divider" style="margin: 12px 0;"></div>
+            <div style="margin: 12px 0;">
+                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:6px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">
+                    <span style="color:var(--good)">Margin: <span id="outMargin">0%</span></span>
+                    <span style="color:var(--muted)">ROI: <span id="outROI">0%</span></span>
+                </div>
+                <div id="barBg" style="width: 100%; height: 8px; background: rgba(240,112,112,0.2); border-radius: 999px; overflow:hidden; display:flex;">
+                    <div id="barRev" style="background: var(--good); height: 100%; width: 50%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                </div>
+            </div>
             
-            <div class="sim-box" id="profitBox" style="background:rgba(78,232,196,.1); border-color:rgba(78,232,196,.3); padding:24px; transition: all 0.3s;">
+            <div class="sim-box" id="profitBox" style="background:rgba(78,232,196,.1); border-color:rgba(78,232,196,.3); padding:24px 16px; transition: all 0.3s;">
               <div class="slabel" id="profitLabel" style="color:var(--primary); font-size:0.9rem;">Net Profit</div>
-              <div class="sval profit-glow" id="outProfit" style="font-size:2.6rem; color:var(--primary);">₹0</div>
+              <div class="sval profit-glow" id="outProfit" style="font-size:2.8rem; color:var(--primary);">₹0</div>
+              <div id="outProfitUnit" style="font-size:0.85rem; color:var(--primary); opacity:0.8; margin-top:6px; font-weight:500;">₹0 / Acre</div>
             </div>
             
-            <p style="font-size:0.82rem;color:var(--muted);line-height:1.6; text-align:center; margin-top:auto;">
-              Estimates are based on average Minimum Support Prices (MSP) and baseline regional input costs. Actual profits may vary.
-            </p>
           </div>
         </div>
       </div>
@@ -787,7 +812,6 @@
   const AGRO_DEFAULT_POLYGON = '6a315b4dfc4d163439b941bc';
 
   // ───────────────────────────────── DATA ─────────────────────────────────
-  // UPDATED: Added financial metrics (msp in INR per quintal, yield_ha in quintals, cost_ha in INR)
   const CROPS = [
     {
       name:'Wheat', emoji:'🌾',
@@ -854,6 +878,17 @@
     }
   ];
 
+  // Engine logic relative to 1 Hectare
+  const LAND_UNITS = {
+    hectare: 1,
+    acre: 0.404686,
+    bigha: 0.252929,
+    guntha: 0.010117,
+    biswa: 0.012646,
+    kanal: 0.0505857,
+    sqm: 0.0001
+  };
+
   // ───────────────────────────────── STATE ────────────────────────────────
   const $ = id => document.getElementById(id);
   const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
@@ -916,7 +951,7 @@
     localStorage.setItem('agrix-theme',S.theme);
     $('themeBtn').textContent = S.theme==='dark'?'🌓':'🌙';
     if(S.chartInst) drawChart();
-    updateProfitCalculator(); // Re-render colors for profit UI
+    updateProfitCalculator(); 
   }
 
   // ───────────────────────────────── TOAST ────────────────────────────────
@@ -939,7 +974,6 @@
     const rain  = round(S.wx.rain7*(1+S.future.r/100),0);
     const hum   = clamp(Math.round(S.wx.hum+S.future.h),0,100);
 
-    // Hero stats
     $('loc').textContent = S.place;
     $('locSub').textContent = `${wxLabel(S.wx.code)} · Elev. ${S.elev!=null?S.elev:'--'} m`;
     $('risk').textContent = risk;
@@ -956,12 +990,10 @@
     $('bestSub').textContent = `${best.score}/100 · ${best.crop.note}`;
     $('riskBar').style.width = `${risk}%`;
 
-    // Status bar
     const el=$('status');
     el.className = 'status-bar '+(risk<35?'ok':risk<70?'warn':'bad');
     el.textContent = `${S.place}: ${best.crop.emoji} ${best.crop.name} is the best match — climate risk is ${risk}/100.`;
 
-    // Crop grid
     $('cropGrid').innerHTML = list.map((item,i)=>`
       <div class="crop-card${i===0?' top':''}">
         <div class="crop-score">${item.crop.emoji} ${item.score}<span style="font-size:0.7rem;color:var(--muted);font-weight:500">/100</span></div>
@@ -975,13 +1007,9 @@
       </div>
     `).join('');
 
-    // Forecast
     renderForecast();
-    
-    // Profitability
     updateProfitCalculator();
 
-    // Simulator output
     $('simTemp').textContent = `${temp}°C`;
     $('simRisk').textContent = `${risk}/100`;
     $('simRain').textContent = `${rain} mm`;
@@ -991,7 +1019,6 @@
       <span class="sim-pill">${item.crop.emoji} ${item.crop.name} ${item.score}/100</span>
     `).join('');
 
-    // Info panel (chat sidebar)
     $('iLoc').textContent  = S.place;
     $('iElev').textContent = S.elev!=null?`${S.elev} m`:'--';
     $('iTemp').textContent = `${temp}°C`;
@@ -1003,13 +1030,9 @@
     $('iMoist').textContent = S.agro?.moisture0 != null ? `${round(S.agro.moisture0 * 100, 1)}%` : '--';
     $('iSoilT').textContent = S.agro?.soilTemp0 != null ? `${round(S.agro.soilTemp0, 1)}°C` : '--';
 
-    // Chart
     drawChart();
-
-    // Map
     refreshMap();
 
-    // Fade in stats smoothly after loading map skeletons
     document.querySelectorAll('.stat').forEach(el => {
       el.style.transition = 'opacity 0.4s ease';
       el.style.opacity = '1';
@@ -1033,52 +1056,81 @@
     if (!cropIdx) return;
     
     const crop = CROPS[cropIdx];
-    const area = parseFloat($('calcArea').value) || 0;
+    const localArea = parseFloat($('calcArea').value) || 0;
+    const unitKey = $('calcUnit').value;
+    const areaInHa = localArea * LAND_UNITS[unitKey];
+    
     const yieldMulti = parseFloat($('calcYield').value);
 
-    // Yield Labels
-    const yLabels = { '0.5':'Low', '0.75':'Below Avg', '1':'Average', '1.25':'Good', '1.5':'High' };
-    $('calcYieldLab').textContent = yLabels[$('calcYield').value] || 'Average';
+    // Dynamic Yield Label based on standard distribution
+    let yLabel = 'Average';
+    if(yieldMulti <= 0.6) yLabel = 'Poor';
+    else if(yieldMulti <= 0.8) yLabel = 'Below Avg';
+    else if(yieldMulti === 1) yLabel = 'Average';
+    else if(yieldMulti <= 1.2) yLabel = 'Good';
+    else yLabel = 'Excellent';
+    $('calcYieldLab').textContent = yLabel;
 
-    // Math Engine
-    const baseYield = crop.yield_ha; // quintals per hectare
-    const actualYield = baseYield * yieldMulti * area;
+    // Core Engine Math (Converted back to Ha baseline)
+    const baseYield = crop.yield_ha; // quintals per ha
+    const actualYield = baseYield * yieldMulti * areaInHa;
     const revenue = actualYield * crop.msp;
 
-    // Costs: assumed 20% of the cost is variable and tied to yield (e.g. harvesting labor, transport)
-    const baseCost = crop.cost_ha * area;
+    // Variable costs scaling with Yield (Harvesting, transport logic)
+    const baseCost = crop.cost_ha * areaInHa;
     const variableCostDelta = baseCost * 0.2 * (yieldMulti - 1); 
     const totalCost = baseCost + variableCostDelta;
 
     const profit = revenue - totalCost;
-
+    
+    // Advanced Metrics
+    const roi = totalCost > 0 ? (profit / totalCost) * 100 : 0;
+    const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
+    const profitPerUnit = localArea > 0 ? profit / localArea : 0;
+    
     // Formatting 
     const fmt = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+    const unitName = $('calcUnit').options[$('calcUnit').selectedIndex].text.replace(/s \(ha\)|s/, ''); // Plural clean up for the "per unit" string
 
     $('outRev').textContent = fmt.format(revenue);
     $('outCost').textContent = fmt.format(totalCost);
     $('outProfit').textContent = fmt.format(profit);
+    
+    $('outROI').textContent = roi.toFixed(1) + '%';
+    $('outMargin').textContent = margin.toFixed(1) + '%';
+    $('outProfitUnit').textContent = `${fmt.format(profitPerUnit)} / ${unitName}`;
 
-    // Dynamic Styling for futuristic aesthetic
+    // Visual Margin Bar Logic
+    let fillPct = revenue > 0 ? Math.max(0, margin) : 0;
+    $('barRev').style.width = fillPct + '%';
+
+    // Futuristic Aesthetic & Dynamic Colors
     const pBox = $('profitBox');
     const pLbl = $('profitLabel');
     const pVal = $('outProfit');
+    const pUnit = $('outProfitUnit');
     const isDark = S.theme === 'dark';
 
     if (profit >= 0) {
       pVal.style.color = 'var(--primary)';
       pLbl.style.color = 'var(--primary)';
+      pUnit.style.color = 'var(--primary)';
       pBox.style.borderColor = isDark ? 'rgba(78,232,196,.3)' : 'rgba(15,110,86,.3)';
       pBox.style.background = isDark ? 'rgba(78,232,196,.1)' : 'rgba(15,110,86,.05)';
       pVal.style.textShadow = isDark ? '0 0 15px var(--glow)' : 'none';
       pLbl.textContent = 'Net Profit';
+      $('barRev').style.background = 'var(--good)';
+      $('barBg').style.background = 'rgba(78,232,196,.2)';
     } else {
       pVal.style.color = 'var(--bad)';
       pLbl.style.color = 'var(--bad)';
+      pUnit.style.color = 'var(--bad)';
       pBox.style.borderColor = isDark ? 'rgba(240,112,112,.3)' : 'rgba(163,45,45,.3)';
       pBox.style.background = isDark ? 'rgba(240,112,112,.1)' : 'rgba(163,45,45,.05)';
       pVal.style.textShadow = isDark ? '0 0 15px rgba(240,112,112,.3)' : 'none';
       pLbl.textContent = 'Net Loss';
+      $('barRev').style.width = '0%';
+      $('barBg').style.background = 'rgba(240,112,112,.2)';
     }
   }
 
@@ -2237,7 +2289,7 @@ GUIDELINES:
     });
     
     // Profit Calc events
-    ['calcCrop','calcArea','calcYield'].forEach(id=>{
+    ['calcCrop','calcArea','calcUnit','calcYield'].forEach(id=>{
       $(id).addEventListener('input', updateProfitCalculator);
     });
 
