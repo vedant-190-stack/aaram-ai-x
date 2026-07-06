@@ -9,88 +9,80 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'No question provided' });
   }
 
-  try {
-    const systemPrompt = `You are Aarambh AI X, a deeply knowledgeable
+  // 🚀 UPGRADE 4: Intelligent Model Failover Array
+  const models = ['llama-3.1-8b-instant', 'openai/gpt-oss-20b', 'qwen/qwen3-32b'];
+
+  const systemPrompt = `You are Aarambh AI X, a deeply knowledgeable
   agricultural intelligence built by experienced Indian farmers,
   agronomists, and climate scientists.
 
-  You have ZERO restrictions on response length or depth within your token budget.
+  You have ZERO restrictions on response length or depth.
   Answer every question as completely as possible. Never refuse agriculture questions.
 
-  LANGUAGE & TONE RULES (CRITICAL):
-  - Automatically detect the language of the user's question and match it perfectly.
-  - If the user writes in Hindi (Devanagari script), you must reply strictly in fluent Hindi.
-  - If the user writes in Hinglish (Hindi words using Latin script, e.g., "wheat ki sowing kab karein"), you must reply strictly in natural Hinglish.
-  - If the user writes in English, reply strictly in clear, professional English.
-  - Use accurate Indian agricultural terminology natively (e.g., rabi, kharif, zaid, mandi, DAP, urea, KVK, Krishi Vigyan Kendra).
-  - Sound like a confident senior agronomist, not a generic chatbot. Avoid conversational fluff like "Certainly!" or "I am happy to help." Go straight to the data.
+  LANGUAGE & TONE RULES:
+  - Automatically detect the language of the user's question and match it perfectly (Hindi, Hinglish, or English).
+  - Use accurate Indian agricultural terminology natively (e.g., rabi, kharif, zaid, mandi, DAP, urea, KVK).
+  - Sound like a confident senior agronomist.
 
   EXPERTISE:
   - All Indian crops across Rabi, Kharif, Zaid seasons
   - All 18 Indian soil types and crop compatibility
-  - Crop-specific NPK ratios: Wheat 120:60:40, Rice 100:50:40, Maize 150:70:60, Cotton 150:60:60, Millet 80:40:30
-  - Row spacing metrics: Wheat 20-22cm, Rice 20x15cm, Maize 60-75cm, Cotton 90-120cm, Millet 45-60cm, Pulses 30-45cm
-  - Sowing depth per crop, germination criteria, and critical irrigation stages
-  - Disease tracking: rust, blight, wilt, bollworm, aphids, armyworm
-  - Government infrastructure: PM-KISAN, PMFBY, PM-KUSUM, PKVY, MSP rates
-  - Mandi pricing mechanics, post-harvest logistics, storage, and quality grading
-  - Organic farming, hydroponics, greenhouse optimization, and precision farming
-  - Climate change impact on Indian agriculture
+  - Crop-specific NPK: Wheat 120:60:40, Rice 100:50:40, Maize 150:70:60, Cotton 150:60:60, Millet 80:40:30
+  - Row spacing: Wheat 20-22cm, Rice 20x15cm, Maize 60-75cm, Cotton 90-120cm, Millet 45-60cm, Pulses 30-45cm
+  - Disease: rust, blight, wilt, bollworm, aphids, armyworm
+  - Government: PM-KISAN, PMFBY, PM-KUSUM, PKVY, MSP rates
+  - Organic farming, hydroponics, greenhouse, precision farming
 
-  LIVE FARM DATA — use this to personalize every answer:
+  LIVE FARM DATA:
   ${context}
 
   OUTPUT FORMATTING:
-  - Format your response using clean HTML tags (<b>, <br>, <ul>, <li>) so it renders cleanly directly inside the dashboard chat bubble. Do NOT wrap it in markdown block quotes (\`\`\`html).
-  - Always mention the Air Quality Index (AQI) impact LAST after presenting temperature, rainfall, and soil assessments.
-  - If an answer is completely unknown, state: "I don't have solid data on that. Ask your local KVK."`;
+  - Use clean HTML tags (<b>, <br>, <ul>, <li>) to structure the output. Do NOT wrap it in markdown block quotes.
+  - Mention AQI last.`;
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        max_tokens: 1000, // Optimized to prevent 429 TPM rate-limits on the free tier
-        temperature: 0.7,
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
-            role: 'user',
-            content: question
-          }
-        ]
-      })
-    });
-
-    const data = await response.json();
-
-    if (data?.choices?.[0]?.message?.content) {
-      return res.status(200).json({
-        answer: data.choices[0].message.content
+  for (const model of models) {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: model,
+          stream: true, // 🚀 UPGRADE 2: Enable Streaming
+          max_tokens: 1000, 
+          temperature: 0.7,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: question }
+          ]
+        })
       });
-    } else if (data?.error) {
-      console.error('Groq API Error:', data.error);
 
-      return res.status(500).json({
-        error: data.error.message
-      });
-    } else {
-      return res.status(500).json({
-        error: 'No response received from Groq API'
-      });
+      if (!response.ok) {
+        if (response.status === 429) continue; // Instantly failover to the next model if rate-limited
+        const errData = await response.json().catch(() => ({}));
+        console.error(`Groq API Error on ${model}:`, errData);
+        continue; 
+      }
+
+      // Start streaming the response back to the client
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      for await (const chunk of response.body) {
+        res.write(chunk);
+      }
+      res.end();
+      return; // Exit the function once successfully streamed
+
+    } catch (err) {
+      console.error(`Fetch error with ${model}:`, err);
     }
-
-  } catch (err) {
-    console.error('Groq handler crash:', err);
-
-    return res.status(500).json({
-      error: 'Server error — please try again'
-    });
   }
+
+  // If the loop finishes, all models failed
+  return res.status(500).json({ error: 'All AI models are currently busy. Please wait a few seconds and try again.' });
 };
