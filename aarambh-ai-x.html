@@ -454,6 +454,7 @@
         <a class="nav-link" href="#weather">Weather</a>
         <a class="nav-link" href="#recommend">Crops</a>
         <a class="nav-link" href="#profit">Profit</a>
+        <a class="nav-link" href="#npkEngine">NPK Tool</a>
         <a class="nav-link" href="#sim">Simulator</a>
         <a class="nav-link" href="#charts">Charts</a>
         <a class="nav-link" href="#mapSection">Map</a>
@@ -664,6 +665,49 @@
             </div>
             
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="npkEngine">
+      <div class="section-head">
+        <h2>🧪 Soil Health Card (NPK) Engine</h2>
+        <p>Convert your target NPK requirements into exact bags of Urea, DAP, and MOP. The engine automatically calculates chemical offsets (e.g., Nitrogen supplied by DAP).</p>
+      </div>
+      <div class="grid2">
+        <div class="panel pad slider-group">
+          <div class="field">
+            <label for="shcCrop">Crop NPK Target</label>
+            <select id="shcCrop">
+              <option value="120,60,40">🌾 Wheat (120:60:40)</option>
+              <option value="120,60,40">🍚 Rice (120:60:40)</option>
+              <option value="150,75,50">🌽 Maize (150:75:50)</option>
+              <option value="150,75,75">☁️ Cotton (150:75:75)</option>
+              <option value="30,60,40">🌱 Soybean (30:60:40)</option>
+              <option value="250,100,120">🎋 Sugarcane (250:100:120)</option>
+            </select>
+          </div>
+          <div class="field" style="margin-top: 10px;">
+            <label for="shcStatus">Soil Test Results (From Lab)</label>
+            <select id="shcStatus">
+              <option value="1">Medium / Standard (No adjustment)</option>
+              <option value="1.25">Low Fertility (+25% Dose)</option>
+              <option value="0.75">High Fertility (-25% Dose)</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="panel pad">
+          <div style="font-size:0.78rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Required Fertilizer for your selected Area</div>
+          <div class="info-row"><span class="key">Target N-P-K (Adjusted)</span><span class="val" id="outNpk">--</span></div>
+          <div class="divider"></div>
+          <div class="info-row"><span class="key">DAP (18-46-0)</span><span class="val" style="color:var(--text); font-weight:700;"><span id="outDap">--</span> kg</span></div>
+          <div class="info-row"><span class="key">Urea (46-0-0)</span><span class="val" style="color:var(--text); font-weight:700;"><span id="outUrea">--</span> kg</span></div>
+          <div class="info-row"><span class="key">MOP (0-0-60)</span><span class="val" style="color:var(--text); font-weight:700;"><span id="outMop">--</span> kg</span></div>
+          <div class="divider"></div>
+          <p style="font-size:0.8rem;color:var(--muted);line-height:1.6; margin-top:8px;">
+            *Note: The engine automatically reduced your Urea requirement by <span id="outOffset" style="color:var(--warn); font-weight:600;">-- kg</span> because DAP already supplies baseline Nitrogen.
+          </p>
         </div>
       </div>
     </section>
@@ -1132,6 +1176,47 @@
       $('barRev').style.width = '0%';
       $('barBg').style.background = 'rgba(240,112,112,.2)';
     }
+  }
+
+  // ───────────────────────────────── NPK CHEMICAL ENGINE ────────────────────
+  function updateNpkEngine() {
+    const npkRaw = $('shcCrop').value.split(',');
+    const soilMultiplier = parseFloat($('shcStatus').value) || 1;
+    
+    // Base Target in kg/ha
+    let targetN = parseFloat(npkRaw[0]) * soilMultiplier;
+    let targetP = parseFloat(npkRaw[1]) * soilMultiplier;
+    let targetK = parseFloat(npkRaw[2]) * soilMultiplier;
+
+    // Grab the area from the Profit Calculator inputs
+    const areaVal = parseFloat($('calcArea').value) || 0;
+    const unitKey = $('calcUnit').value;
+    const areaInHa = areaVal * (LAND_UNITS[unitKey] || 1);
+
+    // Scale targets to the specific farm size
+    const farmN = targetN * areaInHa;
+    const farmP = targetP * areaInHa;
+    const farmK = targetK * areaInHa;
+
+    // 1. Calculate DAP needed for Phosphorus (DAP is 46% P2O5)
+    const dapNeeded = farmP / 0.46;
+
+    // 2. Chemical Offset: DAP provides 18% Nitrogen. We must subtract this from Urea.
+    const nitrogenFromDap = dapNeeded * 0.18;
+    const remainingN = Math.max(0, farmN - nitrogenFromDap);
+
+    // 3. Calculate Urea needed for remaining Nitrogen (Urea is 46% N)
+    const ureaNeeded = remainingN / 0.46;
+
+    // 4. Calculate MOP needed for Potassium (MOP is 60% K2O)
+    const mopNeeded = farmK / 0.60;
+
+    // Update UI
+    $('outNpk').textContent = `${Math.round(farmN)} : ${Math.round(farmP)} : ${Math.round(farmK)} kg`;
+    $('outDap').textContent = Math.round(dapNeeded).toLocaleString();
+    $('outUrea').textContent = Math.round(ureaNeeded).toLocaleString();
+    $('outMop').textContent = Math.round(mopNeeded).toLocaleString();
+    $('outOffset').textContent = Math.round(nitrogenFromDap).toLocaleString();
   }
 
   function renderForecast(){
@@ -1846,7 +1931,6 @@
         .filter(x => x && x.data && (x.data.mean != null || x.data.median != null))
         .sort((a,b) => (b.dt || 0) - (a.dt || 0))[0] : null;
 
-      // Keep Open-Meteo Soil data intact while updating NDVI
       const existingTemp = S.agro?.soilTemp0;
       const existingMoisture = S.agro?.moisture0;
 
@@ -2274,6 +2358,47 @@ GUIDELINES:
     }
   }
 
+  // ───────────────────────────────── NPK CHEMICAL ENGINE ────────────────────
+  function updateNpkEngine() {
+    const npkRaw = $('shcCrop').value.split(',');
+    const soilMultiplier = parseFloat($('shcStatus').value) || 1;
+    
+    // Base Target in kg/ha
+    let targetN = parseFloat(npkRaw[0]) * soilMultiplier;
+    let targetP = parseFloat(npkRaw[1]) * soilMultiplier;
+    let targetK = parseFloat(npkRaw[2]) * soilMultiplier;
+
+    // Grab the area from the Profit Calculator inputs
+    const areaVal = parseFloat($('calcArea').value) || 0;
+    const unitKey = $('calcUnit').value;
+    const areaInHa = areaVal * (LAND_UNITS[unitKey] || 1);
+
+    // Scale targets to the specific farm size
+    const farmN = targetN * areaInHa;
+    const farmP = targetP * areaInHa;
+    const farmK = targetK * areaInHa;
+
+    // 1. Calculate DAP needed for Phosphorus (DAP is 46% P2O5)
+    const dapNeeded = farmP / 0.46;
+
+    // 2. Chemical Offset: DAP provides 18% Nitrogen. We must subtract this from Urea.
+    const nitrogenFromDap = dapNeeded * 0.18;
+    const remainingN = Math.max(0, farmN - nitrogenFromDap);
+
+    // 3. Calculate Urea needed for remaining Nitrogen (Urea is 46% N)
+    const ureaNeeded = remainingN / 0.46;
+
+    // 4. Calculate MOP needed for Potassium (MOP is 60% K2O)
+    const mopNeeded = farmK / 0.60;
+
+    // Update UI
+    $('outNpk').textContent = `${Math.round(farmN)} : ${Math.round(farmP)} : ${Math.round(farmK)} kg`;
+    $('outDap').textContent = Math.round(dapNeeded).toLocaleString();
+    $('outUrea').textContent = Math.round(ureaNeeded).toLocaleString();
+    $('outMop').textContent = Math.round(mopNeeded).toLocaleString();
+    $('outOffset').textContent = Math.round(nitrogenFromDap).toLocaleString();
+  }
+
   function wireEvents(){
     $('themeBtn').addEventListener('click',()=>applyTheme(S.theme==='dark'?'light':'dark'));
     $('copyReportBtn').addEventListener('click',copyReport);
@@ -2288,9 +2413,16 @@ GUIDELINES:
       });
     });
     
-    // Profit Calc events
+    // Profit & NPK Calc events
     ['calcCrop','calcArea','calcUnit','calcYield'].forEach(id=>{
-      $(id).addEventListener('input', updateProfitCalculator);
+      $(id).addEventListener('input', () => {
+         updateProfitCalculator();
+         if(id === 'calcArea' || id === 'calcUnit') updateNpkEngine();
+      });
+    });
+    
+    ['shcCrop', 'shcStatus'].forEach(id => {
+      if($(id)) $(id).addEventListener('change', updateNpkEngine);
     });
 
     ['season','soil'].forEach(id=>{
@@ -2450,6 +2582,7 @@ Try one of the quick questions above, or just type your own.`,'bot');
     initProfitDropdown();
     wireEvents();
     seedChat();
+    updateNpkEngine();
     renderAll();
     $('status').textContent='Getting your location…';
     
