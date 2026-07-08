@@ -14,12 +14,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer></script>
-
-  <style>
-  /* The rest of your CSS continues exactly as before... */
 
   <style>
     :root {
@@ -40,7 +36,9 @@
       --glow:     rgba(78,232,196,0.18);
       --mono: 'DM Mono', monospace;
     }
-    [data-theme="light"] {
+    
+    /* 🚀 FIX: The light theme CSS kicks in when html has data-theme="light" */
+    html[data-theme="light"] {
       --bg:       #eef5ff;
       --bg2:      #dceeff;
       --surface:  #ffffff;
@@ -52,6 +50,7 @@
       --muted2:   #8aadcc;
       --glow:     rgba(78,232,196,0.10);
     }
+    
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html{scroll-behavior:smooth;font-size:15px}
     body{
@@ -60,6 +59,7 @@
       background:var(--bg);
       min-height:100vh;
       line-height:1.65;
+      transition: background 0.3s, color 0.3s;
     }
     a{color:inherit;text-decoration:none}
     button,input,select{font:inherit;color:inherit;background:none;border:none;outline:none}
@@ -115,6 +115,7 @@
       border:1px solid var(--border);
       border-radius:24px;
       overflow:hidden;
+      transition: background 0.3s, border-color 0.3s;
     }
     .pad{padding:24px}
 
@@ -169,7 +170,7 @@
     .stat{
       padding:14px;border-radius:16px;
       background:var(--surface2);border:1px solid var(--border);
-      transition: opacity 0.4s ease;
+      transition: opacity 0.4s ease, background 0.3s;
     }
     .stat .label{font-size:0.76rem;color:var(--muted);font-weight:500;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
     .stat .val{font-size:1.5rem;font-weight:700;letter-spacing:-0.03em;line-height:1}
@@ -204,7 +205,7 @@
       width:100%;padding:11px 13px;border-radius:12px;
       background:var(--surface2);border:1px solid var(--border2);
       color:var(--text);font-size:0.9rem;
-      transition:border-color .18s;
+      transition:border-color .18s, background 0.3s;
     }
     .field input:focus,.field select:focus{border-color:rgba(78,232,196,.5);box-shadow:0 0 0 3px rgba(78,232,196,.08)}
     .field select option{background:var(--surface2);color:var(--text)}
@@ -213,7 +214,7 @@
       padding:10px 16px;border-radius:12px;font-size:0.88rem;font-weight:500;
       border:1px solid var(--border);background:var(--surface2);
       color:var(--muted);margin-bottom:14px;
-      transition:color .3s,border-color .3s;
+      transition:color .3s,border-color .3s, background 0.3s;
     }
     .status-bar.ok{color:var(--good);border-color:rgba(61,227,162,.2)}
     .status-bar.warn{color:var(--warn);border-color:rgba(245,195,66,.2)}
@@ -225,7 +226,8 @@
       padding:16px;border-radius:18px;
       background:var(--surface2);border:1px solid var(--border);
       display:flex;flex-direction:column;gap:6px;
-      transition:border-color .2s,transform .2s;cursor:default;
+      transition:border-color .2s,transform .2s, background 0.3s;
+      cursor:default;
     }
     .crop-card:hover{border-color:var(--border2);transform:translateY(-2px)}
     .crop-card.top{border-color:rgba(78,232,196,.3);background:rgba(78,232,196,.04)}
@@ -997,10 +999,23 @@
 
   // ───────────────────────────────── THEME ────────────────────────────────
   function applyTheme(t){
-    S.theme = t==='light'?'light':'dark';
-    document.documentElement.setAttribute('data-theme',S.theme);
-    localStorage.setItem('agrix-theme',S.theme);
-    $('themeBtn').textContent = S.theme==='dark'?'🌓':'🌙';
+    // Update state
+    S.theme = t === 'light' ? 'light' : 'dark';
+    
+    // Check if the current theme is light or dark and adjust data-theme
+    if (S.theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      $('themeBtn').textContent = '🌙';
+    } else {
+      // Removing the attribute altogether allows the default :root to be used (which is dark)
+      // or you can set it to 'dark' if preferred. Here we remove it for cleaner CSS behavior.
+      document.documentElement.removeAttribute('data-theme');
+      $('themeBtn').textContent = '🌓';
+    }
+
+    localStorage.setItem('agrix-theme', S.theme);
+    
+    // Refresh visual components
     if(S.chartInst) drawChart();
     updateProfitCalculator(); 
   }
@@ -2224,7 +2239,6 @@
     const hum = clamp(Math.round((S.wx?.hum ?? 52) + (S.future?.h ?? 0)), 0, 100);
     const best = list && list.length ? list[0] : { crop: { name: 'Millet', note: 'Resilient in hot and dry conditions.' }, score: 75 };
     
-    // Inject the newly retrieved live soil data for the AI to analyze!
     const moistureText = S.agro?.moisture0 != null ? `\n- Soil moisture (root zone): ${round(S.agro.moisture0 * 100, 1)}%` : '';
     const soilTempText = S.agro?.soilTemp0 != null ? `\n- Soil temperature: ${round(S.agro.soilTemp0, 1)}°C` : '';
 
@@ -2365,47 +2379,6 @@ GUIDELINES:
     }
   }
 
-  // ───────────────────────────────── NPK CHEMICAL ENGINE ────────────────────
-  function updateNpkEngine() {
-    const npkRaw = $('shcCrop').value.split(',');
-    const soilMultiplier = parseFloat($('shcStatus').value) || 1;
-    
-    // Base Target in kg/ha
-    let targetN = parseFloat(npkRaw[0]) * soilMultiplier;
-    let targetP = parseFloat(npkRaw[1]) * soilMultiplier;
-    let targetK = parseFloat(npkRaw[2]) * soilMultiplier;
-
-    // Grab the area from the Profit Calculator inputs
-    const areaVal = parseFloat($('calcArea').value) || 0;
-    const unitKey = $('calcUnit').value;
-    const areaInHa = areaVal * (LAND_UNITS[unitKey] || 1);
-
-    // Scale targets to the specific farm size
-    const farmN = targetN * areaInHa;
-    const farmP = targetP * areaInHa;
-    const farmK = targetK * areaInHa;
-
-    // 1. Calculate DAP needed for Phosphorus (DAP is 46% P2O5)
-    const dapNeeded = farmP / 0.46;
-
-    // 2. Chemical Offset: DAP provides 18% Nitrogen. We must subtract this from Urea.
-    const nitrogenFromDap = dapNeeded * 0.18;
-    const remainingN = Math.max(0, farmN - nitrogenFromDap);
-
-    // 3. Calculate Urea needed for remaining Nitrogen (Urea is 46% N)
-    const ureaNeeded = remainingN / 0.46;
-
-    // 4. Calculate MOP needed for Potassium (MOP is 60% K2O)
-    const mopNeeded = farmK / 0.60;
-
-    // Update UI
-    $('outNpk').textContent = `${Math.round(farmN)} : ${Math.round(farmP)} : ${Math.round(farmK)} kg`;
-    $('outDap').textContent = Math.round(dapNeeded).toLocaleString();
-    $('outUrea').textContent = Math.round(ureaNeeded).toLocaleString();
-    $('outMop').textContent = Math.round(mopNeeded).toLocaleString();
-    $('outOffset').textContent = Math.round(nitrogenFromDap).toLocaleString();
-  }
-
   function wireEvents(){
     $('themeBtn').addEventListener('click',()=>applyTheme(S.theme==='dark'?'light':'dark'));
     $('copyReportBtn').addEventListener('click',copyReport);
@@ -2420,7 +2393,6 @@ GUIDELINES:
       });
     });
     
-    // Profit & NPK Calc events
     ['calcCrop','calcArea','calcUnit','calcYield'].forEach(id=>{
       $(id).addEventListener('input', () => {
          updateProfitCalculator();
