@@ -60,8 +60,15 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'No image was provided.' });
     }
 
+    // CRITICAL FIX: Ensure the base64 string is perfectly clean.
+    // If the frontend accidentally sent the 'data:image/jpeg;base64,' prefix, strip it here.
+    let cleanBase64 = imageBase64;
+    if (cleanBase64.includes(',')) {
+      cleanBase64 = cleanBase64.split(',')[1];
+    }
+
     // Validate image size (max 4MB)
-    const imageSizeInBytes = Buffer.byteLength(imageBase64, 'base64');
+    const imageSizeInBytes = Buffer.byteLength(cleanBase64, 'base64');
     const maxSizeInBytes = 4 * 1024 * 1024; // 4MB
 
     if (imageSizeInBytes > maxSizeInBytes) {
@@ -91,82 +98,76 @@ module.exports = async function handler(req, res) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Reverted to the active, supported Gemini 2.5 Flash model
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    // Using gemini-1.5-flash as it is highly stable for image analysis
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `You are an expert agricultural plant pathologist
-  with 30 years of field experience across Indian farms.
+    with 30 years of field experience across Indian farms.
 
-  Analyze this plant image thoroughly. Be specific and practical.
+    Analyze this plant image thoroughly. Be specific and practical.
 
-  Return ONLY raw HTML in exactly this format, no markdown:
+    Return ONLY raw HTML in exactly this format, no markdown:
 
-  <b>🌿 Plant:</b> [Exact plant name + local Indian name if known]<br><br>
-  <b>🦠 Disease:</b> [Disease name or "No disease detected"]<br><br>
-  <b>📈 Confidence:</b> [X%]<br><br>
-  <b>📍 Affected parts:</b> [leaves/stem/root/fruit etc]<br><br>
-  <b>🔬 Symptoms:</b><br>
-  [Detailed visual symptoms — color, texture, pattern, spread]<br><br>
-  <b>⚗️ Cause:</b><br>
-  [Pathogen name + scientific name + conditions that triggered it]<br><br>
-  <b>🚨 Severity:</b> [Mild / Moderate / Severe] — [brief reason]<br><br>
-  <b>🌱 Organic Treatment:</b><br>
-  • [Treatment 1 with dosage and timing]<br>
-  • [Treatment 2]<br>
-  • [Treatment 3 if applicable]<br><br>
-  <b>🧪 Chemical Treatment:</b><br>
-  • [Chemical name + dosage + frequency]<br>
-  • [Alternative chemical]<br><br>
-  <b>✅ Prevention:</b><br>
-  • [Tip 1]<br>
-  • [Tip 2]<br>
-  • [Tip 3]<br><br>
-  <b>📅 Expected recovery:</b> [Timeframe if treated properly]<br><br>
-  <b>⚠️ Watch out for:</b> [Secondary infections or complications]
+    <b>🌿 Plant:</b> [Exact plant name + local Indian name if known]<br><br>
+    <b>🦠 Disease:</b> [Disease name or "No disease detected"]<br><br>
+    <b>📈 Confidence:</b> [X%]<br><br>
+    <b>📍 Affected parts:</b> [leaves/stem/root/fruit etc]<br><br>
+    <b>🔬 Symptoms:</b><br>
+    [Detailed visual symptoms — color, texture, pattern, spread]<br><br>
+    <b>⚗️ Cause:</b><br>
+    [Pathogen name + scientific name + conditions that triggered it]<br><br>
+    <b>🚨 Severity:</b> [Mild / Moderate / Severe] — [brief reason]<br><br>
+    <b>🌱 Organic Treatment:</b><br>
+    • [Treatment 1 with dosage and timing]<br>
+    • [Treatment 2]<br>
+    • [Treatment 3 if applicable]<br><br>
+    <b>🧪 Chemical Treatment:</b><br>
+    • [Chemical name + dosage + frequency]<br>
+    • [Alternative chemical]<br><br>
+    <b>✅ Prevention:</b><br>
+    • [Tip 1]<br>
+    • [Tip 2]<br>
+    • [Tip 3]<br><br>
+    <b>📅 Expected recovery:</b> [Timeframe if treated properly]<br><br>
+    <b>⚠️ Watch out for:</b> [Secondary infections or complications]
 
-  If the plant is completely healthy return:
-  <b>🌿 Plant:</b> [Name]<br><br>
-  <b>✅ Status:</b> Healthy — no disease detected.<br><br>
-  <b>💡 Tip:</b> [One practical tip to keep this plant healthy]
+    If the plant is completely healthy return:
+    <b>🌿 Plant:</b> [Name]<br><br>
+    <b>✅ Status:</b> Healthy — no disease detected.<br><br>
+    <b>💡 Tip:</b> [One practical tip to keep this plant healthy]
 
-  If the image is not a plant return:
-  <b>❌ Error:</b> No plant detected. Please upload a clear photo
-  of a plant leaf, stem, or affected area.`;
+    If the image is not a plant return:
+    <b>❌ Error:</b> No plant detected. Please upload a clear photo
+    of a plant leaf, stem, or affected area.`;
 
-    // Add timeout to prevent hanging requests
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-    try {
-      const result = await model.generateContent([
+    // Execute the API call
+    const result = await Promise.race([
+      model.generateContent([
         prompt,
         {
           inlineData: {
-            data: imageBase64,
+            data: cleanBase64,
             mimeType: finalMimeType,
           }
         }
-      ]);
+      ]),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 25000))
+    ]);
 
-      clearTimeout(timeoutId);
+    let responseText = result.response.text();
+    // Strip markdown formatting if Gemini includes it
+    responseText = responseText.replace(/```html/g, '').replace(/```/g, '').trim();
 
-      let responseText = result.response.text();
-      // Strip markdown formatting if Gemini includes it
-      responseText = responseText.replace(/```html/g, '').replace(/```/g, '').trim();
-
-      return res.status(200).json({ answer: responseText });
-    } catch (timeoutError) {
-      clearTimeout(timeoutId);
-      if (timeoutError.name === 'AbortError') {
-        return res.status(504).json({
-          error: 'Request timeout. The AI service took too long to respond. Please try again.'
-        });
-      }
-      throw timeoutError;
-    }
+    return res.status(200).json({ answer: responseText });
 
   } catch (error) {
     console.error('Gemini API Error details:', error.message);
+    
+    if (error.message === 'TIMEOUT') {
+      return res.status(504).json({
+        error: 'Request timeout. The AI service took too long to analyze the image. Please try again.'
+      });
+    }
 
     // Sends the exact error string back to the UI so you can debug missing keys/quotas
     return res.status(500).json({
