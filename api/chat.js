@@ -1,6 +1,26 @@
+const rateLimitCache = new Map();
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // 🚀 Rate Limiting Logic (Max 15 requests per minute per IP)
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const currentTime = Date.now();
+  
+  if (!rateLimitCache.has(clientIp)) {
+    rateLimitCache.set(clientIp, { count: 1, firstRequest: currentTime });
+  } else {
+    const userData = rateLimitCache.get(clientIp);
+    if (currentTime - userData.firstRequest > 60000) {
+      rateLimitCache.set(clientIp, { count: 1, firstRequest: currentTime });
+    } else {
+      userData.count++;
+      if (userData.count > 15) {
+        return res.status(429).json({ error: 'Too many requests. Please wait a minute before asking more questions.' });
+      }
+    }
   }
 
   const { question, context } = req.body;
@@ -9,15 +29,12 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'No question provided' });
   }
 
-  // 🚀 UPGRADE 4: Intelligent Model Failover Array
+  // Intelligent Model Failover Array
   const models = ['llama-3.1-8b-instant', 'openai/gpt-oss-20b', 'qwen/qwen3-32b'];
 
-  const systemPrompt = `You are Aarambh AI X, a deeply knowledgeable
-  agricultural intelligence built by experienced Indian farmers,
-  agronomists, and climate scientists.
+  const systemPrompt = `You are Aarambh AI X, a deeply knowledgeable agricultural intelligence built by experienced Indian farmers, agronomists, and climate scientists.
 
-  You have ZERO restrictions on response length or depth.
-  Answer every question as completely as possible. Never refuse agriculture questions.
+  You have ZERO restrictions on response length or depth. Answer every question as completely as possible. Never refuse agriculture questions.
 
   LANGUAGE & TONE RULES:
   - Automatically detect the language of the user's question and match it perfectly (Hindi, Hinglish, or English).
@@ -50,7 +67,7 @@ module.exports = async function handler(req, res) {
         },
         body: JSON.stringify({
           model: model,
-          stream: true, // 🚀 UPGRADE 2: Enable Streaming
+          stream: true, 
           max_tokens: 1000, 
           temperature: 0.7,
           messages: [
@@ -76,7 +93,7 @@ module.exports = async function handler(req, res) {
         res.write(chunk);
       }
       res.end();
-      return; // Exit the function once successfully streamed
+      return; 
 
     } catch (err) {
       console.error(`Fetch error with ${model}:`, err);
