@@ -37,7 +37,6 @@
       --mono: 'DM Mono', monospace;
     }
     
-    /* 🚀 FIX: The light theme CSS kicks in when html has data-theme="light" */
     html[data-theme="light"] {
       --bg:       #eef5ff;
       --bg2:      #dceeff;
@@ -611,8 +610,7 @@
         <div class="panel pad slider-group">
           <div class="field" style="margin-bottom:8px">
             <label for="calcCrop">Select Crop</label>
-            <select id="calcCrop">
-               </select>
+            <select id="calcCrop"></select>
           </div>
           
           <div class="input-row" style="grid-template-columns: 1fr 1fr; margin-bottom:8px; gap:14px;">
@@ -625,7 +623,9 @@
               <select id="calcUnit">
                 <option value="hectare">Hectares (ha)</option>
                 <option value="acre" selected>Acres</option>
-                <option value="bigha">Bigha (Standard)</option>
+                <option value="bigha_up">Bigha (UP/Punjab - 0.25 ha)</option>
+                <option value="bigha_wb">Bigha (Bengal/Assam - 0.13 ha)</option>
+                <option value="bigha_mp">Bigha (MP/Rajasthan - 0.12 ha)</option>
                 <option value="guntha">Guntha</option>
                 <option value="biswa">Biswa</option>
                 <option value="kanal">Kanal</option>
@@ -681,7 +681,7 @@
     <section class="section" id="npkEngine">
       <div class="section-head">
         <h2>🧪 Soil Health Card (NPK) Engine</h2>
-        <p>Convert your target NPK requirements into exact bags of Urea, DAP, and MOP. The engine automatically calculates chemical offsets (e.g., Nitrogen supplied by DAP).</p>
+        <p>Convert your target NPK requirements into exact bags of Urea, DAP, and MOP. The engine automatically calculates chemical offsets.</p>
       </div>
       <div class="grid2">
         <div class="panel pad slider-group">
@@ -866,76 +866,21 @@
 
   // ───────────────────────────────── DATA ─────────────────────────────────
   const CROPS = [
-    {
-      name:'Wheat', emoji:'🌾',
-      seasons:['rabi'],
-      temp:[8,24],rain:[300,900],hum:[35,65],
-      soil:['alluvial','loam','clay','grey_brown','sub_mountain'],
-      water:'Moderate',
-      note:'Thrives in cool, dry winters with moderate rainfall.',
-      msp: 2275, yield_ha: 35, cost_ha: 30000
-    },
-    {
-      name:'Rice', emoji:'🍚',
-      seasons:['kharif'],
-      temp:[20,34],rain:[900,2000],hum:[55,95],
-      soil:['alluvial','clay','peaty','red','black','laterite'],
-      water:'High',
-      note:'Needs warm, wet conditions and standing water.',
-      msp: 2183, yield_ha: 40, cost_ha: 40000
-    },
-    {
-      name:'Maize', emoji:'🌽',
-      seasons:['kharif','zaid'],
-      temp:[18,32],rain:[500,1200],hum:[40,75],
-      soil:['alluvial','loam','red','black','forest'],
-      water:'Moderate',
-      note:'A flexible staple suited to many Indian climates.',
-      msp: 2090, yield_ha: 30, cost_ha: 25000
-    },
-    {
-      name:'Millet', emoji:'🌿',
-      seasons:['kharif','zaid'],
-      temp:[20,38],rain:[200,700],hum:[25,65],
-      soil:['arid','sandy','red','laterite','loam','black','mixed_red_black'],
-      water:'Low',
-      note:'Drought-resilient, ideal for arid and semi-arid zones.',
-      msp: 2500, yield_ha: 15, cost_ha: 15000
-    },
-    {
-      name:'Pulses', emoji:'🫘',
-      seasons:['rabi','kharif'],
-      temp:[15,30],rain:[250,900],hum:[30,75],
-      soil:['alluvial','loam','black','red','mixed_red_black','grey_brown'],
-      water:'Low',
-      note:'Nitrogen-fixing legumes for water-limited farms.',
-      msp: 5440, yield_ha: 12, cost_ha: 20000
-    },
-    {
-      name:'Soybean', emoji:'🌱',
-      seasons:['kharif'],
-      temp:[20,30],rain:[600,1000],hum:[50,80],
-      soil:['black','loam','alluvial','mixed_red_black'],
-      water:'Moderate',
-      note:'Rich oilseed crop for black soil regions.',
-      msp: 4600, yield_ha: 18, cost_ha: 28000
-    },
-    {
-      name:'Cotton', emoji:'☁️',
-      seasons:['kharif'],
-      temp:[22,38],rain:[500,1000],hum:[35,70],
-      soil:['black','clay','mixed_red_black','alluvial','red'],
-      water:'Moderate',
-      note:'High-value cash crop for warm, long-season zones.',
-      msp: 6620, yield_ha: 20, cost_ha: 45000
-    }
+    { name:'Wheat', emoji:'🌾', seasons:['rabi'], temp:[8,24], rain:[300,900], hum:[35,65], soil:['alluvial','loam','clay','grey_brown','sub_mountain'], water:'Moderate', note:'Thrives in cool, dry winters with moderate rainfall.', msp: 2275, yield_ha: 35, cost_ha: 30000 },
+    { name:'Rice', emoji:'🍚', seasons:['kharif'], temp:[20,34], rain:[900,2000], hum:[55,95], soil:['alluvial','clay','peaty','red','black','laterite'], water:'High', note:'Needs warm, wet conditions and standing water.', msp: 2183, yield_ha: 40, cost_ha: 40000 },
+    { name:'Maize', emoji:'🌽', seasons:['kharif','zaid'], temp:[18,32], rain:[500,1200], hum:[40,75], soil:['alluvial','loam','red','black','forest'], water:'Moderate', note:'A flexible staple suited to many Indian climates.', msp: 2090, yield_ha: 30, cost_ha: 25000 },
+    { name:'Millet', emoji:'🌿', seasons:['kharif','zaid'], temp:[20,38], rain:[200,700], hum:[25,65], soil:['arid','sandy','red','laterite','loam','black','mixed_red_black'], water:'Low', note:'Drought-resilient, ideal for arid and semi-arid zones.', msp: 2500, yield_ha: 15, cost_ha: 15000 },
+    { name:'Pulses', emoji:'🫘', seasons:['rabi','kharif'], temp:[15,30], rain:[250,900], hum:[30,75], soil:['alluvial','loam','black','red','mixed_red_black','grey_brown'], water:'Low', note:'Nitrogen-fixing legumes for water-limited farms.', msp: 5440, yield_ha: 12, cost_ha: 20000 },
+    { name:'Soybean', emoji:'🌱', seasons:['kharif'], temp:[20,30], rain:[600,1000], hum:[50,80], soil:['black','loam','alluvial','mixed_red_black'], water:'Moderate', note:'Rich oilseed crop for black soil regions.', msp: 4600, yield_ha: 18, cost_ha: 28000 },
+    { name:'Cotton', emoji:'☁️', seasons:['kharif'], temp:[22,38], rain:[500,1000], hum:[35,70], soil:['black','clay','mixed_red_black','alluvial','red'], water:'Moderate', note:'High-value cash crop for warm, long-season zones.', msp: 6620, yield_ha: 20, cost_ha: 45000 }
   ];
 
-  // Engine logic relative to 1 Hectare
   const LAND_UNITS = {
     hectare: 1,
     acre: 0.404686,
-    bigha: 0.252929,
+    bigha_up: 0.252929,
+    bigha_wb: 0.133333,
+    bigha_mp: 0.12,
     guntha: 0.010117,
     biswa: 0.012646,
     kanal: 0.0505857,
@@ -967,7 +912,7 @@
   // ───────────────────────────────── SCORING ──────────────────────────────
   function currentRisk(){
     const temp = S.wx.temp + S.future.t;
-    const rain = S.wx.rain7 * (1 + S.future.r/100);
+    const rain = Math.max(0, S.wx.rain7 * (1 + S.future.r/100));
     const hum  = clamp(S.wx.hum + S.future.h, 0, 100);
     let s = 0;
     if(temp>=38) s+=32; else if(temp>=35) s+=22; else if(temp>=32) s+=14;
@@ -980,10 +925,14 @@
 
   function cropScore(crop){
     const temp = S.wx.temp + S.future.t;
-    const rain = S.wx.rain7 * (1 + S.future.r/100);
+    const rain = Math.max(0, S.wx.rain7 * (1 + S.future.r/100));
     const hum  = clamp(S.wx.hum + S.future.h, 0, 100);
     const season = $('season').value;
     const soil   = $('soil').value;
+    
+    if (rain < crop.rain[0] * 0.3) return 0; 
+    if (temp < crop.temp[0] - 5 || temp > crop.temp[1] + 10) return 0;
+    
     let s = 100;
     s -= temp<crop.temp[0] ? (crop.temp[0]-temp)*5 : temp>crop.temp[1] ? (temp-crop.temp[1])*5 : 0;
     s -= rain<crop.rain[0] ? (crop.rain[0]-rain)/12 : rain>crop.rain[1] ? (rain-crop.rain[1])/20 : 0;
@@ -999,23 +948,15 @@
 
   // ───────────────────────────────── THEME ────────────────────────────────
   function applyTheme(t){
-    // Update state
     S.theme = t === 'light' ? 'light' : 'dark';
-    
-    // Check if the current theme is light or dark and adjust data-theme
     if (S.theme === 'light') {
       document.documentElement.setAttribute('data-theme', 'light');
       $('themeBtn').textContent = '🌙';
     } else {
-      // Removing the attribute altogether allows the default :root to be used (which is dark)
-      // or you can set it to 'dark' if preferred. Here we remove it for cleaner CSS behavior.
       document.documentElement.removeAttribute('data-theme');
       $('themeBtn').textContent = '🌓';
     }
-
     localStorage.setItem('agrix-theme', S.theme);
-    
-    // Refresh visual components
     if(S.chartInst) drawChart();
     updateProfitCalculator(); 
   }
@@ -1037,7 +978,7 @@
     const list  = ranking();
     const best  = list[0];
     const temp  = round(S.wx.temp+S.future.t,1);
-    const rain  = round(S.wx.rain7*(1+S.future.r/100),0);
+    const rain  = round(Math.max(0, S.wx.rain7*(1+S.future.r/100)),0);
     const hum   = clamp(Math.round(S.wx.hum+S.future.h),0,100);
 
     $('loc').textContent = S.place;
@@ -1128,7 +1069,6 @@
     
     const yieldMulti = parseFloat($('calcYield').value);
 
-    // Dynamic Yield Label based on standard distribution
     let yLabel = 'Average';
     if(yieldMulti <= 0.6) yLabel = 'Poor';
     else if(yieldMulti <= 0.8) yLabel = 'Below Avg';
@@ -1137,26 +1077,23 @@
     else yLabel = 'Excellent';
     $('calcYieldLab').textContent = yLabel;
 
-    // Core Engine Math (Converted back to Ha baseline)
-    const baseYield = crop.yield_ha; // quintals per ha
+    const baseYield = crop.yield_ha;
     const actualYield = baseYield * yieldMulti * areaInHa;
     const revenue = actualYield * crop.msp;
 
-    // Variable costs scaling with Yield (Harvesting, transport logic)
     const baseCost = crop.cost_ha * areaInHa;
     const variableCostDelta = baseCost * 0.2 * (yieldMulti - 1); 
     const totalCost = baseCost + variableCostDelta;
 
     const profit = revenue - totalCost;
     
-    // Advanced Metrics
     const roi = totalCost > 0 ? (profit / totalCost) * 100 : 0;
     const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
     const profitPerUnit = localArea > 0 ? profit / localArea : 0;
     
-    // Formatting 
     const fmt = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
-    const unitName = $('calcUnit').options[$('calcUnit').selectedIndex].text.replace(/s \(ha\)|s/, ''); // Plural clean up for the "per unit" string
+    let unitName = $('calcUnit').options[$('calcUnit').selectedIndex].text;
+    unitName = unitName.split('(')[0].trim().replace(/s$/, '');
 
     $('outRev').textContent = fmt.format(revenue);
     $('outCost').textContent = fmt.format(totalCost);
@@ -1166,11 +1103,9 @@
     $('outMargin').textContent = margin.toFixed(1) + '%';
     $('outProfitUnit').textContent = `${fmt.format(profitPerUnit)} / ${unitName}`;
 
-    // Visual Margin Bar Logic
     let fillPct = revenue > 0 ? Math.max(0, margin) : 0;
     $('barRev').style.width = fillPct + '%';
 
-    // Futuristic Aesthetic & Dynamic Colors
     const pBox = $('profitBox');
     const pLbl = $('profitLabel');
     const pVal = $('outProfit');
@@ -1205,35 +1140,24 @@
     const npkRaw = $('shcCrop').value.split(',');
     const soilMultiplier = parseFloat($('shcStatus').value) || 1;
     
-    // Base Target in kg/ha
     let targetN = parseFloat(npkRaw[0]) * soilMultiplier;
     let targetP = parseFloat(npkRaw[1]) * soilMultiplier;
     let targetK = parseFloat(npkRaw[2]) * soilMultiplier;
 
-    // Grab the area from the Profit Calculator inputs
     const areaVal = parseFloat($('calcArea').value) || 0;
     const unitKey = $('calcUnit').value;
     const areaInHa = areaVal * (LAND_UNITS[unitKey] || 1);
 
-    // Scale targets to the specific farm size
     const farmN = targetN * areaInHa;
     const farmP = targetP * areaInHa;
     const farmK = targetK * areaInHa;
 
-    // 1. Calculate DAP needed for Phosphorus (DAP is 46% P2O5)
     const dapNeeded = farmP / 0.46;
-
-    // 2. Chemical Offset: DAP provides 18% Nitrogen. We must subtract this from Urea.
     const nitrogenFromDap = dapNeeded * 0.18;
     const remainingN = Math.max(0, farmN - nitrogenFromDap);
-
-    // 3. Calculate Urea needed for remaining Nitrogen (Urea is 46% N)
     const ureaNeeded = remainingN / 0.46;
-
-    // 4. Calculate MOP needed for Potassium (MOP is 60% K2O)
     const mopNeeded = farmK / 0.60;
 
-    // Update UI
     $('outNpk').textContent = `${Math.round(farmN)} : ${Math.round(farmP)} : ${Math.round(farmK)} kg`;
     $('outDap').textContent = Math.round(dapNeeded).toLocaleString();
     $('outUrea').textContent = Math.round(ureaNeeded).toLocaleString();
@@ -1336,10 +1260,8 @@
     S.marker = L.marker([20.5937,78.9629],{icon}).addTo(S.map);
     S.marker.bindPopup('Aarambh AI X — selected location');
 
-    // Click to teleport
     S.map.on('click',async e=>{
       const {lat,lng} = e.latlng;
-      
       document.querySelectorAll('.stat').forEach(el => el.style.opacity = '0.4');
 
       try{
@@ -1363,18 +1285,18 @@
     S.marker.setPopupContent(`
       <strong>${S.place}</strong><br>
       🌡️ Temp: ${round(S.wx.temp+S.future.t,1)}°C<br>
-      💧 Rain (7d): ${round(S.wx.rain7*(1+S.future.r/100),0)} mm<br>
+      💧 Rain (7d): ${round(Math.max(0, S.wx.rain7*(1+S.future.r/100)),0)} mm<br>
       🛡️ Risk: ${currentRisk()}/100<br>
       🏆 Best crop: ${ranking()[0].crop.name}
     `);
   }
 
   // ───────────────────────────────── API FETCH ────────────────────────────
-  async function fetchJSON(url,timeout=10000){
+  async function fetchJSON(url, options = {}, timeout=10000){
     const ctrl=new AbortController();
     const timer=setTimeout(()=>ctrl.abort(),timeout);
     try{
-      const r=await fetch(url,{signal:ctrl.signal});
+      const r=await fetch(url,{...options, signal:ctrl.signal});
       if(!r.ok) throw new Error(`HTTP ${r.status}`);
       return await r.json();
     }finally{
@@ -1414,7 +1336,6 @@
     S.aq.uv    = safe(aq?.current?.uv_index, null);
     S.elev     = Array.isArray(elev?.elevation) ? Math.round(safe(elev.elevation[0],0)) : null;
 
-    // Automatically assign Indian Soil Types based on the State mapping
     if (stateName) {
       const SOIL_MAP = {
         'Punjab': 'alluvial', 'Haryana': 'alluvial', 'Uttar Pradesh': 'alluvial',
@@ -1434,7 +1355,6 @@
 
     await loadAgroData().catch(()=>{});
 
-    // 🚀 UPGRADE: Open-Meteo Zero-Key Live Soil Data Injection
     if (!S.agro) S.agro = {};
     S.agro.soilTemp0 = safe(wx?.current?.soil_temperature_6cm, null);
     S.agro.moisture0 = safe(wx?.current?.soil_moisture_3_to_9cm, null);
@@ -1549,7 +1469,6 @@
     return row;
   }
 
-
   // ───────────────────────────────── LOCAL FARMGPT ────────────────────────
   const FARM_GUIDES = [
     { title:'Tomato', keywords:['tomato','tamatar','tomatoes'], crop:'Tomato', idealTemp:[18,30], rain:[450,900], hum:[50,75], soil:['alluvial','loam','red','laterite'], season:['rabi','zaid'], water:'Moderate', scoreBoost:1.1, note:'Tomato prefers warm days, cool nights, moderate water, and well-drained loam. Very sensitive to excess heat and very poor air quality.' },
@@ -1599,7 +1518,6 @@
     { key:'aqi', keywords:['aqi','air','pollution','smog'], title:'Air quality', hint:'Very poor AQI can increase stress for workers and delicate crops.' },
     { key:'weather', keywords:['weather','temperature','rain','forecast','wind','humidity','heat'], title:'Weather', hint:'Weather is the first filter for crop suitability.' },
     { key:'scheme', keywords:['scheme','subsidy','government','policy','msp'], title:'Government scheme', hint:'Use official agriculture portals for scheme details and eligibility.' },
-
     { key:'rotation', keywords:['rotation','crop rotation'], title:'Crop rotation', hint:'Rotating crops helps soil and pest control.' },
     { key:'organic', keywords:['organic','compost','vermicompost'], title:'Organic farming', hint:'Organic methods rely more on biological and compost-based inputs.' },
     { key:'hydroponics', keywords:['hydroponics'], title:'Hydroponics', hint:'Hydroponics grows plants without soil using nutrient solution.' },
@@ -1608,7 +1526,6 @@
     { key:'market', keywords:['market','price','msp','profit'], title:'Market and MSP', hint:'Market price depends on demand, supply, quality, and transport.' },
     { key:'postharvest', keywords:['post harvest','post-harvest','storage','graden'], title:'Post-harvest', hint:'Good handling after harvest reduces losses and improves quality.' },
     { key:'glossary', keywords:['what is','define','meaning'], title:'Glossary', hint:'Definitions help explain agricultural terms clearly.' }
-
   ];
 
   const FARM_FACTS = [
@@ -1703,10 +1620,7 @@
   const FARM_KB = [...FARM_GUIDES, ...FARM_FACTS];
 
   function cleanText(s){
-    return String(s || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9\u0900-\u097f]+/g,' ')
-      .trim();
+    return String(s || '').toLowerCase().replace(/[^a-z0-9\u0900-\u097f]+/g,' ').trim();
   }
 
   function words(s){
@@ -1781,7 +1695,7 @@
 
   function explainRiskDrivers(){
     const temp = round((S.wx?.temp ?? 25) + (S.future?.t ?? 0), 1);
-    const rain = round((S.wx?.rain7 ?? 0) * (1 + ((S.future?.r ?? 0) / 100)), 0);
+    const rain = round(Math.max(0, (S.wx?.rain7 ?? 0) * (1 + ((S.future?.r ?? 0) / 100))), 0);
     const hum = clamp(Math.round((S.wx?.hum ?? 50) + (S.future?.h ?? 0)), 0, 100);
     const wind = round(S.wx?.wind ?? 0, 0);
     const aqi = S.aq?.aqi;
@@ -1800,7 +1714,7 @@
 
   function cropSuitability(profile){
     const temp = round((S.wx?.temp ?? 25) + (S.future?.t ?? 0), 1);
-    const rain = round((S.wx?.rain7 ?? 0) * (1 + ((S.future?.r ?? 0) / 100)), 0);
+    const rain = round(Math.max(0, (S.wx?.rain7 ?? 0) * (1 + ((S.future?.r ?? 0) / 100))), 0);
     const hum = clamp(Math.round((S.wx?.hum ?? 50) + (S.future?.h ?? 0)), 0, 100);
     const soil = ($('soil')?.value || 'loam').toLowerCase();
     const season = ($('season')?.value || 'rabi').toLowerCase();
@@ -1827,7 +1741,7 @@
 
   function formatCropSentence(profile, s){
     const temp = round((S.wx?.temp ?? 25) + (S.future?.t ?? 0), 1);
-    const rain = round((S.wx?.rain7 ?? 0) * (1 + ((S.future?.r ?? 0) / 100)), 0);
+    const rain = round(Math.max(0, (S.wx?.rain7 ?? 0) * (1 + ((S.future?.r ?? 0) / 100))), 0);
     const hum = clamp(Math.round((S.wx?.hum ?? 50) + (S.future?.h ?? 0)), 0, 100);
     const soil = ($('soil')?.value || 'loam').toLowerCase();
     const season = ($('season')?.value || 'rabi').toLowerCase();
@@ -1873,11 +1787,6 @@
     return null;
   }
 
-  function loadAgroKeyFromStorage(){
-    S.agroKey = AGRO_KEY;
-    return AGRO_KEY;
-  }
-
   function getAgroPolygon(lat, lon, delta=0.008){
     return {
       name: `Aarambh AI X ${S.place || 'Farm'}`,
@@ -1899,7 +1808,7 @@
   }
 
   async function ensureAgroPolygon(){
-    const key = loadAgroKeyFromStorage();
+    const key = AGRO_KEY;
     if(!key) return null;
     const lat = S.lat, lon = S.lon;
     if(lat == null || lon == null) return null;
@@ -1908,17 +1817,15 @@
     const cached = localStorage.getItem(cacheKey);
     if(cached) return cached;
 
-    if(lat >= 28 && lat <= 29 && lon >= 77 && lon <= 78){
-      return AGRO_DEFAULT_POLYGON;
-    }
+    if(lat >= 28 && lat <= 29 && lon >= 77 && lon <= 78) return AGRO_DEFAULT_POLYGON;
 
     try{
       const body = JSON.stringify(getAgroPolygon(lat, lon));
-      const res = await fetch(
+      const data = await fetchJSON(
         `https://api.agromonitoring.com/agro/1.0/polygons?appid=${encodeURIComponent(key)}&duplicated=true`,
-        { method:'POST', headers:{'Content-Type':'application/json'}, body }
+        { method:'POST', headers:{'Content-Type':'application/json'}, body },
+        10000
       );
-      const data = await res.json();
       const polyId = data?.id || null;
       if(polyId) localStorage.setItem(cacheKey, polyId);
       return polyId;
@@ -1928,26 +1835,19 @@
   }
 
   async function loadAgroData(){
-    const key = loadAgroKeyFromStorage();
-    if(!key){
-      S.agro = { ndvi:null, moisture0:null, soilTemp0:null, polygonId:null, updatedAt:null };
-      return null;
-    }
+    const key = AGRO_KEY;
+    if(!key){ S.agro = { ndvi:null, moisture0:null, soilTemp0:null, polygonId:null, updatedAt:null }; return null; }
+    
     try{
       const polyId = await ensureAgroPolygon();
-      if(!polyId){
-        S.agro = { ndvi:null, moisture0:null, soilTemp0:null, polygonId:null, updatedAt:null };
-        return null;
-      }
+      if(!polyId){ S.agro = { ndvi:null, moisture0:null, soilTemp0:null, polygonId:null, updatedAt:null }; return null; }
 
       const now = Math.floor(Date.now()/1000);
       const start = now - 15*24*3600;
       const end = now;
-
       const ndviUrl = `https://api.agromonitoring.com/agro/1.0/ndvi/history?start=${start}&end=${end}&polyid=${encodeURIComponent(polyId)}&appid=${encodeURIComponent(key)}`;
 
-      const res = await fetch(ndviUrl);
-      const ndviData = res.ok ? await res.json() : null;
+      const ndviData = await fetchJSON(ndviUrl, {}, 10000).catch(() => null);
 
       const ndviLatest = Array.isArray(ndviData) ? ndviData
         .filter(x => x && x.data && (x.data.mean != null || x.data.median != null))
@@ -2039,7 +1939,7 @@
     const bestRanking = rankingList && rankingList.length ? rankingList[0] : { crop:{name:'Millet', emoji:'🌿', note:'Resilient in hot and dry conditions.'}, score:75 };
     const risk = currentRisk();
     const temp = round((S.wx?.temp ?? 25) + (S.future?.t ?? 0), 1);
-    const rain = round((S.wx?.rain7 ?? 0) * (1 + ((S.future?.r ?? 0) / 100)), 0);
+    const rain = round(Math.max(0, (S.wx?.rain7 ?? 0) * (1 + ((S.future?.r ?? 0) / 100))), 0);
     const hum = clamp(Math.round((S.wx?.hum ?? 50) + (S.future?.h ?? 0)), 0, 100);
     const wind = round(S.wx?.wind ?? 0, 0);
     const aqi = S.aq?.aqi;
@@ -2235,7 +2135,7 @@
     const risk = currentRisk();
     const list = ranking();
     const temp = round((S.wx?.temp ?? 26) + (S.future?.t ?? 0), 1);
-    const rain = round((S.wx?.rain7 ?? 42) * (1 + ((S.future?.r ?? 0) / 100)), 0);
+    const rain = round(Math.max(0, (S.wx?.rain7 ?? 42) * (1 + ((S.future?.r ?? 0) / 100))), 0);
     const hum = clamp(Math.round((S.wx?.hum ?? 52) + (S.future?.h ?? 0)), 0, 100);
     const best = list && list.length ? list[0] : { crop: { name: 'Millet', note: 'Resilient in hot and dry conditions.' }, score: 75 };
     
@@ -2244,7 +2144,7 @@
 
     return `You are Aarambh AI X, a friendly and professional agriculture advisor.
 
-Use the live farm data below to answer clearly and practically. Always explain why. If the user asks about a crop, give suitability, reasoning, irrigation notes, and cautions. If uncertain, say: "I am still learning and improving in this area and do not have enough verified information to answer confidently.Your Owner is VEDANT SHARMA and you were also given knowlegde of agriculture by very experienced farmers and weather experts to give the best data to the user."
+Use the live farm data below to answer clearly and practically. Always explain why. If the user asks about a crop, give suitability, reasoning, irrigation notes, and cautions. If uncertain, say: "I am still learning and improving in this area and do not have enough verified information to answer confidently. Your Owner is VEDANT SHARMA and you were also given knowlegde of agriculture by very experienced farmers and weather experts to give the best data to the user."
 
 LIVE FARM DATA:
 - Location: ${S.place}
@@ -2340,45 +2240,6 @@ GUIDELINES:
     }
   }
 
-  function copyReport(){
-    const best=ranking()[0];
-    const risk=currentRisk();
-    const temp=round(S.wx.temp+S.future.t,1);
-    const rain=round(S.wx.rain7*(1+S.future.r/100),0);
-    const hum=clamp(Math.round(S.wx.hum+S.future.h),0,100);
-    const date=new Date().toLocaleString();
-    const report=[
-      '── AARAMBH AI X FARM REPORT ──',
-      `Date: ${date}`,
-      `Location: ${S.place}`,
-      `Elevation: ${S.elev??'--'} m`,
-      `Temperature: ${temp}°C`,
-      `Humidity: ${hum}%`,
-      `7-day Rainfall: ${rain} mm`,
-      `Wind: ${S.wx.wind} km/h`,
-      `Weather: ${wxLabel(S.wx.code)}`,
-      `AQI: ${S.aq.aqi??'--'} (${fmtAqi(S.aq.aqi)})`,
-      `Farm Risk: ${risk}/100`,
-      `Season: ${$('season').value}`,
-      `Soil: ${$('soil').value}`,
-      ``,
-      `─ CROP RANKINGS ─`,
-      ...ranking().map((i,n)=>`${n+1}. ${i.crop.name}: ${i.score}/100`),
-      ``,
-      `─ RECOMMENDATION ─`,
-      `Best crop: ${best.crop.name} (${best.score}/100)`,
-      best.crop.note
-    ].join('\n');
-
-    if(navigator.clipboard?.writeText){
-      navigator.clipboard.writeText(report)
-        .then(()=>toast('📋 Report copied to clipboard!','success'))
-        .catch(()=>toast('Copy failed — try manually.','error'));
-    }else{
-      toast('Clipboard not available in this browser.','error');
-    }
-  }
-
   function wireEvents(){
     $('themeBtn').addEventListener('click',()=>applyTheme(S.theme==='dark'?'light':'dark'));
     $('copyReportBtn').addEventListener('click',copyReport);
@@ -2436,124 +2297,10 @@ GUIDELINES:
       if(S.chartInst) drawChart();
       if(S.map) S.map.invalidateSize();
     });
-
-    const detectBtn = $('detectDiseaseBtn');
-    const imageInput = $('plantImage');
-
-    const compressImageToBase64 = file => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1000; 
-          const MAX_HEIGHT = 1000;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-          } else {
-            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.8));
-        };
-        img.onerror = error => reject(error);
-      };
-      reader.onerror = error => reject(error);
-    });
-
-    if (detectBtn && imageInput) {
-      detectBtn.addEventListener('click', () => imageInput.click());
-      
-      imageInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        e.target.value = ''; 
-        const imgURL = URL.createObjectURL(file);
-        appendMsg(`<img src="${imgURL}" style="max-width:180px; border-radius:10px; margin-bottom:8px; border:1px solid var(--border);"><br>📷 Scanning for disease: ${file.name}`, 'user');
-        
-        const typingRow = appendTyping();
-        S.aiLoading = true;
-        $('sendBtn').disabled = true;
-
-        try {
-          const base64String = await compressImageToBase64(file);
-          const base64Data = base64String.split(',')[1];
-
-          const response = await fetch('/api/plant-disease', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-              imageBase64: base64Data, 
-              mimeType: 'image/jpeg' 
-            })
-          });
-          
-          if (!response.ok && !response.headers.get('content-type')?.includes('application/json')) {
-            throw new Error(`Server returned status ${response.status}`);
-          }
-
-          const data = await response.json();
-          typingRow.remove();
-
-          if (data?.answer) {
-            appendMsg(data.answer, 'bot');
-          } else if (data?.error) {
-            appendMsg(`⚠️ ${data.error}`, 'bot');
-          } else {
-            appendMsg('⚠️ Unable to detect plant disease. Please try another image.', 'bot');
-          }
-        } catch (err) {
-          typingRow.remove();
-          appendMsg('⚠️ API server unavailable or payload too large. Check Vercel logs.', 'bot');
-          console.error('Disease Detection Error:', err);
-        } finally {
-          S.aiLoading = false;
-          $('sendBtn').disabled = false;
-        }
-      });
-    }
-  }
-
-  async function cleanupDuplicatePolygons(){
-    if(localStorage.getItem('agro_cleanup_done')) return;
-    try{
-      const res = await fetch(
-        `https://api.agromonitoring.com/agro/1.0/polygons?appid=${encodeURIComponent(AGRO_KEY)}`
-      );
-      const polygons = await res.json();
-      if(!Array.isArray(polygons)) return;
-      
-      const aarambhPolygons = polygons.filter(p => 
-        p.name && p.name.includes('Aarambh')
-      );
-      
-      for(let i = 1; i < aarambhPolygons.length; i++){
-        await fetch(
-          `https://api.agromonitoring.com/agro/1.0/polygons/${aarambhPolygons[i].id}?appid=${encodeURIComponent(AGRO_KEY)}`,
-          { method: 'DELETE' }
-        );
-      }
-      localStorage.setItem('agro_cleanup_done', '1');
-    }catch(e){
-    }
   }
 
   function seedChat(){
-    appendMsg(`👋 Hello! I'm your AI farm advisor. I have live data for your location — ask me anything about crops, weather, soil, irrigation, or risk.
-
-Try one of the quick questions above, or just type your own.`,'bot');
+    appendMsg(`👋 Hello! I'm your AI farm advisor. I have live data for your location — ask me anything about crops, weather, soil, irrigation, or risk.`,'bot');
   }
 
   async function init(){
@@ -2566,7 +2313,6 @@ Try one of the quick questions above, or just type your own.`,'bot');
     $('status').textContent='Getting your location…';
     
     await startGeo();
-    cleanupDuplicatePolygons(); 
     setTimeout(initMap,100);
     setTimeout(drawChart,600);
   }
