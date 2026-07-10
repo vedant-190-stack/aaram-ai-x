@@ -2240,6 +2240,45 @@ GUIDELINES:
     }
   }
 
+  function copyReport(){
+    const best = ranking()[0];
+    const risk = currentRisk();
+    const temp = round((S.wx?.temp ?? 26) + (S.future?.t ?? 0), 1);
+    const rain = round(Math.max(0, (S.wx?.rain7 ?? 42) * (1 + ((S.future?.r ?? 0) / 100))), 0);
+    const hum = clamp(Math.round((S.wx?.hum ?? 52) + (S.future?.h ?? 0)), 0, 100);
+    const date = new Date().toLocaleString();
+    const report = [
+      '── AARAMBH AI X FARM REPORT ──',
+      `Date: ${date}`,
+      `Location: ${S.place}`,
+      `Elevation: ${S.elev ?? '--'} m`,
+      `Temperature: ${temp}°C`,
+      `Humidity: ${hum}%`,
+      `7-day Rainfall: ${rain} mm`,
+      `Wind: ${S.wx?.wind ?? 0} km/h`,
+      `Weather: ${wxLabel(S.wx?.code ?? 0)}`,
+      `AQI: ${S.aq?.aqi ?? '--'} (${fmtAqi(S.aq?.aqi)})`,
+      `Farm Risk: ${risk}/100`,
+      `Season: ${$('season').value}`,
+      `Soil: ${$('soil').value}`,
+      ``,
+      `─ CROP RANKINGS ─`,
+      ...ranking().map((i, n) => `${n + 1}. ${i.crop.name}: ${i.score}/100`),
+      ``,
+      `─ RECOMMENDATION ─`,
+      `Best crop: ${best.crop.name} (${best.score}/100)`,
+      best.crop.note
+    ].join('\n');
+
+    if(navigator.clipboard?.writeText){
+      navigator.clipboard.writeText(report)
+        .then(() => toast('📋 Report copied to clipboard!', 'success'))
+        .catch(() => toast('Copy failed — try manually.', 'error'));
+    } else {
+      toast('Clipboard not available in this browser.', 'error');
+    }
+  }
+
   function wireEvents(){
     $('themeBtn').addEventListener('click',()=>applyTheme(S.theme==='dark'?'light':'dark'));
     $('copyReportBtn').addEventListener('click',copyReport);
