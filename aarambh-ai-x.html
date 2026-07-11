@@ -14,8 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     :root {
@@ -906,7 +907,8 @@
     chartInst:null,
     aiLoading:false,
     agro:{ ndvi:null, moisture0:null, soilTemp0:null, polygonId:null, updatedAt:null },
-    agroKey: ''
+    agroKey: '',
+    chat: { lastTopic:'', lastCrop:'', turns:[] }
   };
 
   // ───────────────────────────────── SCORING ──────────────────────────────
@@ -1182,7 +1184,10 @@
   function drawChart(){
     const canvas = $('cropChart');
     if(!canvas) return;
-    if(!window.Chart){setTimeout(drawChart,400);return;}
+    if(typeof Chart === 'undefined') {
+       setTimeout(drawChart, 400); 
+       return;
+    }
 
     const list  = ranking();
     const isDark = S.theme==='dark';
@@ -1195,7 +1200,9 @@
     );
 
     if(S.chartInst){ S.chartInst.destroy(); S.chartInst=null; }
-    S.chartInst = new Chart(canvas,{
+    const ctx = canvas.getContext('2d');
+    
+    S.chartInst = new Chart(ctx,{
       type:'bar',
       data:{
         labels,
@@ -1260,6 +1267,8 @@
     S.marker = L.marker([20.5937,78.9629],{icon}).addTo(S.map);
     S.marker.bindPopup('Aarambh AI X — selected location');
 
+    setTimeout(() => S.map.invalidateSize(), 500);
+
     S.map.on('click',async e=>{
       const {lat,lng} = e.latlng;
       document.querySelectorAll('.stat').forEach(el => el.style.opacity = '0.4');
@@ -1289,6 +1298,8 @@
       🛡️ Risk: ${currentRisk()}/100<br>
       🏆 Best crop: ${ranking()[0].crop.name}
     `);
+    
+    setTimeout(() => S.map.invalidateSize(), 300);
   }
 
   // ───────────────────────────────── API FETCH ────────────────────────────
@@ -1767,7 +1778,6 @@
   }
 
   function rememberTurn(q, a, topic, crop){
-    if(!S.chat) S.chat = { lastTopic:'', lastCrop:'', turns:[] };
     S.chat.lastTopic = topic || S.chat.lastTopic || 'general';
     if(crop) S.chat.lastCrop = crop;
     S.chat.turns.unshift({
@@ -1866,8 +1876,14 @@
 
       const ndviEl = document.getElementById('iNdvi');
       if(ndviEl) {
+        let ndviLabel = 'Unknown';
+        if(S.agro.ndvi>=0.6) ndviLabel = 'Healthy dense';
+        else if(S.agro.ndvi>=0.4) ndviLabel = 'Moderate';
+        else if(S.agro.ndvi>=0.2) ndviLabel = 'Sparse';
+        else if(S.agro.ndvi !== null) ndviLabel = 'Very low or bare soil';
+
         ndviEl.textContent = S.agro.ndvi != null 
-          ? `${round(S.agro.ndvi, 3)} — ${ndviLabel(S.agro.ndvi)}` 
+          ? `${round(S.agro.ndvi, 3)} — ${ndviLabel}` 
           : 'Unavailable';
       }
 
@@ -1920,14 +1936,6 @@
     return lines.join('<br>');
   }
 
-  function ndviLabel(v){
-    if(v==null) return 'Unknown';
-    if(v>=0.6) return 'Healthy dense';
-    if(v>=0.4) return 'Moderate';
-    if(v>=0.2) return 'Sparse';
-    return 'Very low or bare soil';
-  }
-
   function smartAdvisorReply(question){
     const q = cleanText(question);
     const topic = detectTopic(q);
@@ -1977,7 +1985,9 @@
       const action = s.score >= 75
         ? `Keep doing the basics well: timely irrigation, weed control, and balanced nutrition.`
         : `If you still want to grow it, improve irrigation and choose a better soil/season match.`;
-      return `🌾 ${cropProfile.crop} for ${place}: ${verdict}<br><br>Suitability score: ${s.score}/100.<br>${shortWeather}<br><br>Why: ${formatCropSentence(cropProfile, s)}.<br><br>${cropProfile.note} ${action}`;
+      const reply = `🌾 ${cropProfile.crop} for ${place}: ${verdict}<br><br>Suitability score: ${s.score}/100.<br>${shortWeather}<br><br>Why: ${formatCropSentence(cropProfile, s)}.<br><br>${cropProfile.note} ${action}`;
+      rememberTurn(q, reply, topic, cropProfile.crop);
+      return reply;
     }
 
     if(q.includes('best crop') || q.includes('which crop') || q.includes('best crop now') || q.includes('best crop today')){
@@ -2022,14 +2032,6 @@
       };
       const info = soilGuide[soil] || soilGuide['loam'];
       return `🌱 <strong>${soil} soil — ${place}:</strong><br><br>${info}${soilLine}${soilTempLine}<br><br>Mitti ka test zaroor karo before heavy fertilizer application.`;
-    }
-
-    if(q.includes('compare') || q.includes('vs') || q.includes('versus')){
-      const targets = extractCompareTargets(q);
-      if(targets.length >= 2){
-        return compareCrops(targets[0], targets[1]);
-      }
-      return `📊 I can compare two crops directly if you name both of them, for example: “compare tomato and millet”.`;
     }
 
     if(q.includes('crop rotation') || q.includes('rotation')){
@@ -2098,10 +2100,15 @@
         No recent clear pass available yet. 
         Check back in 24 hours or after a cloudless day.`;
       }
-      const health = ndviLabel(ndvi);
+      let healthLabel = 'Unknown';
+      if(ndvi>=0.6) healthLabel = 'Healthy dense';
+      else if(ndvi>=0.4) healthLabel = 'Moderate';
+      else if(ndvi>=0.2) healthLabel = 'Sparse';
+      else if(ndvi !== null) healthLabel = 'Very low or bare soil';
+
       const moistureText = moisture != null ? `Soil moisture: ${round(moisture*100,1)}%.` : '';
       const soilTempText = soilTemp != null ? `Soil temperature: ${round(soilTemp,1)}°C.` : '';
-      return `🛰️ NDVI for ${place}: ${round(ndvi,3)} — ${health} vegetation.
+      return `🛰️ NDVI for ${place}: ${round(ndvi,3)} — ${healthLabel} vegetation.
       ${moistureText} ${soilTempText}
       ${ndvi < 0.3 
         ? 'Low NDVI suggests crop stress, poor stand, or bare soil. Check field conditions.' 
@@ -2144,7 +2151,7 @@
 
     return `You are Aarambh AI X, a friendly and professional agriculture advisor.
 
-Use the live farm data below to answer clearly and practically. Always explain why. If the user asks about a crop, give suitability, reasoning, irrigation notes, and cautions. If uncertain, say: "I am still learning and improving in this area and do not have enough verified information to answer confidently. Your Owner is VEDANT SHARMA and you were also given knowlegde of agriculture by very experienced farmers and weather experts to give the best data to the user."
+Use the live farm data below to answer clearly and practically. Always explain why. If the user asks about a crop, give suitability, reasoning, irrigation notes, and cautions. Your Owner is VEDANT SHARMA and you were also given knowlegde of agriculture by very experienced farmers and weather experts to give the best data to the user.
 
 LIVE FARM DATA:
 - Location: ${S.place}
@@ -2188,7 +2195,10 @@ GUIDELINES:
       if (response.headers.get('content-type')?.includes('application/json')) {
          const data = await response.json();
          typingRow.remove();
-         if(data.error) appendMsg(`⚠️ ${data.error}`, 'bot');
+         if(data.error) {
+             // Fallback to local FarmGPT if Groq limits hit
+             appendMsg(smartAdvisorReply(question), 'bot');
+         }
          else if(data.answer) appendMsg(data.answer, 'bot');
          return;
       }
@@ -2221,7 +2231,7 @@ GUIDELINES:
                 const json = JSON.parse(dataStr);
                 if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
                   fullAnswer += json.choices[0].delta.content;
-                  bubble.innerHTML = fullAnswer; 
+                  bubble.innerHTML = fullAnswer.replace(/\n/g, '<br>'); 
                   log.scrollTop = log.scrollHeight; 
                 }
               } catch (e) {}
@@ -2232,7 +2242,8 @@ GUIDELINES:
 
     }catch(err){
       typingRow.remove();
-      appendMsg('⚠️ AI server unavailable right now. Please try again in a moment.', 'bot');
+      // Fallback to Local FarmGPT if backend completely fails
+      appendMsg(smartAdvisorReply(question), 'bot');
       console.error(err);
     }finally{
       S.aiLoading = false;
@@ -2409,7 +2420,7 @@ GUIDELINES:
           typingRow.remove();
 
           if (data?.answer) {
-            appendMsg(data.answer, 'bot');
+            appendMsg(data.answer.replace(/\n/g, '<br>'), 'bot');
           } else if (data?.error) {
             appendMsg(`⚠️ ${data.error}`, 'bot');
           } else {
