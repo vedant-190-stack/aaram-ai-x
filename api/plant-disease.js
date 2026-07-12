@@ -99,7 +99,7 @@ module.exports = async function handler(req, res) {
     const genAI = new GoogleGenerativeAI(apiKey);
 
     // CRITICAL FIX: Using the strict, locked version number to bypass the 404 routing error
-   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `You are an expert agricultural plant pathologist with 30 years of field experience across Indian farms.
 
