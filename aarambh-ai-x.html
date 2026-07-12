@@ -913,14 +913,15 @@
     return clamp(Math.round(s),0,100);
   }
 
-  function cropScore(crop){
+ function cropScore(crop){
     const temp = S.wx.temp + S.future.t;
     const rain = Math.max(0, S.wx.rain7 * (1 + S.future.r/100));
     const hum  = clamp(S.wx.hum + S.future.h, 0, 100);
     const season = $('season').value;
     const soil   = $('soil').value;
     
-    if (rain < crop.rain[0] * 0.25) return 0;
+    // We only keep the temperature kill-switch. Extreme heat/cold kills crops, 
+    // but low 7-day rain is fine because we assume the farmer uses irrigation.
     if (temp < crop.temp[0] - 8 || temp > crop.temp[1] + 12) return 0;
     
     let s = 100;
