@@ -83,7 +83,7 @@ module.exports = async function handler(req, res) {
 
     if (!validMimeTypes.includes(finalMimeType)) {
       return res.status(400).json({
-        error: `Invalid image format. Supported formats: ${validMimeTypes.join(', ')}`
+        error: `Invalid format. Supported: ${validMimeTypes.join(', ')}`
       });
     }
 
@@ -98,8 +98,8 @@ module.exports = async function handler(req, res) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // CHANGED TO -latest TO FIX THE 404 ERROR
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    // CHANGED: Using the stable model name to prevent 404 errors
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `You are an expert agricultural plant pathologist with 30 years of field experience across Indian farms.
 
