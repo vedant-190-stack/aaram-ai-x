@@ -98,8 +98,8 @@ module.exports = async function handler(req, res) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Using gemini-1.5-flash as it is highly stable and fast for image analysis
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // CHANGED TO -latest TO FIX THE 404 ERROR
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
     const prompt = `You are an expert agricultural plant pathologist with 30 years of field experience across Indian farms.
 
