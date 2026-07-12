@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
+<!DOCTYPE html><html lang="en" data-theme="dark"><head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#060e1a" />
@@ -435,9 +433,7 @@
       .forecast{grid-template-columns:repeat(2,1fr)}
       .stats-grid{grid-template-columns:1fr}
     }
-  </style>
-</head>
-<body>
+  </style></head><body>
 
   <div class="loader" id="loader">
     <div class="loader-inner">
@@ -866,15 +862,7 @@
   const AGRO_DEFAULT_POLYGON = '6a315b4dfc4d163439b941bc';
 
   // ───────────────────────────────── DATA ─────────────────────────────────
-  const CROPS = [
-    { name:'Wheat', emoji:'🌾', seasons:['rabi'], temp:[8,24], rain:[300,900], hum:[35,65], soil:['alluvial','loam','clay','grey_brown','sub_mountain'], water:'Moderate', note:'Thrives in cool, dry winters with moderate rainfall.', msp: 2275, yield_ha: 35, cost_ha: 30000 },
-    { name:'Rice', emoji:'🍚', seasons:['kharif'], temp:[20,34], rain:[900,2000], hum:[55,95], soil:['alluvial','clay','peaty','red','black','laterite'], water:'High', note:'Needs warm, wet conditions and standing water.', msp: 2183, yield_ha: 40, cost_ha: 40000 },
-    { name:'Maize', emoji:'🌽', seasons:['kharif','zaid'], temp:[18,32], rain:[500,1200], hum:[40,75], soil:['alluvial','loam','red','black','forest'], water:'Moderate', note:'A flexible staple suited to many Indian climates.', msp: 2090, yield_ha: 30, cost_ha: 25000 },
-    { name:'Millet', emoji:'🌿', seasons:['kharif','zaid'], temp:[20,38], rain:[200,700], hum:[25,65], soil:['arid','sandy','red','laterite','loam','black','mixed_red_black'], water:'Low', note:'Drought-resilient, ideal for arid and semi-arid zones.', msp: 2500, yield_ha: 15, cost_ha: 15000 },
-    { name:'Pulses', emoji:'🫘', seasons:['rabi','kharif'], temp:[15,30], rain:[250,900], hum:[30,75], soil:['alluvial','loam','black','red','mixed_red_black','grey_brown'], water:'Low', note:'Nitrogen-fixing legumes for water-limited farms.', msp: 5440, yield_ha: 12, cost_ha: 20000 },
-    { name:'Soybean', emoji:'🌱', seasons:['kharif'], temp:[20,30], rain:[600,1000], hum:[50,80], soil:['black','loam','alluvial','mixed_red_black'], water:'Moderate', note:'Rich oilseed crop for black soil regions.', msp: 4600, yield_ha: 18, cost_ha: 28000 },
-    { name:'Cotton', emoji:'☁️', seasons:['kharif'], temp:[22,38], rain:[500,1000], hum:[35,70], soil:['black','clay','mixed_red_black','alluvial','red'], water:'Moderate', note:'High-value cash crop for warm, long-season zones.', msp: 6620, yield_ha: 20, cost_ha: 45000 }
-  ];
+  const CROPS = [  { name:'Wheat', emoji:'🌾', seasons:['rabi'], temp:[8,24], rain:[300,900], hum:[35,65], soil:['alluvial','loam','clay','grey_brown','sub_mountain'], water:'Moderate', note:'Thrives in cool, dry winters with moderate rainfall.', msp:2275, yield_ha:35, cost_ha:30000 },  { name:'Rice', emoji:'🍚', seasons:['kharif'], temp:[20,34], rain:[900,2000], hum:[55,95], soil:['alluvial','clay','peaty','red','black','laterite'], water:'High', note:'Needs warm, wet conditions and standing water.', msp:2183, yield_ha:40, cost_ha:40000 },  { name:'Maize', emoji:'🌽', seasons:['kharif','zaid'], temp:[18,32], rain:[500,1200], hum:[40,75], soil:['alluvial','loam','red','black','forest'], water:'Moderate', note:'A flexible staple suited to many Indian climates.', msp:2090, yield_ha:30, cost_ha:25000 },  { name:'Millet', emoji:'🌿', seasons:['kharif','zaid'], temp:[20,38], rain:[200,700], hum:[25,65], soil:['arid','sandy','red','laterite','loam','black','mixed_red_black'], water:'Low', note:'Drought-resilient, ideal for arid and semi-arid zones.', msp:2500, yield_ha:15, cost_ha:15000 },  { name:'Pulses', emoji:'🫘', seasons:['rabi','kharif'], temp:[15,30], rain:[250,900], hum:[30,75], soil:['alluvial','loam','black','red','mixed_red_black','grey_brown'], water:'Low', note:'Nitrogen-fixing legumes for water-limited farms.', msp:5440, yield_ha:12, cost_ha:20000 },  { name:'Soybean', emoji:'🌱', seasons:['kharif'], temp:[20,30], rain:[600,1000], hum:[50,80], soil:['black','loam','alluvial','mixed_red_black'], water:'Moderate', note:'Rich oilseed crop for black soil regions.', msp:4600, yield_ha:18, cost_ha:28000 },  { name:'Cotton', emoji:'☁️', seasons:['kharif'], temp:[22,38], rain:[500,1000], hum:[35,70], soil:['black','clay','mixed_red_black','alluvial','red'], water:'Moderate', note:'High-value cash crop for warm, long-season zones.', msp:6620, yield_ha:20, cost_ha:45000 }];
 
   const LAND_UNITS = {
     hectare: 1,
@@ -932,8 +920,8 @@
     const season = $('season').value;
     const soil   = $('soil').value;
     
-    if (rain < crop.rain[0] * 0.3) return 0; 
-    if (temp < crop.temp[0] - 5 || temp > crop.temp[1] + 10) return 0;
+    if (rain < crop.rain[0] * 0.25) return 0;
+    if (temp < crop.temp[0] - 8 || temp > crop.temp[1] + 12) return 0;
     
     let s = 100;
     s -= temp<crop.temp[0] ? (crop.temp[0]-temp)*5 : temp>crop.temp[1] ? (temp-crop.temp[1])*5 : 0;
@@ -1332,8 +1320,8 @@
     S.wx.hum   = safe(wx?.current?.relative_humidity_2m, 52);
     S.wx.wind  = safe(wx?.current?.wind_speed_10m, 9);
     S.wx.code  = safe(wx?.current?.weather_code, 0);
-    S.wx.rain7 = Array.isArray(wx?.daily?.precipitation_sum)
-      ? wx.daily.precipitation_sum.reduce((sum,v)=>sum+safe(v,0),0) : 42;
+    S.wx.rain7 = Math.max(0, Array.isArray(wx?.daily?.precipitation_sum)
+      ? wx.daily.precipitation_sum.reduce((sum,v)=>sum+safe(v,0),0) : 42);
     S.wx.daily = Array.isArray(wx?.daily?.time)
       ? wx.daily.time.map((t,i)=>({
           day: new Date(t).toLocaleDateString(undefined,{weekday:'short'}),
@@ -1349,18 +1337,18 @@
 
     if (stateName) {
       const SOIL_MAP = {
-        'Punjab': 'alluvial', 'Haryana': 'alluvial', 'Uttar Pradesh': 'alluvial',
-        'Bihar': 'alluvial', 'West Bengal': 'alluvial', 'Assam': 'alluvial', 'Delhi': 'alluvial',
-        'Maharashtra': 'black', 'Gujarat': 'black', 'Madhya Pradesh': 'black',
-        'Tamil Nadu': 'red', 'Andhra Pradesh': 'red', 'Odisha': 'red', 'Jharkhand': 'red', 'Karnataka': 'red', 'Chhattisgarh': 'red',
-        'Kerala': 'laterite', 'Goa': 'laterite', 'Meghalaya': 'laterite',
-        'Rajasthan': 'arid',
-        'Himachal Pradesh': 'forest', 'Uttarakhand': 'forest', 'Sikkim': 'forest', 'Arunachal Pradesh': 'forest'
+        'Punjab':'alluvial','Haryana':'alluvial','Uttar Pradesh':'alluvial','Bihar':'alluvial',
+        'West Bengal':'alluvial','Assam':'alluvial','Delhi':'alluvial',
+        'Maharashtra':'black','Gujarat':'black','Madhya Pradesh':'black',
+        'Tamil Nadu':'red','Andhra Pradesh':'red','Odisha':'red','Jharkhand':'red','Karnataka':'red','Chhattisgarh':'red',
+        'Kerala':'laterite','Goa':'laterite','Meghalaya':'laterite',
+        'Rajasthan':'arid',
+        'Himachal Pradesh':'forest','Uttarakhand':'forest','Sikkim':'forest','Arunachal Pradesh':'forest'
       };
       const mappedSoil = SOIL_MAP[stateName];
       if (mappedSoil) {
         const soilDropdown = document.getElementById('soil');
-        if(soilDropdown) soilDropdown.value = mappedSoil;
+        if (soilDropdown) soilDropdown.value = mappedSoil;
       }
     }
 
@@ -1406,7 +1394,7 @@
     if(!navigator.geolocation){
       loaderMsg('Geolocation not supported — loading Delhi…');
       await loadCity('Delhi').catch(()=>{});
-      hideLoader(); renderAll(); return;
+      hideLoader(); renderAll(); setTimeout(drawChart, 300); return;
     }
     navigator.geolocation.getCurrentPosition(
       async pos=>{
@@ -1420,10 +1408,12 @@
           $('city').value=name;
           loaderMsg('Almost ready…');
           renderAll();
+          setTimeout(drawChart, 300);
           setStatus(false,`Loaded ${name}.`);
         }catch(e){
           await loadCity('Delhi').catch(()=>{});
           renderAll();
+          setTimeout(drawChart, 300);
           setStatus(false,'Using fallback data for Delhi.');
         }
         hideLoader();
@@ -1432,6 +1422,7 @@
         loaderMsg('Permission denied — loading Delhi…');
         await loadCity('Delhi').catch(()=>{});
         renderAll();
+        setTimeout(drawChart, 300);
         setStatus(false,'Location permission denied. Loaded Delhi.');
         hideLoader();
       },
@@ -2456,7 +2447,9 @@ GUIDELINES:
     setTimeout(drawChart,600);
   }
 
-  init();
-  </script>
-</body>
-</html>
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+  </script></body></html>
