@@ -1,158 +1,182 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Simple in-memory rate limiter
+// ─── Constants ────────────────────────────────────────────────────────────────
+const RATE_LIMIT_WINDOW_MS  = 60_000;   // 1 minute
+const RATE_LIMIT_MAX        = 10;        // requests per window per IP
+const RATE_LIMIT_MAP_MAX    = 1_000;     // prune map above this size
+const MAX_IMAGE_BYTES       = 4 * 1024 * 1024; // 4 MB
+const API_TIMEOUT_MS        = 20_000;    // 20 s per model attempt
+
+const VALID_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+]);
+
+// Correct Gemini model names (gemini-3.5-* does not exist)
+const PRIMARY_MODEL  = 'gemini-1.5-flash';
+const FALLBACK_MODEL = 'gemini-1.5-pro';
+
+// ─── Rate limiter ─────────────────────────────────────────────────────────────
 const rateLimitMap = new Map();
-const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const RATE_LIMIT_REQUESTS = 10; // 10 requests per minute per IP
 
 function checkRateLimit(ip) {
-  const now = Date.now();
-  const key = `${ip}`;
+  const now  = Date.now();
+  const prev = rateLimitMap.get(ip) ?? [];
+  const recent = prev.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
 
-  if (!rateLimitMap.has(key)) {
-    rateLimitMap.set(key, []);
-  }
+  if (recent.length >= RATE_LIMIT_MAX) return false;
 
-  const timestamps = rateLimitMap.get(key);
-  const recentRequests = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW);
+  recent.push(now);
+  rateLimitMap.set(ip, recent);
 
-  if (recentRequests.length >= RATE_LIMIT_REQUESTS) {
-    return false;
-  }
-
-  recentRequests.push(now);
-  rateLimitMap.set(key, recentRequests);
-
-  // Cleanup old entries
-  if (rateLimitMap.size > 1000) {
-    for (const [k, v] of rateLimitMap.entries()) {
-      const active = v.filter(t => now - t < RATE_LIMIT_WINDOW);
-      if (active.length === 0) {
-        rateLimitMap.delete(k);
-      } else {
-        rateLimitMap.set(k, active);
-      }
+  // Periodic cleanup to prevent unbounded memory growth
+  if (rateLimitMap.size > RATE_LIMIT_MAP_MAX) {
+    for (const [k, timestamps] of rateLimitMap) {
+      const active = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+      active.length === 0 ? rateLimitMap.delete(k) : rateLimitMap.set(k, active);
     }
   }
 
   return true;
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Race an async call against a timeout.
+ * @param {Promise} promise
+ * @param {number}  ms
+ * @param {string}  label  – used in the rejection message
+ */
+function withTimeout(promise, ms, label = 'Request') {
+  const timer = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+  );
+  return Promise.race([promise, timer]);
+}
+
+/** Strip data-URL prefix and return clean base64, or throw if clearly invalid. */
+function cleanBase64(raw) {
+  const b64 = raw.includes(',') ? raw.split(',')[1] : raw;
+  if (!/^[A-Za-z0-9+/=]+$/.test(b64.slice(0, 64))) {
+    throw Object.assign(new Error('Invalid base64 data.'), { status: 400 });
+  }
+  return b64;
+}
+
+// ─── Prompt ───────────────────────────────────────────────────────────────────
+const ANALYSIS_PROMPT = `
+You are an expert agricultural plant pathologist with 30 years of field
+experience across Indian farms.
+
+Analyse the supplied plant image carefully. Return ONLY raw HTML — no markdown,
+no code fences, no surrounding text — in exactly this structure:
+
+<b>🌿 Plant:</b> [Exact plant name + local Indian name if known]<br><br>
+<b>🦠 Disease:</b> [Disease name or "No disease detected"]<br><br>
+<b>📈 Confidence:</b> [X%]<br><br>
+<b>📍 Affected parts:</b> [leaves / stem / root / fruit etc.]<br><br>
+<b>🔬 Symptoms:</b> [2–3 key visible symptoms]<br><br>
+<b>💡 Immediate Action:</b> [1–2 practical, safe steps a farmer can take today]
+`.trim();
+
+// ─── Core Gemini call ─────────────────────────────────────────────────────────
+async function analyseImage(genAI, modelName, b64, mimeType) {
+  const model  = genAI.getGenerativeModel({ model: modelName });
+  const result = await withTimeout(
+    model.generateContent([
+      ANALYSIS_PROMPT,
+      { inlineData: { data: b64, mimeType } },
+    ]),
+    API_TIMEOUT_MS,
+    modelName,
+  );
+  return result.response.text();
+}
+
+// ─── Handler ──────────────────────────────────────────────────────────────────
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  try {
-    // Get client IP for rate limiting
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  // ── 1. Validate inputs early (cheap, before rate-limit bookkeeping) ─────────
+  const { imageBase64, mimeType } = req.body ?? {};
 
-    // Rate limiting check
-    if (!checkRateLimit(ip)) {
-      return res.status(429).json({
-        error: 'Too many requests. Please wait a moment before trying again.'
-      });
-    }
-
-    const { imageBase64, mimeType } = req.body;
-
-    if (!imageBase64) {
-      return res.status(400).json({ error: 'No image was provided.' });
-    }
-
-    // Ensure the base64 string is perfectly clean
-    let cleanBase64 = imageBase64;
-    if (cleanBase64.includes(',')) {
-      cleanBase64 = cleanBase64.split(',')[1];
-    }
-
-    // Validate image size (max 4MB)
-    const imageSizeInBytes = Buffer.byteLength(cleanBase64, 'base64');
-    const maxSizeInBytes = 4 * 1024 * 1024; // 4MB
-
-    if (imageSizeInBytes > maxSizeInBytes) {
-      return res.status(400).json({
-        error: `Image too large. Maximum size is 4MB, received ${(imageSizeInBytes / (1024 * 1024)).toFixed(2)}MB`
-      });
-    }
-
-    // Validate MIME type
-    const validMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    const finalMimeType = mimeType || 'image/jpeg';
-
-    if (!validMimeTypes.includes(finalMimeType)) {
-      return res.status(400).json({
-        error: `Invalid image format. Supported formats: ${validMimeTypes.join(', ')}`
-      });
-    }
-
-    const apiKey = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key;
-
-    if (!apiKey) {
-      console.error('GEMINI_API_KEY not configured');
-      return res.status(500).json({
-        error: 'AI service not configured. Please contact support.'
-      });
-    }
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-
-    const prompt = `You are an expert agricultural plant pathologist with 30 years of field experience across Indian farms.
-
-    Analyze this plant image thoroughly. Be specific and practical.
-
-    Return ONLY raw HTML in exactly this format, no markdown formatting blocks, no backticks:
-
-    <b>🌿 Plant:</b> [Exact plant name + local Indian name if known]<br><br>
-    <b>🦠 Disease:</b> [Disease name or "No disease detected"]<br><br>
-    <b>📈 Confidence:</b> [X%]<br><br>
-    <b>📍 Affected parts:</b> [leaves/stem/root/fruit etc]<br><br>
-    <b>🔬 Symptoms:</b> [List 2-3 key visible symptoms]<br><br>
-    <b>💡 Immediate Action:</b> [1-2 practical, safe steps for the farmer]`;
-
-    let result;
-    
-    // --- ENTERPRISE REDUNDANCY: MULTI-MODEL FALLBACK SYSTEM ---
-    try {
-      // ATTEMPT 1: Try the primary 'flash' model first (faster, usually standard)
-      console.log('Attempting to use primary model: gemini-3.5-flash');
-      const primaryModel = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
-      result = await primaryModel.generateContent([
-        prompt,
-        {
-          inlineData: {
-            data: cleanBase64,
-            mimeType: finalMimeType
-          }
-        }
-      ]);
-    } catch (primaryError) {
-      console.warn('Primary model failed (Traffic Overload). Initiating fallback to Pro...', primaryError.message);
-      
-      // ATTEMPT 2: If flash fails with a 503, instantly intercept and fallback to 'pro'
-      const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-3.5-pro' });
-      result = await fallbackModel.generateContent([
-        prompt,
-        {
-          inlineData: {
-            data: cleanBase64,
-            mimeType: finalMimeType
-          }
-        }
-      ]);
-    }
-    // --- END FALLBACK SYSTEM ---
-
-    const responseText = result.response.text();
-    
-    // Clean up any potential markdown backticks from the LLM's response
-    const cleanResponse = responseText.replace(/```html/g, '').replace(/```/g, '').trim();
-
-    return res.status(200).json({ answer: cleanResponse });
-
-  } catch (error) {
-    // This will only trigger if BOTH models fail completely
-    console.error('Gemini API Error (Multi-Model Failure):', error);
-    return res.status(500).json({ error: 'AI image analysis failed after redundant attempts. Please try again or check server logs.' });
+  if (!imageBase64 || typeof imageBase64 !== 'string') {
+    return res.status(400).json({ error: 'No image was provided.' });
   }
+
+  let b64;
+  try {
+    b64 = cleanBase64(imageBase64);
+  } catch (e) {
+    return res.status(400).json({ error: e.message });
+  }
+
+  const imageSizeBytes = Buffer.byteLength(b64, 'base64');
+  if (imageSizeBytes > MAX_IMAGE_BYTES) {
+    return res.status(400).json({
+      error: `Image too large. Maximum is 4 MB; received ${(imageSizeBytes / 1024 / 1024).toFixed(2)} MB.`,
+    });
+  }
+
+  const finalMimeType = mimeType || 'image/jpeg';
+  if (!VALID_MIME_TYPES.has(finalMimeType)) {
+    return res.status(400).json({
+      error: `Unsupported image format "${finalMimeType}". Accepted: ${[...VALID_MIME_TYPES].join(', ')}.`,
+    });
+  }
+
+  // ── 2. Rate limiting ────────────────────────────────────────────────────────
+  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim()
+          || req.socket?.remoteAddress
+          || 'unknown';
+
+  if (!checkRateLimit(ip)) {
+    return res.status(429).json({
+      error: 'Too many requests. Please wait a moment before trying again.',
+    });
+  }
+
+  // ── 3. API key guard ────────────────────────────────────────────────────────
+  const apiKey = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key;
+  if (!apiKey) {
+    console.error('[plant-api] GEMINI_API_KEY is not configured');
+    return res.status(500).json({ error: 'AI service is not configured. Please contact support.' });
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+
+  // ── 4. Primary model, then fallback ────────────────────────────────────────
+  let rawText;
+
+  try {
+    console.log(`[plant-api] Trying primary model: ${PRIMARY_MODEL}`);
+    rawText = await analyseImage(genAI, PRIMARY_MODEL, b64, finalMimeType);
+    console.log(`[plant-api] Primary model succeeded`);
+  } catch (primaryErr) {
+    console.warn(`[plant-api] Primary model failed (${primaryErr.message}). Trying fallback: ${FALLBACK_MODEL}`);
+
+    try {
+      rawText = await analyseImage(genAI, FALLBACK_MODEL, b64, finalMimeType);
+      console.log(`[plant-api] Fallback model succeeded`);
+    } catch (fallbackErr) {
+      console.error('[plant-api] Both models failed.', {
+        primary:  primaryErr.message,
+        fallback: fallbackErr.message,
+      });
+      return res.status(500).json({
+        error: 'Image analysis failed on all available models. Please try again shortly.',
+      });
+    }
+  }
+
+  // Strip any stray markdown fences the model may have included
+  const answer = rawText.replace(/```html?/gi, '').replace(/```/g, '').trim();
+
+  return res.status(200).json({ answer });
 };
