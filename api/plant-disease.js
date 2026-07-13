@@ -60,7 +60,7 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'No image was provided.' });
     }
 
-    // CRITICAL FIX: Ensure the base64 string is perfectly clean.
+    // Ensure the base64 string is perfectly clean
     let cleanBase64 = imageBase64;
     if (cleanBase64.includes(',')) {
       cleanBase64 = cleanBase64.split(',')[1];
@@ -97,9 +97,6 @@ module.exports = async function handler(req, res) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // CRITICAL FIX: Pointing to the active 2026 model to avoid 404s
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
-
     const prompt = `You are an expert agricultural plant pathologist with 30 years of field experience across Indian farms.
 
     Analyze this plant image thoroughly. Be specific and practical.
@@ -113,15 +110,38 @@ module.exports = async function handler(req, res) {
     <b>🔬 Symptoms:</b> [List 2-3 key visible symptoms]<br><br>
     <b>💡 Immediate Action:</b> [1-2 practical, safe steps for the farmer]`;
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: cleanBase64,
-          mimeType: finalMimeType
+    let result;
+    
+    // --- ENTERPRISE REDUNDANCY: MULTI-MODEL FALLBACK SYSTEM ---
+    try {
+      // ATTEMPT 1: Try the primary 'flash' model first (faster, usually standard)
+      console.log('Attempting to use primary model: gemini-3.5-flash');
+      const primaryModel = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+      result = await primaryModel.generateContent([
+        prompt,
+        {
+          inlineData: {
+            data: cleanBase64,
+            mimeType: finalMimeType
+          }
         }
-      }
-    ]);
+      ]);
+    } catch (primaryError) {
+      console.warn('Primary model failed (Traffic Overload). Initiating fallback to Pro...', primaryError.message);
+      
+      // ATTEMPT 2: If flash fails with a 503, instantly intercept and fallback to 'pro'
+      const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-3.5-pro' });
+      result = await fallbackModel.generateContent([
+        prompt,
+        {
+          inlineData: {
+            data: cleanBase64,
+            mimeType: finalMimeType
+          }
+        }
+      ]);
+    }
+    // --- END FALLBACK SYSTEM ---
 
     const responseText = result.response.text();
     
@@ -131,7 +151,8 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ answer: cleanResponse });
 
   } catch (error) {
-    console.error('Gemini API Error:', error);
-    return res.status(500).json({ error: 'AI image analysis failed. Please try again or check server logs.' });
+    // This will only trigger if BOTH models fail completely
+    console.error('Gemini API Error (Multi-Model Failure):', error);
+    return res.status(500).json({ error: 'AI image analysis failed after redundant attempts. Please try again or check server logs.' });
   }
 };
