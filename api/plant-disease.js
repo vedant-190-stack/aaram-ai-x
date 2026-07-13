@@ -1,5 +1,8 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
+const PRIMARY_MODEL  = 'gemini-3.5-flash';
+const FALLBACK_MODEL = 'gemini-3.1-flash-lite';
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 const RATE_LIMIT_WINDOW_MS  = 60_000;   // 1 minute
 const RATE_LIMIT_MAX        = 10;        // requests per window per IP
@@ -13,10 +16,6 @@ const VALID_MIME_TYPES = new Set([
   'image/webp',
   'image/gif',
 ]);
-
-// Correct Gemini model names (gemini-3.5-* does not exist)
-const PRIMARY_MODEL  = 'gemini-1.5-flash';
-const FALLBACK_MODEL = 'gemini-1.5-pro';
 
 // ─── Rate limiter ─────────────────────────────────────────────────────────────
 const rateLimitMap = new Map();
