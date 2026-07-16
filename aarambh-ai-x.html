@@ -1348,23 +1348,26 @@
     const unitKey = $('calcUnit').value; 
     const areaInHa = areaVal * (LAND_UNITS[unitKey] || 1);
     
-    // LIVE API INTEGRATION: Try fetching real Mandi prices from data.gov.in
+    // LIVE API INTEGRATION: data.gov.in Mandi Prices
     try {
-      // NOTE: Replace 'YOUR_API_KEY' with a real one for production use
-      const apiKey = 'YOUR_API_KEY';
-      if(apiKey === 'YOUR_API_KEY') throw new Error('No API Key provided');
-      
+      const apiKey = '579b464db66ec23bdd000001d3a571f3687742935cf0045afa7a6db7';
       const url = `https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key=${apiKey}&format=json&filters[commodity]=${crop.name}`;
+      
       const res = await fetch(url);
       const data = await res.json();
+      
       if (data.records && data.records.length > 0) {
-        if($('mandiPrice')) $('mandiPrice').textContent = '₹' + data.records[0].modal_price + ' / Qtl';
-        if($('mandiTrend')) $('mandiTrend').textContent = `Live from ${data.records[0].market} Mandi`;
+        const livePrice = data.records[0].modal_price;
+        const liveMarket = data.records[0].market;
+        
+        if($('mandiPrice')) $('mandiPrice').textContent = '₹' + livePrice + ' / Qtl';
+        if($('mandiTrend')) $('mandiTrend').textContent = `Live from ${liveMarket} Mandi`;
+        
+        crop.msp = parseFloat(livePrice); 
       } else {
-        throw new Error('No data');
+        throw new Error('No live data returned for this specific crop');
       }
     } catch(e) {
-      // Fallback: If API key is missing or call fails, use the algorithmic simulation seamlessly
       const volatility = (Math.random() * 0.12) - 0.04;
       const currentMandi = crop.msp * (1 + volatility);
       if($('mandiPrice')) $('mandiPrice').textContent = '₹' + Math.round(currentMandi).toLocaleString() + ' / Qtl';
@@ -1608,10 +1611,9 @@
         'Rajasthan':'arid',
         'Himachal Pradesh':'forest','Uttarakhand':'forest','Sikkim':'forest','Arunachal Pradesh':'forest'
       };
-      const mappedSoil = SOIL_MAP[stateName];
-      if (mappedSoil) {
-        const soilDropdown = document.getElementById('soil');
-        if (soilDropdown) soilDropdown.value = mappedSoil;
+      const mappedSoil = document.getElementById('soil');
+      if (mappedSoil && SOIL_MAP[stateName]) {
+        mappedSoil.value = SOIL_MAP[stateName];
       }
     }
 
@@ -1620,9 +1622,6 @@
     if (!S.agro) S.agro = {};
     S.agro.soilTemp0 = safe(wx?.current?.soil_temperature_6cm, null);
     S.agro.moisture0 = safe(wx?.current?.soil_moisture_3_to_9cm, null);
-    
-    // Fetch nearby cold storage when location loads
-    fetchColdStorage();
   }
 
   async function searchCity(q){
@@ -2546,31 +2545,6 @@ GUIDELINES:
       toast('Clipboard not available in this browser.', 'error');
     }
   }
-
-  // ───────────────────────────────── IOT SENSOR TOGGLE LOGIC (NEW) ──────────
-  $('iotToggle')?.addEventListener('change', (e) => {
-    const isEnabled = e.target.checked;
-    if (isEnabled) {
-      // Override values safely to simulate connected Bluetooth probes
-      $('iotMoist').textContent = "42% (Optimal)";
-      $('iotTemp').textContent = "29.5°C";
-      if(S.agro) {
-          S.agro.moisture0 = 0.42; 
-          S.agro.soilTemp0 = 29.5; 
-      }
-      S.wx.temp = 29.5;
-      toast('Local IoT Sensors Connected', 'success');
-      renderAll();
-    } else {
-      $('iotMoist').textContent = "--"; 
-      $('iotTemp').textContent = "--";
-      // Revert back to API data
-      loadCoords(S.lat, S.lon, S.place).then(() => {
-          toast('Reverted to Satellite Data');
-          renderAll();
-      });
-    }
-  });
 
   function wireEvents(){
     $('themeBtn').addEventListener('click',()=>applyTheme(S.theme==='dark'?'light':'dark'));
