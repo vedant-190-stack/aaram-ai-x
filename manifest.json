@@ -1,0 +1,17 @@
+{
+  "name": "Aarambh AI X",
+  "short_name": "Aarambh",
+  "description": "AgriTech Intelligence Dashboard",
+  "start_url": "/aarambh-ai-x.html",
+  "display": "standalone",
+  "background_color": "#060e1a",
+  "theme_color": "#060e1a",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1892/1892751.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
