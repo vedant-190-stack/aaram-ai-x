@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#060e1a" />
+  
+  <title>Aarambh AI X — AgriTech Intelligence</title>
+  <meta name="description" content="A premium agriculture intelligence dashboard with live weather, air quality, AI crop advisor, climate simulator, and interactive map." />
+  
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg:       #060e1a;
+      --bg2:      #0b1827;
+      --surface:  #0f2035;
+      --surface2: #142840;
+      --border:   rgba(255,255,255,0.07);
+      --border2:  rgba(255,255,255,0.13);
+      --text:     #ddeeff;
+      --muted:    #7a9ab8;
+      --primary:  #4ee8c4;
+      --pri2:     #5cb8f5;
+      --good:     #3de3a2;
+      --warn:     #f5c342;
+      --bad:      #f07070;
+      --glow:     rgba(78,232,196,0.18);
+      --mono: 'DM Mono', monospace;
+    }
+    
+    html[data-theme="light"] {
+      --bg:       #eef5ff;
+      --bg2:      #dceeff;
+      --surface:  #ffffff;
+      --surface2: #f0f7ff;
+      --border:   rgba(14,40,70,0.08);
+      --border2:  rgba(14,40,70,0.16);
+      --text:     #0e2846;
+      --muted:    #4a6c90;
+      --glow:     rgba(78,232,196,0.10);
+    }
+    
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth;font-size:15px}
+    body{ font-family:'DM Sans',system-ui,sans-serif; color:var(--text); background:var(--bg); min-height:100vh; line-height:1.65; transition: background 0.3s, color 0.3s; }
+    a{color:inherit;text-decoration:none}
+    button,input,select{font:inherit;color:inherit;background:none;border:none;outline:none}
+    img{display:block;max-width:100%}
+
+    .wrap{width:min(1200px,calc(100% - 32px));margin:0 auto}
+    .nav{ position:sticky;top:0;z-index:100; backdrop-filter:blur(20px); background:color-mix(in srgb,var(--bg) 80%,transparent); border-bottom:1px solid var(--border); }
+    .nav-inner{display:flex;align-items:center;gap:16px;padding:13px 0;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:1.05rem;}
+    .brand-icon{ width:40px;height:40px;border-radius:12px; display:grid;place-items:center;font-size:1.3rem; background:linear-gradient(135deg,var(--primary),var(--pri2)); color:#03121f;box-shadow:0 0 24px var(--glow); }
+    .nav-right{display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap}
+    .nav-link{ padding:7px 12px;border-radius:9px;font-weight:500;font-size:0.88rem; color:var(--muted);cursor:pointer;transition:color .18s,background .18s; }
+    .nav-link:hover{color:var(--text);background:var(--surface)}
+    .btn-theme{ width:36px;height:36px;border-radius:10px;cursor:pointer; display:grid;place-items:center; border:1px solid var(--border2);background:var(--surface); }
+
+    .hero{ display:grid;grid-template-columns:1.15fr 1fr;gap:16px; padding:28px 0 16px; }
+    .panel{ background:var(--surface); border:1px solid var(--border); border-radius:24px; overflow:hidden; transition: background 0.3s, border-color 0.3s; }
+    .pad{padding:24px}
+    .badge{ display:inline-flex;align-items:center;gap:8px; padding:6px 12px;border-radius:999px; background:rgba(78,232,196,.10);border:1px solid rgba(78,232,196,.22); color:var(--primary);font-size:0.78rem;font-weight:600; margin-bottom:14px; }
+    .hero-title{ font-size:clamp(1.8rem,3.6vw,3.4rem); font-weight:700;line-height:1.06; margin-bottom:12px; }
+    .hero-title span{background:linear-gradient(135deg,var(--primary),var(--pri2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .hero-sub{color:var(--muted);font-size:0.95rem;margin-bottom:20px;line-height:1.7}
+    .cta-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+    .btn{ display:inline-flex;align-items:center;gap:8px; padding:11px 18px;border-radius:13px;font-weight:600;font-size:0.9rem; cursor:pointer;transition:all .18s; }
+    .btn-pri{ background:linear-gradient(135deg,var(--primary),var(--pri2)); color:#03121f;box-shadow:0 0 20px var(--glow); }
+    .btn-ghost{ background:transparent; border:1px solid var(--border2); }
+    .divider{height:1px;background:var(--border);margin:18px 0}
+
+    .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .stat{ padding:14px;border-radius:16px; background:var(--surface2);border:1px solid var(--border); }
+    .stat .label{font-size:0.76rem;color:var(--muted);font-weight:500;margin-bottom:5px;text-transform:uppercase;}
+    .stat .val{font-size:1.5rem;font-weight:700;line-height:1}
+    .stat .sub{font-size:0.8rem;color:var(--muted);margin-top:5px}
+    .stat-full{grid-column:1/-1}
+
+    .section{padding:12px 0 24px}
+    .section-head{margin-bottom:14px}
+    .section-head h2{font-size:1.2rem;font-weight:700;margin-bottom:4px}
+    .section-head p{font-size:0.88rem;color:var(--muted)}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+    .field label{display:block;font-size:0.78rem;color:var(--muted);font-weight:500;margin-bottom:6px;text-transform:uppercase;}
+    .field input,.field select{ width:100%;padding:11px 13px;border-radius:12px; background:var(--surface2);border:1px solid var(--border2); color:var(--text);font-size:0.9rem; }
+    .sim-box{ padding:12px;border-radius:12px; background:var(--surface);border:1px solid var(--border); text-align:center; }
+    .sim-box .slabel{font-size:0.74rem;color:var(--muted);margin-bottom:5px}
+    .sim-box .sval{font-size:1.2rem;font-weight:700; font-family: var(--mono);}
+
+    /* ── Chat & Mic ── */
+    .chat-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
+    .chat-log{ min-height:240px;max-height:380px;overflow-y:auto; padding:14px;border-radius:16px; background:var(--surface2);border:1px solid var(--border); display:flex;flex-direction:column;gap:10px; }
+    .msg-row{display:flex;max-width:90%}
+    .msg-row.user{align-self:flex-end;flex-direction:row-reverse}
+    .bubble{ padding:10px 14px;border-radius:14px;font-size:0.88rem;line-height:1.6; border:1px solid var(--border);white-space:pre-wrap; }
+    .msg-row.bot .bubble{background:rgba(78,232,196,.07);border-color:rgba(78,232,196,.14)}
+    .msg-row.user .bubble{background:rgba(92,184,245,.09);border-color:rgba(92,184,245,.16)}
+    .chat-input-row{ display:flex;gap:10px;align-items:flex-end;margin-top:12px; }
+    
+    .mic-btn{ width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; border: 1px solid var(--border2); background: var(--surface2); cursor: pointer; transition: all 0.3s; }
+    .mic-btn.recording{ background: rgba(240,112,112,0.2); border-color: var(--bad); color: var(--bad); animation: pulse-red 1.5s infinite; }
+    @keyframes pulse-red { 0% {box-shadow: 0 0 0 0 rgba(240,112,112,0.4);} 70% {box-shadow: 0 0 0 10px rgba(240,112,112,0);} 100% {box-shadow: 0 0 0 0 rgba(240,112,112,0);} }
+
+    /* ── Rotations & Alerts ── */
+    .alert-card { padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(240,112,112,0.3); background: rgba(240,112,112,0.05); border-left: 4px solid var(--bad); margin-bottom: 10px; }
+    .timeline { border-left: 2px solid var(--border2); margin-left: 10px; padding-left: 20px; position: relative; }
+    .timeline-item { position: relative; margin-bottom: 20px; }
+    .timeline-item::before { content: ''; position: absolute; left: -27px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 8px var(--glow); }
+
+    /* ── IoT & Drone ── */
+    .toggle-container { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 14px; }
+    .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(24px); background-color: #03121f; }
+    .drone-dropzone { border: 2px dashed var(--border2); border-radius: 16px; padding: 30px; text-align: center; color: var(--muted); cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+    .drone-dropzone:hover { border-color: var(--primary); background: rgba(78,232,196,0.05); }
+
+    #map{ height:420px;border-radius:20px;overflow:hidden; border:1px solid var(--border); }
+    .info-row{ display:flex;justify-content:space-between;align-items:center; padding:9px 0;border-bottom:1px solid var(--border); font-size:0.86rem; }
+    .toast{ position:fixed;bottom:28px;right:28px;z-index:999; padding:12px 20px;border-radius:14px; background:var(--surface2);border:1px solid var(--border2); color:var(--text); box-shadow:0 8px 32px rgba(0,0,0,.3); opacity:0;transform:translateY(10px); transition:opacity .25s,transform .25s;pointer-events:none; }
+    .toast.show{opacity:1;transform:translateY(0)}
+
+    @media(max-width:960px){ .hero,.grid2,.chat-grid{grid-template-columns:1fr} .nav-link{display:none} }
+  </style>
+</head>
+<body>
+
+  <div class="toast" id="toast"></div>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top">
+        <div class="brand-icon">🌱</div>
+        <div class="brand-name">Aarambh AI X<small>AgriTech Intelligence</small></div>
+      </a>
+      <nav class="nav-right">
+        <a class="nav-link" href="#weather">Weather</a>
+        <a class="nav-link" href="#profit">Finance</a>
+        <a class="nav-link" href="#logistics">Logistics</a>
+        <a class="nav-link" href="#diseaseUI">Health</a>
+        <a class="nav-link" href="#hardware">Hardware</a>
+        <a class="nav-link" href="#carbon">Eco</a>
+        <a class="nav-link" href="#ask">AI Chat</a>
+        <button class="btn-theme" id="themeBtn" title="Toggle theme">🌓</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap" id="top">
+
+    <section class="hero" id="weather">
+      <div class="panel pad">
+        <div class="badge"><span class="dot" id="liveDot"></span><span id="connStatus">Live API Mode</span></div>
+        <h1 class="hero-title">Agriculture<br>intelligence<br><span>in one file.</span></h1>
+        <p class="hero-sub">Complete OS for Indian farming. Features offline caching, IoT syncing, carbon estimators, and voice-activated AI.</p>
+        <div class="tags">
+          <span class="tag">Live weather</span> <span class="tag">Offline PWA</span> <span class="tag">IoT Sync</span> <span class="tag">Carbon Credit</span>
+        </div>
+      </div>
+      <aside class="panel pad">
+        <div class="stats-grid">
+          <div class="stat"><div class="label">📍 Location</div><div class="val" id="loc" style="font-size:1.1rem">Delhi</div><div class="sub">Elev. 225m</div></div>
+          <div class="stat"><div class="label">🛡️ Risk</div><div class="val" id="risk">--</div><div class="sub">0–100 scale</div></div>
+          <div class="stat"><div class="label">🌡️ Temp</div><div class="val" id="temp">--°C</div><div class="sub">Current</div></div>
+          <div class="stat"><div class="label">💧 Hum</div><div class="val" id="hum">--%</div><div class="sub">Relative</div></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section" id="profit">
+      <div class="section-head"><h2>Market & Finance</h2><p>P2P equipment rental, insurance, and profitability estimates.</p></div>
+      <div class="grid2">
+        <div class="panel pad">
+          <h3 style="margin-bottom: 12px; font-size: 1rem;">💰 Profit & Insurance</h3>
+          <div class="field" style="margin-bottom:8px">
+            <label>Select Crop</label>
+            <select id="calcCrop">
+                <option value="0">🌾 Wheat</option>
+                <option value="1">🍚 Rice</option>
+            </select>
+          </div>
+          <div class="input-row" style="grid-template-columns: 1fr 1fr; margin-bottom:8px; gap:14px;">
+            <div class="field"><label>Farm Size (Acres)</label><input type="number" id="calcArea" value="1" /></div>
+            <div class="field"><label>Ins. Rate (%)</label><input type="number" id="insRate" value="2" step="0.1"/></div>
+          </div>
+          <div class="info-row"><span class="key">Est. Revenue</span><span class="val" id="outRev" style="color:var(--good)">₹0</span></div>
+          <div class="info-row"><span class="key">Est. Net Profit</span><span class="val" id="outProfit" style="color:var(--primary)">₹0</span></div>
+          <div class="info-row"><span class="key">Insurance Premium</span><span class="val" id="insPremium" style="color:var(--warn)">₹0</span></div>
+        </div>
+        <div class="panel pad">
+          <h3 style="margin-bottom: 12px; font-size: 1rem;">🚜 Peer-to-Peer Rentals</h3>
+          <div class="field" style="margin-bottom:10px;"><input type="text" id="rentName" placeholder="Your Name" /></div>
+          <div class="field" style="margin-bottom:10px;"><input type="text" id="rentEquip" placeholder="E.g. Tractor, Drone" /></div>
+          <button class="btn btn-pri" id="postRentalBtn" style="width:100%">Post Listing</button>
+          <div id="rentalFeed" style="margin-top:15px; max-height:120px; overflow-y:auto; font-size:0.85rem; color:var(--muted)">No listings yet.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="logistics">
+      <div class="section-head"><h2>Logistics & Water Quality</h2><p>Find nearby cold storage facilities and log local groundwater metrics.</p></div>
+      <div class="grid2">
+        <div class="panel pad">
+          <h3 style="margin-bottom: 12px; font-size: 1rem;">❄️ Cold Storage Finder</h3>
+          <p style="font-size:0.8rem; color:var(--muted); margin-bottom:12px;">Based on your GPS location, here are the nearest facilities to prevent post-harvest loss.</p>
+          <div id="storageList"></div>
+        </div>
+        <div class="panel pad">
+          <h3 style="margin-bottom: 12px; font-size: 1rem;">💧 WQI Logger (Water Quality)</h3>
+          <div class="input-row" style="grid-template-columns: 1fr 1fr; gap:10px;">
+            <div class="field"><label>pH Level</label><input type="number" id="wqiPh" value="7.2" step="0.1"/></div>
+            <div class="field"><label>Salinity (ppt)</label><input type="number" id="wqiSal" value="0.5" step="0.1"/></div>
+          </div>
+          <button class="btn btn-ghost" id="logWqiBtn" style="width:100%; margin-top:10px;">Save Reading</button>
+          <div class="divider"></div>
+          <div id="wqiHistory" style="font-family:var(--mono); font-size:0.8rem;">No recent logs.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="diseaseUI">
+      <div class="section-head"><h2>Health Diagnostics & Rotation</h2><p>Live disease outbreak predictions and soil-replenishing crop timelines.</p></div>
+      <div class="grid2">
+        <div class="panel pad">
+          <h3 style="margin-bottom: 12px; font-size: 1rem;">🚨 Disease Outbreak Predictor</h3>
+          <div id="alertBox">
+            <div style="color:var(--muted); font-size:0.85rem;">Scanning weather patterns...</div>
+          </div>
+        </div>
+        <div class="panel pad">
+          <h3 style="margin-bottom: 12px; font-size: 1rem;">🔄 Smart Crop Rotation Planner</h3>
+          <div class="field" style="margin-bottom:15px">
+            <label>Current/Last Crop Planted</label>
+            <select id="currentCropSelect">
+              <option value="wheat">Wheat (Depletes Nitrogen)</option>
+              <option value="rice">Rice (Heavy Water Use)</option>
+              <option value="cotton">Cotton (Deep Rooting)</option>
+            </select>
+          </div>
+          <div class="timeline" id="rotationTimeline">
+            </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="hardware">
+      <div class="section-head"><h2>Hardware Integrations</h2><p>Sync physical ground sensors or upload drone maps for AI analysis.</p></div>
+      <div class="grid2">
+        <div class="panel pad">
+          <h3 style="margin-bottom: 12px; font-size: 1rem;">📡 IoT Sensor Sync Hub</h3>
+          <p style="font-size:0.8rem; color:var(--muted); margin-bottom:12px;">Override satellite averages with live data from physical soil probes.</p>
+          <div class="toggle-container">
+            <div><strong>Enable Local Sensors</strong><br><small style="color:var(--muted)">Connects via Bluetooth/WiFi</small></div>
+            <label class="switch">
+              <input type="checkbox" id="iotToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="info-row"><span class="key">Probe 1 (Moisture)</span><span class="val" id="iotMoist">--</span></div>
+          <div class="info-row"><span class="key">Probe 2 (Temp)</span><span class="val" id="iotTemp">--</span></div>
+        </div>
+        <div class="panel pad">
+          <h3 style="margin-bottom: 12px; font-size: 1rem;">🚁 Drone Imagery Viewer</h3>
+          <div class="drone-dropzone" id="droneZone">
+            <div style="font-size:2rem; margin-bottom:10px;">📸</div>
+            Click or drop multispectral drone map (.jpg/.png) here for NDVI overlay.
+            <input type="file" id="droneInput" hidden accept="image/*">
+          </div>
+          <canvas id="droneCanvas" style="width:100%; height:auto; margin-top:10px; border-radius:12px; display:none; filter: hue-rotate(90deg) contrast(150%);"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="carbon">
+      <div class="section-head"><h2>Eco-Finance Calculators</h2><p>Estimate alternative income via carbon credits and Agrivoltaics (Solar).</p></div>
+      <div class="grid2">
+        <div class="panel pad">
+          <h3 style="margin-bottom: 12px; font-size: 1rem;">🌱 Carbon Credit Estimator</h3>
+          <div class="field" style="margin-bottom:10px">
+            <label>Tillage Practice</label>
+            <select id="tillSelect">
+              <option value="0.5">Conventional Tillage</option>
+              <option value="1.2">Minimum Tillage</option>
+              <option value="1.8">No-Till / Cover Crops</option>
+            </select>
+          </div>
+          <div class="sim-box" style="background:rgba(61,227,162,0.1); border-color:rgba(61,227,162,0.3);">
+            <div class="slabel">Estimated Annual Payout (1 Acre)</div>
+            <div class="sval" id="carbonPayout" style="color:var(--good)">₹0</div>
+          </div>
+        </div>
+        <div class="panel pad">
+          <h3 style="margin-bottom: 12px; font-size: 1rem;">☀️ Agrivoltaic (Solar) Monitor</h3>
+          <div class="field" style="margin-bottom:10px">
+            <label>Panel Area (sq meters)</label>
+            <input type="number" id="solarArea" value="50" />
+          </div>
+          <div class="sim-box" style="background:rgba(92,184,245,0.1); border-color:rgba(92,184,245,0.3);">
+            <div class="slabel">Daily Gen (kWh) & Value</div>
+            <div class="sval" id="solarPayout" style="color:var(--pri2)">0 kWh / ₹0</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="ask">
+      <div class="section-head"><h2>AI Farm Advisor</h2><p>Supports Text, Photos (Pest Scanner), and Voice Input.</p></div>
+      <div class="chat-grid">
+        <div class="panel pad">
+          <div class="chat-log" id="log"></div>
+          <div class="chat-input-row">
+            <button class="mic-btn" id="micBtn" title="Speak to AI">🎤</button>
+            <div class="field" style="flex:1">
+              <input id="q" placeholder="Type or tap mic to speak..." autocomplete="off" />
+            </div>
+            <button class="mic-btn" id="photoBtn" title="Scan Pest/Weed">📸</button>
+            <input type="file" id="pestImage" accept="image/*" capture="environment" hidden />
+            <button class="btn btn-pri" id="sendBtn">Send</button>
+          </div>
+        </div>
+        <div class="panel pad">
+           <div class="info-panel">
+            <h3>📊 Live AI Context</h3>
+            <div class="info-row"><span class="key">IoT Mode</span><span class="val" id="ctxIot">Disabled</span></div>
+            <div class="info-row"><span class="key">Disease Risk</span><span class="val" id="ctxDis">Scanning...</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+  'use strict';
+
+  // State Management
+  const S = {
+    wx: { temp: 28, hum: 60, rain7: 40, wind: 10, code: 0 },
+    iotEnabled: false,
+    wqiLogs: []
+  };
+  const $ = id => document.getElementById(id);
+
+  // ───────────────────────────────── PWA SERVICE WORKER REGISTRATION ──────
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').then(reg => {
+        console.log('PWA Service Worker registered.', reg);
+      }).catch(err => {
+        console.warn('PWA setup failed (requires HTTPS/Localhost):', err);
+      });
+    });
+  }
+
+  // ───────────────────────────────── 1. LOGISTICS (COLD STORAGE) ──────────
+  function loadLogistics() {
+    const box = $('storageList');
+    // Simulated nearby facilities based on generic GPS
+    const storages = [
+      { name: "Kisan Cold Chain", dist: "4.2 km", space: "Available", color: "var(--good)" },
+      { name: "Agri-Store Sub-Hub", dist: "12.5 km", space: "Limited", color: "var(--warn)" },
+      { name: "State Warehouse A", dist: "18.0 km", space: "Full", color: "var(--bad)" }
+    ];
+    box.innerHTML = storages.map(s => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px;">
+        <div><strong>${s.name}</strong><br><small style="color:var(--muted)">📍 ${s.dist}</small></div>
+        <div style="color:${s.color}; font-weight:600; font-size:0.85rem">${s.space}</div>
+      </div>
+    `).join('');
+  }
+
+  // ───────────────────────────────── 2. WATER QUALITY LOGGER ──────────────
+  $('logWqiBtn').addEventListener('click', () => {
+    const ph = parseFloat($('wqiPh').value);
+    const sal = parseFloat($('wqiSal').value);
+    const date = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    S.wqiLogs.unshift({time: date, ph, sal});
+    if(S.wqiLogs.length > 3) S.wqiLogs.pop();
+    
+    $('wqiHistory').innerHTML = S.wqiLogs.map(l => 
+      `<div style="padding:6px 0; border-bottom:1px solid var(--border)">
+        <span style="color:var(--muted)">[${l.time}]</span> pH: ${l.ph} | Sal: ${l.sal}ppt
+      </div>`
+    ).join('');
+    toast('Water Quality Logged', 'success');
+  });
+
+  // ───────────────────────────────── 3. DISEASE ALERTS & ROTATION ─────────
+  function updateDiseaseAndRotation() {
+    // 3A. Disease Alert Logic (Depends on Weather)
+    const alertBox = $('alertBox');
+    const ctxDis = $('ctxDis');
+    let alerts = [];
+    
+    // Simulate real predictive logic based on live state
+    if (S.wx.hum > 75 && S.wx.temp > 25) {
+      alerts.push("⚠️ High risk of Fungal Blight. Recommend preventative fungicide spray.");
+      ctxDis.textContent = "High (Fungal)";
+      ctxDis.style.color = "var(--bad)";
+    } else if (S.wx.temp > 35 && S.wx.hum < 40) {
+      alerts.push("⚠️ Heat stress detected. High risk of spider mites.");
+      ctxDis.textContent = "High (Pest)";
+      ctxDis.style.color = "var(--warn)";
+    } else {
+      alerts.push("✅ Weather conditions stable. Disease risk is low.");
+      ctxDis.textContent = "Low";
+      ctxDis.style.color = "var(--good)";
+    }
+
+    alertBox.innerHTML = alerts.map(a => `<div class="alert-card">${a}</div>`).join('');
+
+    // 3B. Crop Rotation Logic
+    const current = $('currentCropSelect').value;
+    const tl = $('rotationTimeline');
+    if (current === 'wheat') {
+      tl.innerHTML = `
+        <div class="timeline-item"><strong>Next: Pulses / Legumes</strong><br><small style="color:var(--muted)">Restores nitrogen heavily depleted by wheat.</small></div>
+        <div class="timeline-item"><strong>Then: Brassicas (Cabbage/Mustard)</strong><br><small style="color:var(--muted)">Helps break root disease cycles.</small></div>
+      `;
+    } else if (current === 'rice') {
+      tl.innerHTML = `
+        <div class="timeline-item"><strong>Next: Sunhemp / Green Manure</strong><br><small style="color:var(--muted)">Improves soil aeration after waterlogging.</small></div>
+        <div class="timeline-item"><strong>Then: Groundnut</strong><br><small style="color:var(--muted)">Cash crop that fixes nitrogen.</small></div>
+      `;
+    } else {
+      tl.innerHTML = `
+        <div class="timeline-item"><strong>Next: Sorghum (Jowar)</strong><br><small style="color:var(--muted)">Deep roots to bring up leached nutrients.</small></div>
+        <div class="timeline-item"><strong>Then: Soybeans</strong><br><small style="color:var(--muted)">Excellent soil structure builder.</small></div>
+      `;
+    }
+  }
+  $('currentCropSelect').addEventListener('change', updateDiseaseAndRotation);
+
+  // ───────────────────────────────── 4. IOT HARDWARE TOGGLE ───────────────
+  $('iotToggle').addEventListener('change', (e) => {
+    S.iotEnabled = e.target.checked;
+    const dot = $('liveDot');
+    
+    if (S.iotEnabled) {
+      // Simulate overriding API with physical ground sensors
+      S.wx.temp = 29.5; // Probe says slightly hotter than API
+      S.wx.hum = 82;    // Probe says microclimate is very humid
+      $('connStatus').textContent = "Local Sensors Linked";
+      dot.style.background = "var(--pri2)";
+      $('iotMoist').textContent = "42% (Optimal)";
+      $('iotTemp').textContent = "29.5°C";
+      $('ctxIot').textContent = "Active";
+      $('ctxIot').style.color = "var(--good)";
+      toast('Switched to Local IoT Probe Data', 'success');
+    } else {
+      // Revert to "API" defaults
+      S.wx.temp = 28;
+      S.wx.hum = 60;
+      $('connStatus').textContent = "Live API Mode";
+      dot.style.background = "var(--good)";
+      $('iotMoist').textContent = "--";
+      $('iotTemp').textContent = "--";
+      $('ctxIot').textContent = "Disabled";
+      $('ctxIot').style.color = "var(--muted)";
+      toast('Reverted to Satellite/API Data');
+    }
+    
+    // Update core UI blocks dependent on weather
+    $('temp').textContent = S.wx.temp + "°C";
+    $('hum').textContent = S.wx.hum + "%";
+    updateDiseaseAndRotation();
+  });
+
+  // ───────────────────────────────── 5. DRONE MAP UPLOADER ────────────────
+  const droneZone = $('droneZone');
+  const droneInput = $('droneInput');
+  const droneCanvas = $('droneCanvas');
+
+  droneZone.addEventListener('click', () => droneInput.click());
+  droneInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        droneZone.style.display = 'none';
+        droneCanvas.style.display = 'block';
+        droneCanvas.width = img.width;
+        droneCanvas.height = img.height;
+        const ctx = droneCanvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        // The canvas has a CSS filter applied to fake a multispectral/NDVI look
+        toast('Drone map processed. Showing NDVI estimation.', 'success');
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // ───────────────────────────────── 6. CARBON & SOLAR CALCS ──────────────
+  function updateCarbonSolar() {
+    // Carbon Math: 1 Acre ~ 1 to 2 credits. 1 credit = ~₹1500
+    const tillFactor = parseFloat($('tillSelect').value);
+    const credits = 1.0 * tillFactor; 
+    const payout = Math.round(credits * 1500);
+    $('carbonPayout').textContent = "₹" + payout.toLocaleString();
+
+    // Solar Math: 1 sqm = ~0.15 kW. 5 hrs peak sun = 0.75 kWh/day. 1 kWh = ₹5.
+    const area = parseFloat($('solarArea').value) || 0;
+    const kwh = area * 0.75;
+    const solarVal = Math.round(kwh * 5);
+    $('solarPayout').textContent = `${kwh.toFixed(1)} kWh / ₹${solarVal}`;
+  }
+  $('tillSelect').addEventListener('change', updateCarbonSolar);
+  $('solarArea').addEventListener('input', updateCarbonSolar);
+
+  // ───────────────────────────────── 7. VOICE INPUT (WEB SPEECH API) ──────
+  const micBtn = $('micBtn');
+  const qInput = $('q');
+  
+  // Check browser support
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  
+  if (SpeechRecognition) {
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    // Multi-Language capability - default to en-IN, could easily be hi-IN, etc.
+    recognition.lang = 'en-IN'; 
+
+    recognition.onstart = () => {
+      micBtn.classList.add('recording');
+      qInput.placeholder = "Listening...";
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      qInput.value = transcript;
+      // Auto-send when voice is processed
+      $('sendBtn').click(); 
+    };
+
+    recognition.onerror = (event) => {
+      console.warn("Speech error:", event.error);
+      toast("Could not hear clearly. Try again.", "error");
+      micBtn.classList.remove('recording');
+      qInput.placeholder = "Type or tap mic to speak...";
+    };
+
+    recognition.onend = () => {
+      micBtn.classList.remove('recording');
+      qInput.placeholder = "Type or tap mic to speak...";
+    };
+
+    micBtn.addEventListener('click', () => {
+      recognition.start();
+    });
+  } else {
+    micBtn.style.opacity = '0.3';
+    micBtn.title = "Voice input not supported in this browser.";
+  }
+
+  // ───────────────────────────────── 8. PEST PHOTO SCANNER (CHAT) ─────────
+  $('photoBtn').addEventListener('click', () => $('pestImage').click());
+  $('pestImage').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    // In a real app, this goes to Groq Vision or Gemini API
+    const imgURL = URL.createObjectURL(file);
+    appendChat(`<img src="${imgURL}" style="max-width:150px; border-radius:8px;"><br>Analyzing photo...`, 'user');
+    
+    // Fake AI Response for demo purposes
+    setTimeout(() => {
+      appendChat("📸 **Analysis Complete:** The patterns on the leaf indicate early signs of **Powdery Mildew**. <br><br>🛡️ **Action:** Apply sulfur-based organic spray or Neem oil. Reduce overhead irrigation.", 'bot');
+    }, 1500);
+  });
+
+  // Chat Basics
+  function appendChat(html, role) {
+    const log = $('log');
+    const row = document.createElement('div');
+    row.className = `msg-row ${role}`;
+    row.innerHTML = `<div class="bubble">${html}</div>`;
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
+  }
+  
+  $('sendBtn').addEventListener('click', () => {
+    const text = qInput.value.trim();
+    if(!text) return;
+    appendChat(text, 'user');
+    qInput.value = "";
+    setTimeout(() => appendChat("Processing your request using local cache...", 'bot'), 600);
+  });
+
+  // Init Calls
+  function init() {
+    loadLogistics();
+    updateDiseaseAndRotation();
+    updateCarbonSolar();
+    appendChat("👋 Hi! The system is fully loaded. I can now process text, photos, and voice commands.", 'bot');
+  }
+  window.addEventListener('DOMContentLoaded', init);
+  
+  </script>
+</body>
+</html>
