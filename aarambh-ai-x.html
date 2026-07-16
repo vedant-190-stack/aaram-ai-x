@@ -2545,7 +2545,30 @@ GUIDELINES:
       toast('Clipboard not available in this browser.', 'error');
     }
   }
-
+// ───────────────────────────────── IOT SENSOR TOGGLE LOGIC ──────────
+  $('iotToggle')?.addEventListener('change', (e) => {
+    const isEnabled = e.target.checked;
+    if (isEnabled) {
+      // Override values safely to simulate connected Bluetooth probes
+      $('iotMoist').textContent = "42% (Optimal)";
+      $('iotTemp').textContent = "29.5°C";
+      if(S.agro) {
+          S.agro.moisture0 = 0.42; 
+          S.agro.soilTemp0 = 29.5; 
+      }
+      S.wx.temp = 29.5;
+      toast('Local IoT Sensors Connected', 'success');
+      renderAll();
+    } else {
+      $('iotMoist').textContent = "--"; 
+      $('iotTemp').textContent = "--";
+      // Revert back to API data
+      loadCoords(S.lat, S.lon, S.place).then(() => {
+          toast('Reverted to Satellite Data');
+          renderAll();
+      });
+    }
+  });
   function wireEvents(){
     $('themeBtn').addEventListener('click',()=>applyTheme(S.theme==='dark'?'light':'dark'));
     $('copyReportBtn').addEventListener('click',copyReport);
