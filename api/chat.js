@@ -1,105 +1,91 @@
-const rateLimitCache = new Map();
+// ─── Constants ───────────────────────────────────────────────────────────────
+const GROQ_API_URL    = 'https://api.groq.com/openai/v1/chat/completions';
+const MODEL_NAME      = 'llama-3.1-8b-instant';
+const MAX_TOKENS      = 600;
+const TEMPERATURE     = 0.7;
+const TIMEOUT_MS      = 20_000;
+const MAX_QUESTION_LEN = 2000;
+const MAX_CONTEXT_LEN  = 8000;
+const DEFAULT_SYSTEM  = 'You are Aarambh AI X, an expert agricultural advisor for Indian farmers.';
 
-module.exports = async function handler(req, res) {
+// ─── Handler ─────────────────────────────────────────────────────────────────
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // 🚀 Rate Limiting Logic (Max 15 requests per minute per IP)
-  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-  const currentTime = Date.now();
-  
-  if (!rateLimitCache.has(clientIp)) {
-    rateLimitCache.set(clientIp, { count: 1, firstRequest: currentTime });
-  } else {
-    const userData = rateLimitCache.get(clientIp);
-    if (currentTime - userData.firstRequest > 60000) {
-      rateLimitCache.set(clientIp, { count: 1, firstRequest: currentTime });
-    } else {
-      userData.count++;
-      if (userData.count > 15) {
-        return res.status(429).json({ error: 'Too many requests. Please wait a minute before asking more questions.' });
-      }
-    }
+  // API key guard — fail fast with a clear message
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    console.error('[chat] GROQ_API_KEY is not set');
+    return res.status(500).json({ error: 'Chat service is not configured. Contact support.' });
   }
 
-  const { question, context } = req.body;
+  // Input validation
+  const { question, context } = req.body ?? {};
 
-  if (!question) {
-    return res.status(400).json({ error: 'No question provided' });
+  if (!question || typeof question !== 'string' || !question.trim()) {
+    return res.status(400).json({ error: 'A non-empty question is required.' });
+  }
+  if (question.length > MAX_QUESTION_LEN) {
+    return res.status(400).json({ error: `Question too long (max ${MAX_QUESTION_LEN} characters).` });
+  }
+  if (context && context.length > MAX_CONTEXT_LEN) {
+    return res.status(400).json({ error: `Context too long (max ${MAX_CONTEXT_LEN} characters).` });
   }
 
-  // Intelligent Model Failover Array
-  const models = ['llama-3.1-8b-instant', 'openai/gpt-oss-20b', 'qwen/qwen3-32b'];
+  // Groq call with timeout
+  try {
+    const controller = new AbortController();
+    const timer      = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-  const systemPrompt = `You are Aarambh AI X, a deeply knowledgeable agricultural intelligence built by experienced Indian farmers, agronomists, and climate scientists.
-
-  You have ZERO restrictions on response length or depth. Answer every question as completely as possible. Never refuse agriculture questions.
-
-  LANGUAGE & TONE RULES:
-  - Automatically detect the language of the user's question and match it perfectly (Hindi, Hinglish, or English).
-  - Use accurate Indian agricultural terminology natively (e.g., rabi, kharif, zaid, mandi, DAP, urea, KVK).
-  - Sound like a confident senior agronomist.
-
-  EXPERTISE:
-  - All Indian crops across Rabi, Kharif, Zaid seasons
-  - All 18 Indian soil types and crop compatibility
-  - Crop-specific NPK: Wheat 120:60:40, Rice 100:50:40, Maize 150:70:60, Cotton 150:60:60, Millet 80:40:30
-  - Row spacing: Wheat 20-22cm, Rice 20x15cm, Maize 60-75cm, Cotton 90-120cm, Millet 45-60cm, Pulses 30-45cm
-  - Disease: rust, blight, wilt, bollworm, aphids, armyworm
-  - Government: PM-KISAN, PMFBY, PM-KUSUM, PKVY, MSP rates
-  - Organic farming, hydroponics, greenhouse, precision farming
-
-  LIVE FARM DATA:
-  ${context}
-
-  OUTPUT FORMATTING:
-  - Use clean HTML tags (<b>, <br>, <ul>, <li>) to structure the output. Do NOT wrap it in markdown block quotes.
-  - Mention AQI last.`;
-
-  for (const model of models) {
+    let response;
     try {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
+      response = await fetch(GROQ_API_URL, {
+        method:  'POST',
+        signal:  controller.signal,
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: model,
-          stream: true, 
-          max_tokens: 1000, 
-          temperature: 0.7,
+          model:       MODEL_NAME,
+          max_tokens:  MAX_TOKENS,
+          temperature: TEMPERATURE,
           messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: question }
+            { role: 'system', content: context?.trim() || DEFAULT_SYSTEM },
+            { role: 'user',   content: question.trim() }
           ]
         })
       });
-
-      if (!response.ok) {
-        if (response.status === 429) continue; // Instantly failover to the next model if rate-limited
-        const errData = await response.json().catch(() => ({}));
-        console.error(`Groq API Error on ${model}:`, errData);
-        continue; 
-      }
-
-      // Start streaming the response back to the client
-      res.setHeader('Content-Type', 'text/event-stream');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Connection', 'keep-alive');
-
-      for await (const chunk of response.body) {
-        res.write(chunk);
-      }
-      res.end();
-      return; 
-
-    } catch (err) {
-      console.error(`Fetch error with ${model}:`, err);
+    } finally {
+      clearTimeout(timer);
     }
-  }
 
-  // If the loop finishes, all models failed
-  return res.status(500).json({ error: 'All AI models are currently busy. Please wait a few seconds and try again.' });
-};
+    // Surface non-2xx HTTP errors from Groq
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      console.error('[chat] Groq HTTP error:', response.status, body);
+      return res.status(502).json({
+        error: body?.error?.message ?? `Groq returned status ${response.status}.`
+      });
+    }
+
+    const data = await response.json();
+    const answer = data?.choices?.[0]?.message?.content;
+
+    if (!answer) {
+      console.error('[chat] Unexpected Groq response shape:', JSON.stringify(data));
+      return res.status(502).json({ error: 'Unexpected response from AI service.' });
+    }
+
+    return res.status(200).json({ answer });
+
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      return res.status(504).json({ error: 'Request timed out. Please try again.' });
+    }
+    console.error('[chat] Unexpected error:', err.message);
+    return res.status(500).json({ error: 'Server error — please try again.' });
+  }
+}
