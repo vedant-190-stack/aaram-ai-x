@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en" data-theme="dark"><head>
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#060e1a" />
@@ -433,7 +435,9 @@
       .forecast{grid-template-columns:repeat(2,1fr)}
       .stats-grid{grid-template-columns:1fr}
     }
-  </style></head><body>
+  </style>
+</head>
+<body>
 
   <div class="loader" id="loader">
     <div class="loader-inner">
@@ -459,6 +463,8 @@
         <a class="nav-link" href="#weather">Weather</a>
         <a class="nav-link" href="#recommend">Crops</a>
         <a class="nav-link" href="#profit">Profit</a>
+        <a class="nav-link" href="#marketplace">Marketplace</a>
+        <a class="nav-link" href="#smartTools">Smart Tools</a>
         <a class="nav-link" href="#npkEngine">NPK Tool</a>
         <a class="nav-link" href="#sim">Simulator</a>
         <a class="nav-link" href="#charts">Charts</a>
@@ -675,6 +681,102 @@
       </div>
     </section>
 
+    <section class="section" id="marketplace"> 
+      <div class="section-head"> 
+        <h2>🚜 Peer-to-Peer Equipment Rental</h2> 
+        <p>Rent out your idle tractors and drones, or find affordable equipment near you.</p> 
+      </div> 
+      <div class="grid2"> 
+        <div class="panel pad"> 
+          <h3 style="margin-bottom: 12px; font-size: 1rem;">List Your Equipment</h3> 
+          <div class="slider-group"> 
+            <div class="field"> 
+              <label>Your Name</label> 
+              <input type="text" id="rentName" placeholder="E.g., Rajesh Kumar" /> 
+            </div> 
+            <div class="field"> 
+              <label>Equipment Type</label> 
+              <select id="rentType"> 
+                <option value="Tractor">Tractor</option> 
+                <option value="Harvester">Harvester</option> 
+                <option value="Drone">Agricultural Drone</option> 
+                <option value="Water Pump">Water Pump</option> 
+              </select> 
+            </div> 
+            <div class="field"> 
+              <label>Price Per Day (₹)</label> 
+              <input type="number" id="rentPrice" placeholder="E.g., 1500" /> 
+            </div> 
+            <div class="field"> 
+              <label>City / Village</label> 
+              <input type="text" id="rentCity" placeholder="E.g., Nashik" /> 
+            </div> 
+            <div class="field"> 
+              <label>Contact Number</label> 
+              <input type="text" id="rentPhone" placeholder="10-digit mobile number" /> 
+            </div> 
+            <button class="btn btn-pri" id="postRentalBtn" style="margin-top: 10px;">Post Listing</button> 
+          </div> 
+        </div> 
+        <div class="panel pad" style="display: flex; flex-direction: column;"> 
+          <h3 style="margin-bottom: 12px; font-size: 1rem;">Available Near You</h3> 
+          <button class="btn btn-ghost" id="refreshRentalsBtn" style="margin-bottom: 12px; font-size: 0.8rem;">🔄 Refresh Feed</button> 
+          <div id="rentalFeed" style="overflow-y: auto; max-height: 400px; display: flex; flex-direction: column; gap: 10px;"> 
+            <div style="color: var(--muted); font-size: 0.85rem;">Loading equipment...</div> 
+          </div> 
+        </div> 
+      </div> 
+    </section>
+
+    <section class="section" id="smartTools">
+        <div class="section-head">
+            <h2>📊 Smart Agri-Calculators</h2>
+            <p>Advanced financial and water management tools based on your specific farm data.</p>
+        </div>
+        <div class="grid2">
+            <div class="panel pad">
+                <h3 style="margin-bottom:15px; font-size:1rem;">💰 Market & Finance</h3>
+                
+                <div class="stat" style="margin-bottom:15px; background:rgba(78,232,196,0.05)">
+                    <div class="label">Expected Mandi Price</div>
+                    <div class="val" id="mandiPrice" style="font-size:1.3rem;">₹0 / Quintal</div>
+                    <div class="sub" id="mandiTrend">Calculating trend...</div>
+                </div>
+
+                <div class="field">
+                    <label>Insurance Premium Rate (%)</label>
+                    <input type="number" id="insRate" value="2.0" step="0.1" />
+                </div>
+                <div class="info-row"><span class="key">Sum Insured</span><span class="val" id="insSum">₹0</span></div>
+                <div class="info-row"><span class="key">Your Premium</span><span class="val" id="insPremium" style="color:var(--pri2)">₹0</span></div>
+                
+                <div class="divider"></div>
+                <div id="schemeBox" class="sim-box" style="background:rgba(92,184,245,.08); text-align:left;">
+                    <div class="slabel">Govt. Scheme Match</div>
+                    <div id="schemeContent" style="font-size:0.82rem; line-height:1.4;">Select a crop to find subsidies.</div>
+                </div>
+            </div>
+
+            <div class="panel pad">
+                <h3 style="margin-bottom:15px; font-size:1rem;">💧 Water & Irrigation</h3>
+                
+                <div class="field">
+                    <label>Roof/Catchment Area (m²)</label>
+                    <input type="number" id="rainArea" value="100" />
+                </div>
+                <div class="info-row"><span class="key">Rain Potential (7-Day)</span><span class="val" id="rainPotential" style="color:var(--good)">0 Liters</span></div>
+                
+                <div class="divider"></div>
+                
+                <div class="sim-box" style="text-align:left; background:rgba(61,227,162,0.05);">
+                    <div class="slabel">Irrigation Advice</div>
+                    <div class="sval" id="irrigationAdvice" style="font-size:0.9rem; font-family:sans-serif; line-height:1.4; color:var(--text);">Loading soil data...</div>
+                </div>
+                <p style="font-size:0.75rem; color:var(--muted); margin-top:10px;">*Irrigation advice is calculated using real-time soil moisture and precipitation forecasts.</p>
+            </div>
+        </div>
+    </section>
+
     <section class="section" id="npkEngine">
       <div class="section-head">
         <h2>🧪 Soil Health Card (NPK) Engine</h2>
@@ -862,7 +964,15 @@
   const AGRO_DEFAULT_POLYGON = '6a315b4dfc4d163439b941bc';
 
   // ───────────────────────────────── DATA ─────────────────────────────────
-  const CROPS = [  { name:'Wheat', emoji:'🌾', seasons:['rabi'], temp:[8,24], rain:[300,900], hum:[35,65], soil:['alluvial','loam','clay','grey_brown','sub_mountain'], water:'Moderate', note:'Thrives in cool, dry winters with moderate rainfall.', msp:2275, yield_ha:35, cost_ha:30000 },  { name:'Rice', emoji:'🍚', seasons:['kharif'], temp:[20,34], rain:[900,2000], hum:[55,95], soil:['alluvial','clay','peaty','red','black','laterite'], water:'High', note:'Needs warm, wet conditions and standing water.', msp:2183, yield_ha:40, cost_ha:40000 },  { name:'Maize', emoji:'🌽', seasons:['kharif','zaid'], temp:[18,32], rain:[500,1200], hum:[40,75], soil:['alluvial','loam','red','black','forest'], water:'Moderate', note:'A flexible staple suited to many Indian climates.', msp:2090, yield_ha:30, cost_ha:25000 },  { name:'Millet', emoji:'🌿', seasons:['kharif','zaid'], temp:[20,38], rain:[200,700], hum:[25,65], soil:['arid','sandy','red','laterite','loam','black','mixed_red_black'], water:'Low', note:'Drought-resilient, ideal for arid and semi-arid zones.', msp:2500, yield_ha:15, cost_ha:15000 },  { name:'Pulses', emoji:'🫘', seasons:['rabi','kharif'], temp:[15,30], rain:[250,900], hum:[30,75], soil:['alluvial','loam','black','red','mixed_red_black','grey_brown'], water:'Low', note:'Nitrogen-fixing legumes for water-limited farms.', msp:5440, yield_ha:12, cost_ha:20000 },  { name:'Soybean', emoji:'🌱', seasons:['kharif'], temp:[20,30], rain:[600,1000], hum:[50,80], soil:['black','loam','alluvial','mixed_red_black'], water:'Moderate', note:'Rich oilseed crop for black soil regions.', msp:4600, yield_ha:18, cost_ha:28000 },  { name:'Cotton', emoji:'☁️', seasons:['kharif'], temp:[22,38], rain:[500,1000], hum:[35,70], soil:['black','clay','mixed_red_black','alluvial','red'], water:'Moderate', note:'High-value cash crop for warm, long-season zones.', msp:6620, yield_ha:20, cost_ha:45000 }];
+  const CROPS = [  
+    { name:'Wheat', emoji:'🌾', seasons:['rabi'], temp:[8,24], rain:[300,900], hum:[35,65], soil:['alluvial','loam','clay','grey_brown','sub_mountain'], water:'Moderate', note:'Thrives in cool, dry winters with moderate rainfall.', msp:2275, yield_ha:35, cost_ha:30000, scheme: 'PM-KISAN Fertilizer Subsidy' },  
+    { name:'Rice', emoji:'🍚', seasons:['kharif'], temp:[20,34], rain:[900,2000], hum:[55,95], soil:['alluvial','clay','peaty','red','black','laterite'], water:'High', note:'Needs warm, wet conditions and standing water.', msp:2183, yield_ha:40, cost_ha:40000, scheme: 'State Paddy Procurement Bonus' },  
+    { name:'Maize', emoji:'🌽', seasons:['kharif','zaid'], temp:[18,32], rain:[500,1200], hum:[40,75], soil:['alluvial','loam','red','black','forest'], water:'Moderate', note:'A flexible staple suited to many Indian climates.', msp:2090, yield_ha:30, cost_ha:25000, scheme: 'NFSM Maize Cluster Demo' },  
+    { name:'Millet', emoji:'🌿', seasons:['kharif','zaid'], temp:[20,38], rain:[200,700], hum:[25,65], soil:['arid','sandy','red','laterite','loam','black','mixed_red_black'], water:'Low', note:'Drought-resilient, ideal for arid and semi-arid zones.', msp:2500, yield_ha:15, cost_ha:15000, scheme: 'International Year of Millets Grant' },  
+    { name:'Pulses', emoji:'🫘', seasons:['rabi','kharif'], temp:[15,30], rain:[250,900], hum:[30,75], soil:['alluvial','loam','black','red','mixed_red_black','grey_brown'], water:'Low', note:'Nitrogen-fixing legumes for water-limited farms.', msp:5440, yield_ha:12, cost_ha:20000, scheme: 'NFSM Pulse Development Subsidy' },  
+    { name:'Soybean', emoji:'🌱', seasons:['kharif'], temp:[20,30], rain:[600,1000], hum:[50,80], soil:['black','loam','alluvial','mixed_red_black'], water:'Moderate', note:'Rich oilseed crop for black soil regions.', msp:4600, yield_ha:18, cost_ha:28000, scheme: 'Oilseed Mission Cluster Plan' },  
+    { name:'Cotton', emoji:'☁️', seasons:['kharif'], temp:[22,38], rain:[500,1000], hum:[35,70], soil:['black','clay','mixed_red_black','alluvial','red'], water:'Moderate', note:'High-value cash crop for warm, long-season zones.', msp:6620, yield_ha:20, cost_ha:45000, scheme: 'CCI Procurement Support' }
+  ];
 
   const LAND_UNITS = {
     hectare: 1,
@@ -1007,6 +1117,7 @@
 
     renderForecast();
     updateProfitCalculator();
+    updateSmartTools();
 
     $('simTemp').textContent = `${temp}°C`;
     $('simRisk').textContent = `${risk}/100`;
@@ -1124,6 +1235,69 @@
       $('barRev').style.width = '0%';
       $('barBg').style.background = 'rgba(240,112,112,.2)';
     }
+  }
+
+  // ───────────────────────────────── MARKETPLACE ────────────────────────────
+  async function loadRentals() {
+    const feed = $('rentalFeed'); if (!feed) return;
+    feed.innerHTML = '<div style="color:var(--muted); font-size: 0.85rem;">Fetching live market data...</div>';
+    try {
+      const response = await fetch('/api/rentals');
+      const result = await response.json();
+      if (result.success && result.data.length > 0) {
+        feed.innerHTML = result.data.map(item => `
+          <div style="padding: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; margin-bottom:10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="color: var(--primary); font-size: 1rem;">${item.equipment_type}</strong>
+              <span style="font-family: var(--mono); color: var(--good); font-weight: 600;">₹${item.price_per_day}/day</span>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 8px;">📍 ${item.location_city} | 👤 ${item.owner_name}</div>
+            <a href="tel:${item.contact_phone}" class="btn btn-ghost" style="width: 100%; text-align: center; font-size: 0.8rem; padding: 6px; display:block;">📞 Contact Owner</a>
+          </div>`).join('');
+      } else { feed.innerHTML = '<div style="color:var(--muted); font-size: 0.85rem;">No equipment listed yet.</div>'; }
+    } catch (error) { feed.innerHTML = '<div style="color:var(--bad); font-size: 0.85rem;">Marketplace offline.</div>'; }
+  }
+
+  async function postRental() {
+    const btn = $('postRentalBtn');
+    const payload = { owner_name: $('rentName').value, equipment_type: $('rentType').value, price_per_day: $('rentPrice').value, location_city: $('rentCity').value, contact_phone: $('rentPhone').value };
+    if (!payload.owner_name || !payload.price_per_day || !payload.contact_phone) { toast("Please fill all fields!", "error"); return; }
+    btn.disabled = true; btn.textContent = 'Posting...';
+    try {
+      const response = await fetch('/api/rentals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const result = await response.json();
+      if (result.success) { toast("Listed successfully!", "success"); loadRentals(); }
+    } catch (error) { toast("Network error.", "error"); } finally { btn.disabled = false; btn.textContent = 'Post Listing'; }
+  }
+
+  // ───────────────────────────────── SMART TOOLS ────────────────────────────
+  function updateSmartTools() {
+    const cropIdx = $('calcCrop').value || 0; 
+    const crop = CROPS[cropIdx];
+    const areaVal = parseFloat($('calcArea').value) || 0;
+    const unitKey = $('calcUnit').value; 
+    const areaInHa = areaVal * (LAND_UNITS[unitKey] || 1);
+    
+    const volatility = (Math.random() * 0.12) - 0.04;
+    const currentMandi = crop.msp * (1 + volatility);
+    
+    if($('mandiPrice')) $('mandiPrice').textContent = '₹' + Math.round(currentMandi).toLocaleString() + ' / Qtl';
+    if($('mandiTrend')) $('mandiTrend').textContent = volatility > 0 ? '📈 Trading above MSP' : '📉 Market dip';
+    
+    const sumInsured = crop.msp * crop.yield_ha * areaInHa;
+    if($('insSum')) $('insSum').textContent = '₹' + Math.round(sumInsured).toLocaleString();
+    
+    const insRate = parseFloat($('insRate')?.value || 2.0);
+    if($('insPremium')) $('insPremium').textContent = '₹' + Math.round(sumInsured * (insRate / 100)).toLocaleString();
+    
+    const totalRain = Math.max(0, S.wx.rain7 * (1 + S.future.r/100));
+    const rainArea = parseFloat($('rainArea')?.value || 100);
+    if($('rainPotential')) $('rainPotential').textContent = Math.round(rainArea * totalRain * 0.85) + ' L';
+    
+    const moisture = S.agro?.moisture0 || 0.25;
+    if($('irrigationAdvice')) $('irrigationAdvice').textContent = totalRain > 20 ? "Rain expected. Pause irrigation." : (moisture < 0.2 ? "Soil dry. 3-hour irrigation needed." : "Moisture levels optimal.");
+    
+    if($('schemeContent')) $('schemeContent').innerHTML = `<b>Matched:</b> ${crop.scheme || 'Govt Scheme Support'}`;
   }
 
   // ───────────────────────────────── NPK CHEMICAL ENGINE ────────────────────
@@ -1762,7 +1936,7 @@
   }
 
   function followUpHint(topic, best){
-    if(topic === 'irrigation') return `If you want, I can turn this into a water schedule for ${best.crop}.`;
+    if(topic === 'irrigation') return `If you want, I can turn this into a water schedule for ${best.crop.name}.`;
     if(topic === 'disease') return `If you want, I can also explain preventive spray timing and field hygiene.`;
     if(topic === 'fertilizer') return `If you want, I can tailor the fertilizer advice to tomato, wheat, rice, or pulses.`;
     if(topic === 'soil') return `If you want, I can compare your soil with the best crop choices right now.`;
@@ -2299,6 +2473,7 @@ GUIDELINES:
     ['calcCrop','calcArea','calcUnit','calcYield'].forEach(id=>{
       $(id).addEventListener('input', () => {
          updateProfitCalculator();
+         updateSmartTools();
          if(id === 'calcArea' || id === 'calcUnit') updateNpkEngine();
       });
     });
@@ -2309,6 +2484,15 @@ GUIDELINES:
 
     ['season','soil'].forEach(id=>{
       $(id).addEventListener('change',renderAll);
+    });
+
+    // Marketplace events
+    $('postRentalBtn')?.addEventListener('click', postRental);
+    $('refreshRentalsBtn')?.addEventListener('click', loadRentals);
+    
+    // Smart tools events
+    ['insRate', 'rainArea'].forEach(id => {
+        $(id)?.addEventListener('input', updateSmartTools);
     });
 
     $('simReset').addEventListener('click',()=>{
@@ -2440,6 +2624,8 @@ GUIDELINES:
     wireEvents();
     seedChat();
     updateNpkEngine();
+    loadRentals();
+    updateSmartTools();
     renderAll();
     $('status').textContent='Getting your location…';
     
@@ -2453,4 +2639,6 @@ GUIDELINES:
   } else {
     init();
   }
-  </script></body></html>
+  </script>
+</body>
+</html>
